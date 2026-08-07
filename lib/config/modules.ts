@@ -1,0 +1,24 @@
+export interface ModuleDefinition {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  status: "active" | "planned" | "coming-soon";
+}
+
+export const SYNTH_MODULES: ModuleDefinition[] = [
+  { id: "assistant", label: "SYNTH Assistant", description: "General AI workspace", icon: "message-circle-2", status: "active" },
+  { id: "code", label: "SYNTH Code", description: "Code understanding and generation", icon: "code-2", status: "planned" },
+  { id: "agent", label: "SYNTH Agent", description: "Autonomous workflow execution", icon: "route", status: "planned" },
+  { id: "docs", label: "SYNTH Docs", description: "Knowledge and documentation", icon: "book-open", status: "planned" },
+  { id: "search", label: "SYNTH Search", description: "Workspace and web search", icon: "search", status: "planned" },
+  { id: "vision", label: "SYNTH Vision", description: "Image intelligence and generation", icon: "image", status: "coming-soon" },
+];
+
+export const WORKSPACE_AREAS = [
+  { id: "history", label: "Conversation History", icon: "history" },
+  { id: "projects", label: "Projects", icon: "folders" },
+  { id: "knowledge", label: "Knowledge", icon: "brain" },
+  { id: "skills", label: "Skills", icon: "sparkles" },
+  { id: "plugins", label: "Plugins", icon: "plug-zap" },
+] as const;
