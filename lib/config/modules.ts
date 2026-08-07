@@ -1,5 +1,7 @@
+export type SynthModuleId = "assistant" | "code" | "agent" | "docs" | "search" | "vision";
+
 export interface ModuleDefinition {
-  id: string;
+  id: SynthModuleId;
   label: string;
   description: string;
   icon: string;
@@ -8,10 +10,10 @@ export interface ModuleDefinition {
 
 export const SYNTH_MODULES: ModuleDefinition[] = [
   { id: "assistant", label: "SYNTH Assistant", description: "General AI workspace", icon: "message-circle-2", status: "active" },
-  { id: "code", label: "SYNTH Code", description: "Code understanding and generation", icon: "code-2", status: "planned" },
+  { id: "code", label: "SYNTH Code", description: "Code understanding and generation", icon: "code-2", status: "active" },
   { id: "agent", label: "SYNTH Agent", description: "Autonomous workflow execution", icon: "route", status: "planned" },
-  { id: "docs", label: "SYNTH Docs", description: "Knowledge and documentation", icon: "book-open", status: "planned" },
-  { id: "search", label: "SYNTH Search", description: "Workspace and web search", icon: "search", status: "planned" },
+  { id: "docs", label: "SYNTH Docs", description: "Knowledge and documentation", icon: "book-open", status: "active" },
+  { id: "search", label: "SYNTH Search", description: "Workspace and web search", icon: "search", status: "active" },
   { id: "vision", label: "SYNTH Vision", description: "Image intelligence and generation", icon: "image", status: "coming-soon" },
 ];
 

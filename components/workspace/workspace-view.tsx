@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModuleRouter } from "@/components/modules/module-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -51,9 +52,12 @@ export function WorkspaceView({ destination, onBackToAssistant }: { destination:
   const filteredHistory = useMemo(() => history.filter((item) => item.toLowerCase().includes(query.toLowerCase())), [history, query]);
   const Icon = iconFor(selectedModule?.icon ?? area?.icon ?? (destination === "settings" ? "settings" : "dashboard"));
 
+  if (selectedModule && selectedModule.id !== "assistant" && selectedModule.id !== "agent") {
+    return <ModuleRouter destination={selectedModule.id} project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onBackToAssistant={onBackToAssistant} onAction={(action) => toast.success(`${action.label} is ready for the SYNTH ${action.intent} pipeline`)} />;
+  }
+
   if (selectedModule) {
-    const isVision = selectedModule.id === "vision";
-    return <WorkspaceFrame icon={Icon} eyebrow={isVision ? "Roadmap preview" : "Module workspace"} title={selectedModule.label} description={isVision ? "SYNTH Vision is the next capability layer for image understanding and generation." : selectedModule.description} onBackToAssistant={onBackToAssistant}><Card className="border-synth-violet/25 bg-synth-violet/5"><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center"><div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-synth-violet/10 text-synth-violet"><Icon className="size-5" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{isVision ? "Coming soon, intentionally" : `${selectedModule.label} is staged for the next phase`}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{isVision ? "The UI seam is ready. Provider-neutral capability contracts will land here without changing the SYNTH Assistant experience." : "This destination is interactive now so your workspace never dead-ends. Use the action below to return to the active Assistant workspace."}</p></div><Button variant="outline" onClick={() => toast.success(`${selectedModule.label} roadmap saved to your workspace`)}>Save roadmap</Button></CardContent></Card><WorkspaceActionGrid actions={isVision ? ["Preview vision roadmap", "Review capability contract", "Notify me when ready"] : ["View module brief", "Open architecture notes", "Return to Assistant"]} onAction={(action) => action === "Return to Assistant" ? onBackToAssistant() : toast.info(`${action} is available as a SYNTH mock action`)} /></WorkspaceFrame>;
+    return <WorkspaceFrame icon={Icon} eyebrow="Roadmap preview" title={selectedModule.label} description={selectedModule.description} onBackToAssistant={onBackToAssistant}><Card className="border-synth-violet/25 bg-synth-violet/5"><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center"><div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-synth-violet/10 text-synth-violet"><Icon className="size-5" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{selectedModule.label} is staged for the next phase</p><p className="mt-1 text-xs leading-5 text-muted-foreground">This destination is interactive now so your workspace never dead-ends. Use the action below to return to the active Assistant workspace.</p></div><Button variant="outline" onClick={() => toast.success(`${selectedModule.label} roadmap saved to your workspace`)}>Save roadmap</Button></CardContent></Card><WorkspaceActionGrid actions={["View module brief", "Open architecture notes", "Return to Assistant"]} onAction={(action) => action === "Return to Assistant" ? onBackToAssistant() : toast.info(`${action} is available as a SYNTH mock action`)} /></WorkspaceFrame>;
   }
 
   if (area) {

@@ -23,7 +23,7 @@ interface WorkspaceHeaderProps {
 
 export function WorkspaceHeader({ model, connected, onContextToggle, onOpenCommand, onOpenNotifications, onOpenSettings, onOpenAbout }: WorkspaceHeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const [workspace, setWorkspace] = useState("SYNTH");
+  const [workspace, setWorkspace] = useState("ANONYMIKE/LABS");
   const FolderIcon = iconFor("folders");
   const ChevronIcon = iconFor("chevronDown");
   const ActivityIcon = iconFor("activity");
