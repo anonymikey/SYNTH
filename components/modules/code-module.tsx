@@ -8,16 +8,18 @@ import { CodeFileTree } from "@/components/modules/code-file-tree";
 import { CodeViewer } from "@/components/modules/code-viewer";
 import { ModuleEmpty } from "@/components/modules/module-states";
 import { SYNTH_CODE_FILES } from "@/components/modules/mock-data";
-import type { ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
+import { useEngineAction } from "@/components/modules/use-engine-action";
+import type { ModuleAction, ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
 
 export function CodeModule({ project, context, onAction }: WorkspaceModuleProps) {
   const [selectedPath, setSelectedPath] = useState(context.selectedFile ?? SYNTH_CODE_FILES[0]?.path ?? "");
-  const [statusMessage, setStatusMessage] = useState("");
   const selectedFile = useMemo(() => SYNTH_CODE_FILES.find((file) => file.path === selectedPath), [selectedPath]);
+  const engine = useEngineAction({ project, context });
 
-  const handleAction = (id: ModuleActionId, label: string) => {
-    setStatusMessage(`${label} staged for ${selectedFile?.path ?? "the repository"}.`);
-    onAction?.({ id, label, intent: "coding", payload: { path: selectedFile?.path ?? "" } });
+  const handleAction = async (id: ModuleActionId, label: string) => {
+    const action: ModuleAction = { id, label, intent: "coding", payload: { path: selectedFile?.path ?? "" } };
+    onAction?.(action);
+    await engine.runAction(action);
   };
 
   if (!SYNTH_CODE_FILES.length) return <ModuleEmpty title="No repository files" description="SYNTH Code has no local files to display yet." />;
@@ -31,9 +33,9 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         </CardContent>
       </Card>
       <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)_16rem]">
-        <CodeFileTree files={SYNTH_CODE_FILES} selectedPath={selectedPath} onSelect={(path) => { setSelectedPath(path); setStatusMessage(""); onAction?.({ id: "select-file", label: `Selected ${path}`, intent: "coding", payload: { path } }); }} />
+        <CodeFileTree files={SYNTH_CODE_FILES} selectedPath={selectedPath} onSelect={(path) => { setSelectedPath(path); onAction?.({ id: "select-file", label: `Selected ${path}`, intent: "coding", payload: { path } }); }} />
         <CodeViewer file={selectedFile} />
-        <CodeActions filePath={selectedFile?.path} statusMessage={statusMessage} onAction={handleAction} />
+        <CodeActions filePath={selectedFile?.path} actionState={engine.state} output={engine.output} error={engine.error} model={engine.model} onAction={handleAction} />
       </div>
     </div>
   );

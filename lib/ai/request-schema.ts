@@ -1,8 +1,9 @@
 import type { AIMessage, ProviderId, ProviderSelection } from "@/lib/ai/types";
-import type { EngineRequest, RuntimeTarget } from "@/engine/types";
+import type { EngineIntent, EngineRequest, RuntimeTarget } from "@/engine/types";
 import type { AgentMode } from "@/types/workspace";
 
 const modes = new Set<AgentMode>(["assistant", "architect", "researcher", "reviewer"]);
+const intents = new Set<EngineIntent>(["conversation", "coding", "research", "review", "planning", "vision", "unknown"]);
 const runtimes = new Set<RuntimeTarget>(["web", "desktop", "mobile"]);
 const providers = new Set<ProviderId>(["ollama", "openai", "anthropic", "gemini", "openrouter", "custom-local", "mock"]);
 
@@ -29,8 +30,11 @@ export function parseEngineRequest(input: unknown): EngineRequest {
   });
 
   const mode = asString(body.mode ?? "assistant", "mode") as AgentMode;
+  const intent = body.intent === undefined ? undefined : asString(body.intent, "intent") as EngineIntent;
+  const agentId = body.agentId === undefined ? undefined : asString(body.agentId, "agentId");
   const runtime = asString(body.runtime ?? "web", "runtime") as RuntimeTarget;
   if (!modes.has(mode)) throw new Error("Agent mode is invalid.");
+  if (intent && !intents.has(intent)) throw new Error("Engine intent is invalid.");
   if (!runtimes.has(runtime)) throw new Error("Runtime target is invalid.");
 
   const providerRecord = body.provider ? asRecord(body.provider) : undefined;
@@ -45,6 +49,8 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     requestId: typeof body.requestId === "string" && body.requestId ? body.requestId : crypto.randomUUID(),
     messages,
     mode,
+    intent,
+    agentId,
     model: typeof body.model === "string" ? body.model : undefined,
     provider,
     runtime,

@@ -20,6 +20,8 @@ export interface EngineRequest {
   requestId: string;
   messages: AIMessage[];
   mode: AgentMode;
+  intent?: EngineIntent;
+  agentId?: string;
   model?: string;
   provider?: ProviderSelection;
   context?: EngineContext;

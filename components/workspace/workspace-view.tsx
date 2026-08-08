@@ -52,8 +52,8 @@ export function WorkspaceView({ destination, onBackToAssistant }: { destination:
   const filteredHistory = useMemo(() => history.filter((item) => item.toLowerCase().includes(query.toLowerCase())), [history, query]);
   const Icon = iconFor(selectedModule?.icon ?? area?.icon ?? (destination === "settings" ? "settings" : "dashboard"));
 
-  if (selectedModule && selectedModule.id !== "assistant" && selectedModule.id !== "agent") {
-    return <ModuleRouter destination={selectedModule.id} project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onBackToAssistant={onBackToAssistant} onAction={(action) => toast.success(`${action.label} is ready for the SYNTH ${action.intent} pipeline`)} />;
+  if (selectedModule && selectedModule.id !== "assistant") {
+    return <ModuleRouter destination={selectedModule.id} project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onBackToAssistant={onBackToAssistant} onAction={(action) => toast.info(`${action.label} sent through the SYNTH ${action.intent} boundary`)} />;
   }
 
   if (selectedModule) {

@@ -1,7 +1,7 @@
 import type { AIMessage, ProviderSelection } from "@/lib/ai/types";
 import type { AgentPort, KnowledgePort, MemoryPort, ProviderPort, SkillPort, ToolPort } from "@/engine/ports";
 import { assembleContext } from "@/engine/context-assembler";
-import { createEngineError } from "@/engine/errors";
+import { createEngineError, type EngineError } from "@/engine/errors";
 import { routeIntent } from "@/engine/intent-router";
 import { buildPrompt } from "@/engine/prompt-manager";
 import { normalizeEngineRequest } from "@/engine/request-orchestrator";
@@ -31,6 +31,10 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
       try {
         const context = await assembleContext(request.context, query, { memory: dependencies.memory, knowledge: dependencies.knowledge });
         yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
+        if (request.agentId) {
+          const agent = await dependencies.agents?.resolve(intent, request.mode);
+          if (!agent || agent.id !== request.agentId) throw createEngineError("routing", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
+        }
         const selection = request.provider ?? { ...dependencies.defaultSelection, model: request.model ?? dependencies.defaultSelection.model };
         const provider = await dependencies.provider.resolve(selection);
         const messages = buildPrompt(request.messages, intent, context);
@@ -39,10 +43,15 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
           if (event) yield event;
         }
       } catch (error) {
-        yield { type: "failed", requestId: request.requestId, error: createEngineError(request.signal?.aborted ? "aborted" : "provider", error instanceof Error ? error.message : "The Synth Engine could not complete this request.", { retryable: !request.signal?.aborted, cause: error }) };
+        const engineError = isEngineError(error) ? error : createEngineError(request.signal?.aborted ? "aborted" : "provider", error instanceof Error ? error.message : "The SYNTH Engine could not complete this request.", { retryable: !request.signal?.aborted, cause: error });
+        yield { type: "failed", requestId: request.requestId, error: engineError };
       }
     },
   };
+}
+
+function isEngineError(value: unknown): value is EngineError {
+  return Boolean(value && typeof value === "object" && "code" in value && "message" in value && "retryable" in value);
 }
 
 function getLatestUserText(messages: AIMessage[]): string {

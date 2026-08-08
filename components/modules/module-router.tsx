@@ -7,6 +7,7 @@ import { SYNTH_MODULES } from "@/lib/config/modules";
 import { iconFor } from "@/lib/icons";
 import type { ModuleRouterProps } from "@/components/modules/types";
 
+const AgentModule = dynamic(() => import("@/components/modules/agent-module").then((module) => module.AgentModule), { loading: () => <ModuleLoading label="SYNTH Agent" /> });
 const CodeModule = dynamic(() => import("@/components/modules/code-module").then((module) => module.CodeModule), { loading: () => <ModuleLoading label="SYNTH Code" /> });
 const DocsModule = dynamic(() => import("@/components/modules/docs-module").then((module) => module.DocsModule), { loading: () => <ModuleLoading label="SYNTH Docs" /> });
 const SearchModule = dynamic(() => import("@/components/modules/search-module").then((module) => module.SearchModule), { loading: () => <ModuleLoading label="SYNTH Search" /> });
@@ -20,7 +21,8 @@ export function ModuleRouter({ destination, onBackToAssistant, ...moduleProps }:
   const description = definition?.description ?? "A provider-neutral SYNTH workspace module.";
 
   let content: React.ReactNode;
-  if (destination === "code") content = <CodeModule {...moduleProps} />;
+  if (destination === "agent") content = <AgentModule {...moduleProps} />;
+  else if (destination === "code") content = <CodeModule {...moduleProps} />;
   else if (destination === "docs") content = <DocsModule {...moduleProps} />;
   else if (destination === "search") content = <SearchModule {...moduleProps} />;
   else if (destination === "vision") content = <VisionModule {...moduleProps} />;
