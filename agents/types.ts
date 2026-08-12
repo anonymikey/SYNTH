@@ -6,9 +6,11 @@ export interface AgentDefinition {
   id: string;
   label: string;
   mode: AgentRole;
+  description?: string;
   intents: EngineIntent[];
   skillIds: string[];
   toolIds: string[];
+  capabilities?: string[];
   responsePolicy: "direct" | "structured" | "review";
   enabled: boolean;
 }

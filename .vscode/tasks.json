@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Validate SYNTH Agent module",
+			"type": "shell",
+			"command": "npm run lint && npx tsc --noEmit && npm run build",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
