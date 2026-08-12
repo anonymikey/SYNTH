@@ -10,13 +10,13 @@ import { testerAgent } from "@/agents/definitions/tester";
 const definitions: AgentDefinition[] = [];
 
 const defaultDefinitions: AgentDefinition[] = [
-  { ...assistantAgent, description: "Handles direct assistant conversations and keeps the workspace grounded in the current project context.", capabilities: ["conversation", "context recall", "clarification"] },
-  { ...coderAgent, description: "Provides structured code guidance for implementation planning without executing shell commands or mutating files.", capabilities: ["implementation planning", "refactoring guidance", "review planning"] },
-  { ...designerAgent, description: "Frames visual and UI-oriented suggestions while remaining provider-neutral and non-destructive.", capabilities: ["visual direction", "UX planning", "asset guidance"] },
-  { ...plannerAgent, description: "Creates structured work plans and sequencing for the SYNTH workspace, while preserving the planning-only safety model.", capabilities: ["task decomposition", "sequencing", "risk highlighting"] },
-  { ...researcherAgent, description: "Gathers local context, documentation, and workspace knowledge into a concise research synthesis.", capabilities: ["workspace research", "local synthesis", "context review"] },
-  { ...reviewerAgent, description: "Checks plans and outputs for gaps, risk, and alignment with the active project context.", capabilities: ["review", "gap analysis", "safety checks"] },
-  { ...testerAgent, description: "Summarizes testing and validation plans without executing arbitrary commands or shell actions.", capabilities: ["verification planning", "test strategy", "validation review"] },
+  { ...assistantAgent, enabled: true, intents: [...assistantAgent.intents, "planning"], description: "Handles direct assistant conversations and keeps the workspace grounded in the current project context.", capabilities: ["conversation", "context recall", "clarification"] },
+  { ...coderAgent, enabled: true, intents: [...coderAgent.intents, "planning"], description: "Provides structured code guidance for implementation planning without executing shell commands or mutating files.", capabilities: ["implementation planning", "refactoring guidance", "review planning"] },
+  { ...designerAgent, enabled: true, intents: [...designerAgent.intents, "planning"], description: "Frames visual and UI-oriented suggestions while remaining provider-neutral and non-destructive.", capabilities: ["visual direction", "UX planning", "asset guidance"] },
+  { ...plannerAgent, enabled: true, intents: [...plannerAgent.intents, "planning"], description: "Creates structured work plans and sequencing for the SYNTH workspace, while preserving the planning-only safety model.", capabilities: ["task decomposition", "sequencing", "risk highlighting"] },
+  { ...researcherAgent, enabled: true, intents: [...researcherAgent.intents, "planning"], description: "Gathers local context, documentation, and workspace knowledge into a concise research synthesis.", capabilities: ["workspace research", "local synthesis", "context review"] },
+  { ...reviewerAgent, enabled: true, intents: [...reviewerAgent.intents, "planning"], description: "Checks plans and outputs for gaps, risk, and alignment with the active project context.", capabilities: ["review", "gap analysis", "safety checks"] },
+  { ...testerAgent, enabled: true, intents: [...testerAgent.intents, "planning"], description: "Summarizes testing and validation plans without executing arbitrary commands or shell actions.", capabilities: ["verification planning", "test strategy", "validation review"] },
 ];
 
 export function ensureDefaultAgentsRegistered() {

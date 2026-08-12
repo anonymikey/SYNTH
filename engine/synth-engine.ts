@@ -32,7 +32,7 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
         const context = await assembleContext(request.context, query, { memory: dependencies.memory, knowledge: dependencies.knowledge });
         yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
         if (request.agentId) {
-          const agent = await dependencies.agents?.resolve(intent, request.mode);
+          const agent = await dependencies.agents?.resolve(intent, request.mode, request.agentId);
           if (!agent || agent.id !== request.agentId) throw createEngineError("routing", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
         }
         const selection = request.provider ?? { ...dependencies.defaultSelection, model: request.model ?? dependencies.defaultSelection.model };
