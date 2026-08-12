@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { DocsList } from "@/components/modules/docs-list";
 import { MarkdownViewer } from "@/components/modules/markdown-viewer";
 import { ModuleEmpty } from "@/components/modules/module-states";
@@ -15,8 +16,17 @@ type SummaryState = "idle" | "loading" | "ready";
 
 export function DocsModule({ project, context, onAction }: WorkspaceModuleProps) {
   const [selectedId, setSelectedId] = useState(SYNTH_DOCUMENTS[0]?.id);
+  const [query, setQuery] = useState("");
   const [summary, setSummary] = useState("");
-  const selectedDocument = SYNTH_DOCUMENTS.find((document) => document.id === selectedId);
+  const filteredDocuments = useMemo(
+    () => SYNTH_DOCUMENTS.filter((document) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      if (!normalizedQuery) return true;
+      return [document.title, document.summary, document.markdown].some((value) => value.toLowerCase().includes(normalizedQuery));
+    }),
+    [query],
+  );
+  const selectedDocument = SYNTH_DOCUMENTS.find((document) => document.id === selectedId) ?? filteredDocuments[0];
   const engine = useEngineAction({ project, context });
   const summaryState: SummaryState = engine.state === "loading" ? "loading" : engine.state === "success" ? "ready" : "idle";
 
@@ -40,7 +50,21 @@ export function DocsModule({ project, context, onAction }: WorkspaceModuleProps)
   return (
     <div className="space-y-4">
       <Card className="border-synth-violet/20 bg-synth-violet/5"><CardContent className="p-4 text-xs leading-5 text-muted-foreground">Browse pinned knowledge and local workspace documents. Document selection and summary requests are ready for the future SYNTH research capability.</CardContent></Card>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"><DocsList documents={SYNTH_DOCUMENTS} selectedId={selectedId} onSelect={selectDocument} /><div className="min-w-0 space-y-4"><MarkdownViewer document={selectedDocument} /><SummaryPlaceholder state={summaryState} summary={summary} disabled={engine.state === "loading"} onSummarize={summarize} /><ModuleActionFeedback state={engine.state} output={engine.output} error={engine.error} model={engine.model} /></div></div>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <div className="space-y-3">
+          <Card className="border-synth-violet/20 bg-synth-violet/5">
+            <CardContent className="p-3">
+              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter documents..." aria-label="Filter pinned documents" className="h-9 text-xs" />
+            </CardContent>
+          </Card>
+          <DocsList documents={filteredDocuments} selectedId={selectedId} onSelect={selectDocument} />
+        </div>
+        <div className="min-w-0 space-y-4">
+          <MarkdownViewer document={selectedDocument} />
+          <SummaryPlaceholder state={summaryState} summary={summary} disabled={engine.state === "loading"} onSummarize={summarize} />
+          <ModuleActionFeedback state={engine.state} output={engine.output} error={engine.error} model={engine.model} />
+        </div>
+      </div>
     </div>
   );
 }

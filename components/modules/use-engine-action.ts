@@ -70,13 +70,6 @@ export function useEngineAction({ project, context, modelId }: UseEngineActionOp
     setError("");
     setModel("");
 
-    if (action.intent === "vision") {
-      const unavailableResult: ModuleActionResult = { state: "unavailable", output: "", error: "SYNTH Vision analysis is not connected yet. The image remains local and no provider request was sent." };
-      setState(unavailableResult.state);
-      setError(unavailableResult.error ?? "SYNTH Vision is unavailable.");
-      return unavailableResult;
-    }
-
     const controller = new AbortController();
     abortRef.current = controller;
     let responseText = "";

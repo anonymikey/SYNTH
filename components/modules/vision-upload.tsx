@@ -7,7 +7,6 @@ import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { iconFor } from "@/lib/icons";
 import { formatFileSize } from "@/components/modules/formatters";
 import type { VisionAsset } from "@/components/modules/types";
@@ -24,7 +23,7 @@ export function VisionUpload({ asset, error, onFile, onRemove }: { asset?: Visio
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-synth-violet/10 text-synth-violet"><ImageIcon className="size-5" aria-hidden="true" /></div>
           <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Prepare an image for SYNTH Vision</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Stage a local preview only. PNG, JPG, GIF, and WebP images up to 10 MB are accepted.</p></div>
-          <Input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { chooseFile(event.target.files?.[0]); event.currentTarget.value = ""; }} aria-label="Choose an image for SYNTH Vision" />
+          <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="hidden" onChange={(event) => { chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} aria-label="Choose an image for SYNTH Vision" />
           <Button type="button" variant="outline" className="min-h-10" onClick={() => inputRef.current?.click()}>Browse image</Button>
         </div>
         <div className="mt-4 rounded-xl border border-dashed border-synth-violet/30 bg-background/30 p-3 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" role={asset ? undefined : "button"} tabIndex={asset ? undefined : 0} aria-label={asset ? undefined : "Drop an image here or press Enter to browse"} onClick={() => { if (!asset) inputRef.current?.click(); }} onKeyDown={(event) => { if (!asset && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); inputRef.current?.click(); } }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); chooseFile(event.dataTransfer.files[0]); }}>
