@@ -30,5 +30,5 @@ export interface SkillPort {
 }
 
 export interface AgentPort {
-  resolve(intent: EngineIntent, mode: AgentMode): Promise<AgentDefinition | undefined>;
+  resolve(intent: EngineIntent, mode: AgentMode, agentId?: string): Promise<AgentDefinition | undefined>;
 }
