@@ -7,6 +7,7 @@ import { MockProvider } from "@/lib/ai/providers/mock-provider";
 import { OllamaProvider } from "@/lib/ai/providers/ollama-provider";
 import { createSynthEngine } from "@/engine/synth-engine";
 import { synthAgentPort } from "@/agents/default-port";
+import { mockMcpToolPort } from "@/lib/ai/mock-mcp";
 
 const ollama = new OllamaProvider(serverEnvironment.ollamaBaseUrl, serverEnvironment.ollamaModel);
 const mock = new MockProvider();
@@ -18,5 +19,5 @@ const knowledge = createKnowledgeService();
 export const serverAi = { ollama, mock, registry, router };
 
 export function getSynthEngine() {
-  return createSynthEngine({ provider: router, memory, knowledge, agents: synthAgentPort, defaultSelection: { providerId: "ollama", model: serverEnvironment.ollamaModel, allowFallback: true } });
+  return createSynthEngine({ provider: router, memory, knowledge, agents: synthAgentPort, tools: mockMcpToolPort, defaultSelection: { providerId: "ollama", model: serverEnvironment.ollamaModel, allowFallback: true } });
 }

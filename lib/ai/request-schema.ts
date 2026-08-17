@@ -45,6 +45,16 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     provider = { providerId, model: asString(providerRecord.model, "provider.model"), allowFallback: providerRecord.allowFallback !== false };
   }
 
+  const toolRequestRaw = body.toolRequest;
+  let toolRequest = undefined as EngineRequest["toolRequest"] | undefined;
+  if (toolRequestRaw !== undefined) {
+    const toolObj = asRecord(toolRequestRaw);
+    const toolId = asString(toolObj.toolId, "toolRequest.toolId");
+    const callId = typeof toolObj.id === "string" && toolObj.id ? toolObj.id : crypto.randomUUID();
+    const input = toolObj.input ?? undefined;
+    toolRequest = { id: callId, toolId, input };
+  }
+
   return {
     requestId: typeof body.requestId === "string" && body.requestId ? body.requestId : crypto.randomUUID(),
     messages,
@@ -56,5 +66,7 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     runtime,
     context: body.context ? (asRecord(body.context) as EngineRequest["context"]) : undefined,
     metadata: body.metadata ? (asRecord(body.metadata) as Record<string, string>) : undefined,
+    toolRequest,
   };
 }
+

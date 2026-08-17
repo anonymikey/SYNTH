@@ -28,6 +28,8 @@ export interface EngineRequest {
   runtime: RuntimeTarget;
   signal?: AbortSignal;
   metadata?: Record<string, string>;
+  // Optional explicit tool request routed through the Engine (MCP-ready)
+  toolRequest?: ToolCall;
 }
 
 export type EngineEvent =
