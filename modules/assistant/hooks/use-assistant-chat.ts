@@ -6,15 +6,17 @@ import { chatReducer, initialChatState } from "@/modules/chat/chat-reducer";
 import type { EngineEvent } from "@/engine/types";
 import type { ChatMessage } from "@/modules/chat/types";
 import type { AgentMode, ChatContextView, ProjectSummary } from "@/types/workspace";
+import type { AIMessage } from "@/lib/ai/types";
 
 interface UseAssistantChatOptions {
   project: ProjectSummary;
   context: ChatContextView;
   modelId: string;
+  providerId: string;
   agentMode: AgentMode;
 }
 
-export function useAssistantChat({ project, context, modelId, agentMode }: UseAssistantChatOptions) {
+export function useAssistantChat({ project, context, modelId, providerId, agentMode }: UseAssistantChatOptions) {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -30,25 +32,31 @@ export function useAssistantChat({ project, context, modelId, agentMode }: UseAs
     dispatch({ type: "assistant-start", message: assistantMessage });
 
     try {
+      const conversation: AIMessage[] = [...state.messages, userMessage].map((message) => ({ role: message.role, content: message.content }));
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           requestId,
-          messages: [{ role: "user", content: prompt }],
+          messages: conversation,
           mode: agentMode,
           model: modelId,
+          provider: { providerId, model: modelId, allowFallback: modelId === "auto" },
           runtime: "web",
           context: { projectId: project.id, selectedFile: context.selectedFile, recentFiles: context.recentFiles, knowledgeIds: context.knowledge.map((item) => item.id) },
         }),
       });
 
-      if (!response.ok) throw new Error(`SYNTH Engine request failed (${response.status})`);
+      if (!response.ok) {
+        const body = await response.json().catch(() => undefined) as { error?: string } | undefined;
+        throw new Error(body?.error || "SYNTH provider is currently unavailable.");
+      }
 
       for await (const event of readSseEvents<EngineEvent>(response)) {
         if (event.type === "assistant-delta") dispatch({ type: "assistant-delta", messageId: assistantId, delta: event.delta });
         if (event.type === "completed") dispatch({ type: "completed", messageId: assistantId });
+        if (event.type === "approval-required") dispatch({ type: "approval-required", messageId: assistantId });
         if (event.type === "failed") dispatch({ type: "failed", messageId: assistantId, error: event.error.message });
       }
     } catch (error) {
@@ -57,7 +65,7 @@ export function useAssistantChat({ project, context, modelId, agentMode }: UseAs
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
     }
-  }, [agentMode, context, modelId, project.id]);
+  }, [agentMode, context, modelId, project.id, providerId, state.messages]);
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
   const reset = useCallback(() => { abortRef.current?.abort(); dispatch({ type: "reset" }); }, []);

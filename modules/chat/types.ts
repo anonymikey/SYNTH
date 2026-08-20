@@ -10,6 +10,7 @@ export interface ChatMessage {
   createdAt: string;
   status: ChatMessageStatus;
   error?: string;
+  approvalRequired?: boolean;
 }
 
 export interface ChatThread {

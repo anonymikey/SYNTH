@@ -1,11 +1,15 @@
 import type { AIProvider, ProviderSelection } from "@/lib/ai/types";
 import type { ProviderPort } from "@/engine/ports";
 import type { ProviderRegistry } from "@/lib/ai/provider-registry";
+import { resolveConfiguredModel } from "@/lib/ai/models";
 
 export class ProviderRouter implements ProviderPort {
   constructor(private readonly registry: ProviderRegistry) {}
 
   async resolve(selection: ProviderSelection): Promise<AIProvider> {
+    if (selection.providerId === "openrouter" && !resolveConfiguredModel(selection.model)) {
+      throw new Error(`OpenRouter model '${selection.model}' is not configured.`);
+    }
     const provider = this.registry.get(selection.providerId);
     if (provider) {
       const health = await provider.healthCheck();

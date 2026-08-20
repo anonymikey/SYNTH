@@ -1,4 +1,4 @@
-export type EngineErrorCode = "invalid-request" | "routing" | "context" | "provider" | "tool" | "aborted" | "unknown";
+export type EngineErrorCode = "invalid-request" | "authorization" | "routing" | "context" | "provider" | "tool" | "aborted" | "unknown";
 
 export interface EngineError {
   code: EngineErrorCode;
