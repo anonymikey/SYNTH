@@ -21,11 +21,11 @@ export async function runToolPolicyTests() {
 
   // REJECT: toolRequest without agentId
   const r1 = ToolPolicy.authorizeExecution(undefined, "research", "calculator");
-  assert(!r1.ok && r1.reason?.includes("agentId"), "toolRequest without agentId should be rejected");
+  assert((r1.ok ?? false) === false && Boolean(r1.reason && r1.reason.includes("agentId")), "toolRequest without agentId should be rejected");
 
   // REJECT: nonexistent agentId
   const r2 = ToolPolicy.authorizeExecution("no-such-agent", "research", "calculator");
-  assert(!r2.ok && r2.reason?.includes("not found"), "nonexistent agent should be rejected");
+  assert((r2.ok ?? false) === false && Boolean(r2.reason && r2.reason.includes("not found")), "nonexistent agent should be rejected");
 
   console.log("MCP ToolPolicy tests passed (declarative).\n");
 }

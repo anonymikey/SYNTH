@@ -12,6 +12,7 @@ export type ChatAction =
   | { type: "assistant-start"; message: ChatMessage }
   | { type: "assistant-delta"; messageId: string; delta: string }
   | { type: "completed"; messageId: string }
+  | { type: "approval-required"; messageId: string }
   | { type: "failed"; messageId: string; error: string };
 
 export const initialChatState: ChatState = { messages: [], isStreaming: false };
@@ -28,6 +29,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, content: message.content + action.delta, status: "streaming" } : message) };
     case "completed":
       return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, status: "complete" } : message), activeRequestId: undefined, isStreaming: false };
+    case "approval-required":
+      return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, status: "complete", approvalRequired: true } : message), activeRequestId: undefined, isStreaming: false };
     case "failed":
       return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, status: "error", error: action.error } : message), activeRequestId: undefined, isStreaming: false };
     default:

@@ -9,7 +9,6 @@ import { ModuleActionFeedback } from "@/components/modules/module-action-feedbac
 import { useEngineAction } from "@/components/modules/use-engine-action";
 import { AgentRegistry } from "@/agents/registry";
 import { synthAgentModule } from "@/modules/agent/agent-module";
-import type { AgentDefinition } from "@/agents/types";
 import type { ModuleAction, WorkspaceModuleProps } from "@/components/modules/types";
 
 const DEFAULT_AGENT_ID = "planner";

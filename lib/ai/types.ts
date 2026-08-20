@@ -73,6 +73,10 @@ export interface ModelInfo {
   providerId: ProviderId;
   contextWindow?: number;
   capabilities: AIProviderCapabilities;
+  category?: "chat" | "coding" | "reasoning" | "vision";
+  enabled?: boolean;
+  free?: boolean;
+  priority?: number;
 }
 
 export interface ProviderHealth {

@@ -14,11 +14,6 @@ function parseAgentRequest(request: ChatRequest) {
   };
 }
 
-function textFromMessages(request: ChatRequest) {
-  const last = request.messages.at(-1)?.content;
-  if (typeof last === "string") return last;
-  return "your request";
-}
 
 function buildAgentResponse(agentId: string | undefined, task: string) {
   const normalizedAgent = agentId?.toLowerCase();
@@ -99,7 +94,7 @@ function buildAgentResponse(agentId: string | undefined, task: string) {
       break;
   }
 
-  return `PLAN\n\n${planLines.join("\n")}`;
+  return `PLAN for "${task}"\n\n${planLines.join("\n")}`;
 }
 
 export class MockProvider implements AIProvider {

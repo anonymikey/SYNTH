@@ -15,6 +15,7 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
           {!isUser && message.status === "complete" && <CheckIcon className="ml-auto size-3 text-synth-success" />}
         </div>
         <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/85">{message.content || (message.status === "pending" ? "Thinking through the active workspace context…" : "")}</p>
+        {message.approvalRequired && <p className="mt-3 text-xs text-synth-violet">SYNTH wants permission to run a tool. Approval is required before anything can execute.</p>}
         {message.status === "streaming" && <Badge variant="outline" className="mt-3 gap-1 border-synth-cyan/25 bg-synth-cyan/5 font-mono text-[9px] text-synth-cyan"><span className="size-1.5 animate-pulse rounded-full bg-synth-cyan" /> streaming</Badge>}
         {message.status === "error" && <p className="mt-3 text-xs text-destructive">{message.error ?? "The request failed."}</p>}
         {!isUser && message.status === "complete" && <MessageActions onAction={(action) => onAction(message, action)} />}

@@ -33,7 +33,7 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
         yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
 
           // Resolve the explicit agent (if provided) so we can validate tool permissions later
-          let resolvedAgent = undefined as any;
+          let resolvedAgent: import("@/agents/types").AgentDefinition | undefined = undefined;
           if (request.agentId) {
             resolvedAgent = await dependencies.agents?.resolve(intent, request.mode, request.agentId);
             if (!resolvedAgent || resolvedAgent.id !== request.agentId) throw createEngineError("routing", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
@@ -60,9 +60,35 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
             if (!toolDef) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is not available.`, { retryable: false });
             if (!toolDef.enabled) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is disabled.`, { retryable: false });
 
-            // Emit tool-request event, execute and return a tool-result event. Execution is server-authorized only.
-            yield { type: "tool-request", requestId: request.requestId, call: request.toolRequest };
-            const result = await dependencies.tools.execute(request.toolRequest, { requestId: request.requestId, projectId: request.context?.projectId, runtime: request.runtime, approved: false });
+            // If this request includes an approval token, attempt to consume and execute. Otherwise create an approval request.
+            if (!request.toolApproval) {
+              const { ToolApproval } = await import("@/lib/ai/tool-approval");
+              const approval = await ToolApproval.create(request.requestId, request.agentId!, intent, request.toolRequest);
+              // Emit approval-required event with opaque token and stop
+              yield { type: "approval-required", requestId: request.requestId, approvalToken: approval.token, call: request.toolRequest } as import("@/engine/types").EngineEvent;
+              return;
+            }
+
+            // Continuation: consume approval token and execute
+            const { ToolApproval } = await import("@/lib/ai/tool-approval");
+            const consumed = await ToolApproval.consume(request.toolApproval.token);
+            if (!consumed.ok) throw createEngineError("authorization", `Tool approval failed: ${consumed.reason}`, { retryable: false });
+            const record = consumed.record!;
+
+            // Validate approval binding
+            if (record.agentId !== request.agentId) throw createEngineError("authorization", `Tool approval token does not belong to agent ${request.agentId}`, { retryable: false });
+            if (record.toolId !== request.toolRequest?.toolId) throw createEngineError("authorization", `Tool approval toolId mismatch`, { retryable: false });
+            if (record.requestId !== request.requestId) throw createEngineError("authorization", `Tool approval requestId mismatch`, { retryable: false });
+            if (intent && record.intent && intent !== record.intent) throw createEngineError("authorization", `Tool approval intent mismatch`, { retryable: false });
+
+            const callToExecute = { id: record.callId, toolId: record.toolId, input: record.input } as import("@/tools/types").ToolCall;
+            // Audit: tool execution starting
+            const { ConsoleAuditLogger } = await import("@/lib/ai/audit-logger");
+            ConsoleAuditLogger.tool_execution_started({ requestId: request.requestId, agentId: record.agentId, toolId: record.toolId, callId: record.callId });
+            yield { type: "tool-request", requestId: request.requestId, call: callToExecute };
+            const result = await dependencies.tools.execute(callToExecute, { requestId: request.requestId, projectId: request.context?.projectId, runtime: request.runtime, approved: true });
+            // Audit: completed
+            ConsoleAuditLogger.tool_execution_completed({ requestId: request.requestId, agentId: record.agentId, toolId: record.toolId, callId: record.callId, status: result.status });
             yield { type: "tool-result", requestId: request.requestId, result };
             return;
           }

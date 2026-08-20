@@ -30,6 +30,8 @@ export interface EngineRequest {
   metadata?: Record<string, string>;
   // Optional explicit tool request routed through the Engine (MCP-ready)
   toolRequest?: ToolCall;
+  // Optional approval token presented to continue a previously-approved tool call
+  toolApproval?: { token: string };
 }
 
 export type EngineEvent =
@@ -40,6 +42,7 @@ export type EngineEvent =
   | { type: "assistant-delta"; requestId: string; messageId: string; delta: string }
   | { type: "tool-request"; requestId: string; call: ToolCall }
   | { type: "tool-result"; requestId: string; result: ToolResult }
+  | { type: "approval-required"; requestId: string; approvalToken: string; call: ToolCall }
   | { type: "usage"; requestId: string; usage: TokenUsage }
   | { type: "completed"; requestId: string; messageId: string; finishReason: string }
   | { type: "failed"; requestId: string; error: EngineError };

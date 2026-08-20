@@ -55,6 +55,14 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     toolRequest = { id: callId, toolId, input };
   }
 
+  const toolApprovalRaw = body.toolApproval;
+  let toolApproval: EngineRequest["toolApproval"] | undefined;
+  if (toolApprovalRaw !== undefined) {
+    const approvalObj = asRecord(toolApprovalRaw);
+    const token = asString(approvalObj.token, "toolApproval.token");
+    toolApproval = { token };
+  }
+
   return {
     requestId: typeof body.requestId === "string" && body.requestId ? body.requestId : crypto.randomUUID(),
     messages,
@@ -67,6 +75,7 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     context: body.context ? (asRecord(body.context) as EngineRequest["context"]) : undefined,
     metadata: body.metadata ? (asRecord(body.metadata) as Record<string, string>) : undefined,
     toolRequest,
+    toolApproval,
   };
 }
 
