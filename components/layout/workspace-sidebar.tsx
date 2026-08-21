@@ -16,6 +16,7 @@ import type { WorkspaceArea } from "@/components/workspace/workspace-view-types"
 
 interface WorkspaceSidebarProps {
   activeModule: string;
+  onDashboard: () => void;
   onSelectModule: (module: ModuleDefinition) => void;
   onSelectArea: (area: WorkspaceArea) => void;
   onNewChat: () => void;
@@ -30,6 +31,7 @@ interface WorkspaceSidebarProps {
 
 export function WorkspaceSidebar({
   activeModule,
+  onDashboard,
   onSelectModule,
   onSelectArea,
   onNewChat,
@@ -88,7 +90,7 @@ export function WorkspaceSidebar({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     isActive={activeModule === "dashboard"}
-                    onClick={() => onSelectModule({ id: "assistant", label: "SYNTH Dashboard", description: "Home", icon: "layout-dashboard", status: "active" })}
+                    onClick={onDashboard}
                     tooltip="Dashboard"
                     className="group/dash"
                   >

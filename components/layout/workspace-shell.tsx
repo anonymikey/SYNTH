@@ -118,6 +118,7 @@ function WorkspaceShellInner() {
     <SidebarProvider defaultOpen>
       <WorkspaceSidebar
         activeModule={activeDestination}
+        onDashboard={() => setActiveDestination("dashboard")}
         onSelectModule={handleModuleSelect}
         onSelectArea={handleAreaSelect}
         onNewChat={openNewChat}
