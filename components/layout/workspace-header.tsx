@@ -36,18 +36,20 @@ function useProviderStatus() {
     return () => { active = false; clearInterval(interval); };
   }, []);
 
-  const primaryProvider = health.find((p) => p.status === "connected" && p.providerId === "openrouter")
-    ?? health.find((p) => p.status === "connected")
-    ?? health.find((p) => p.providerId === "mock");
+  // Determine status label using SYNTH branding
+  const openrouterHealth = health.find((p) => p.providerId === "openrouter");
+  const ollamaHealth = health.find((p) => p.providerId === "ollama");
+  const mockHealth = health.find((p) => p.providerId === "mock");
 
-  const modelLabel = primaryProvider?.model ?? "No model";
-  const providerLabel = primaryProvider?.providerId === "openrouter"
-    ? "OpenRouter"
-    : primaryProvider?.providerId === "ollama"
-      ? "Ollama"
-      : primaryProvider?.providerId === "mock"
-        ? "Demo"
-        : "—";
+  const primaryProvider = openrouterHealth?.status === "connected"
+    ? openrouterHealth
+    : ollamaHealth?.status === "connected"
+      ? ollamaHealth
+      : mockHealth;
+
+  const modelLabel = primaryProvider?.model ?? "auto";
+  // Show SYNTH product name instead of raw provider
+  const providerLabel = "SYNTH";
 
   return { connected, modelLabel, providerLabel };
 }
@@ -62,7 +64,7 @@ interface WorkspaceHeaderProps {
 
 export function WorkspaceHeader({ onContextToggle, onOpenCommand, onOpenNotifications, onOpenSettings, onOpenAbout }: WorkspaceHeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { connected, modelLabel, providerLabel } = useProviderStatus();
+  const { connected, providerLabel } = useProviderStatus();
   const [workspace, setWorkspace] = useState("ANONYMIKE/LABS");
   const FolderIcon = iconFor("folders");
   const ChevronIcon = iconFor("chevronDown");
@@ -109,7 +111,7 @@ export function WorkspaceHeader({ onContextToggle, onOpenCommand, onOpenNotifica
             {connected ? "Connected" : "Offline"}
           </span>
           <span className="size-1 rounded-full bg-muted-foreground/60" />
-          <span className="font-mono text-[9px] text-muted-foreground">{providerLabel} / {modelLabel}</span>
+          <span className="font-mono text-[9px] text-muted-foreground">{providerLabel}</span>
         </div>
         <Tooltip>
           <TooltipTrigger asChild>

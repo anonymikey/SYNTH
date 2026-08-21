@@ -5,6 +5,8 @@ export type AgentRole = "assistant" | "coder" | "researcher" | "reviewer" | "pla
 export interface AgentDefinition {
   id: string;
   label: string;
+  /** Public SYNTH-branded display name (shown to users) */
+  displayName?: string;
   mode: AgentRole;
   description?: string;
   intents: EngineIntent[];

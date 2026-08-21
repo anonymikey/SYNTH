@@ -8,7 +8,6 @@ import { SuggestionGrid } from "@/components/assistant/suggestion-grid";
 import { WelcomeState } from "@/components/assistant/welcome-state";
 import { DEFAULT_CONTEXT } from "@/lib/config/workspace";
 import { useModelCatalog } from "@/modules/models/hooks/use-model-catalog";
-import { resolveConfiguredModel } from "@/lib/ai/models";
 import { SUGGESTED_PROMPTS } from "@/modules/assistant/constants";
 import { useAssistantChat } from "@/modules/assistant/hooks/use-assistant-chat";
 import { useConversations } from "@/modules/conversation/conversation-provider";
@@ -22,18 +21,13 @@ interface AssistantWorkspaceProps {
 
 export function AssistantWorkspace({ project, conversationId }: AssistantWorkspaceProps) {
   const conversations = useConversations();
-  const { models } = useModelCatalog();
+  const { models, routing } = useModelCatalog();
   const [prompt, setPrompt] = useState("");
   const [agentMode, setAgentMode] = useState<AgentMode>("assistant");
   const [modelId, setModelId] = useState("auto");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
 
-  // Resolve model from catalog (server-merged) or fallback to configured
-  const selectedModel = useMemo(() => {
-    const found = models.find((m) => m.id === modelId);
-    return found ?? resolveConfiguredModel(modelId);
-  }, [models, modelId]);
-  const providerId = selectedModel?.providerId ?? "openrouter";
+  const selectedModel = useMemo(() => models.find((m) => m.id === modelId), [models, modelId]);
 
   const activeIdRef = useRef<string | null>(conversationId ?? null);
   useEffect(() => {
@@ -47,31 +41,30 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
       conversations.persistMessages(id, messages, {
         agentMode,
         modelId,
-        providerId,
+        providerId: "synth",
       });
     },
-    [conversations, agentMode, modelId, providerId]
+    [conversations, agentMode, modelId]
   );
 
   const chat = useAssistantChat({
     project,
     context: DEFAULT_CONTEXT,
     modelId,
-    providerId,
+    providerId: "synth",
     agentMode,
     conversationId,
     onMessagesChange: handleMessagesChange,
   });
 
   const showWelcome = chat.messages.length === 0;
-  const activeModel = useMemo(() => selectedModel, [selectedModel]);
 
   const ensureConversation = useCallback((): string => {
     if (activeIdRef.current) return activeIdRef.current;
-    const id = conversations.create({ agentMode, modelId, providerId });
+    const id = conversations.create({ agentMode, modelId, providerId: "synth" });
     activeIdRef.current = id;
     return id;
-  }, [conversations, agentMode, modelId, providerId]);
+  }, [conversations, agentMode, modelId]);
 
   const send = async () => {
     const nextPrompt = prompt.trim();
@@ -155,13 +148,14 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
           onAgentModeChange={setAgentMode}
           modelId={modelId}
           models={models}
+          routing={routing}
           onModelChange={setModelId}
           attachments={attachments}
           onAddAttachments={addAttachments}
           onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
         />
         <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground/60">
-          {activeModel?.label ?? "SYNTH model"} · Engine scoped context · provider-neutral
+          {selectedModel?.label ?? "SYNTH model"} · Engine scoped context · provider-neutral
         </p>
       </div>
     </div>

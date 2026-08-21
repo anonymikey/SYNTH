@@ -127,7 +127,7 @@ function WorkspaceShellInner() {
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
           )}
         </div>
-        <StatusBar project={DEFAULT_PROJECT} model="auto" />
+        <StatusBar project={DEFAULT_PROJECT} />
       </SidebarInset>
 
       {activeDestination === "assistant" && (

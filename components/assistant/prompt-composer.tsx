@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AgentModeSelect } from "@/components/assistant/agent-mode-select";
 import { iconFor } from "@/lib/icons";
-import type { ModelInfo } from "@/lib/ai/types";
+import type { SynthModelView, SynthRoutingPreset } from "@/modules/models/hooks/use-model-catalog";
 import type { AgentMode } from "@/types/workspace";
 
 export interface ComposerAttachment {
@@ -28,7 +28,8 @@ interface PromptComposerProps {
   agentMode: AgentMode;
   onAgentModeChange: (mode: AgentMode) => void;
   modelId: string;
-  models: ModelInfo[];
+  models: SynthModelView[];
+  routing?: SynthRoutingPreset[];
   onModelChange: (modelId: string) => void;
   attachments: ComposerAttachment[];
   onAddAttachments: (files: File[]) => void;
@@ -66,6 +67,7 @@ export function PromptComposer({
   onAgentModeChange,
   modelId,
   models,
+  routing,
   onModelChange,
   attachments,
   onAddAttachments,
@@ -107,18 +109,7 @@ export function PromptComposer({
           <span className="hidden h-3 w-px bg-border sm:block" />
           <span className="hidden text-[10px] text-muted-foreground/60 sm:inline">provider-neutral</span>
         </div>
-        <Select value={modelId} onValueChange={onModelChange}>
-          <SelectTrigger size="sm" className="max-w-[155px] border-transparent bg-transparent font-mono text-[10px] text-muted-foreground">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            {models.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                {model.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ModelSelectInline modelId={modelId} models={models} routing={routing} onChange={onModelChange} />
       </div>
 
       {/* Textarea */}
@@ -229,5 +220,52 @@ export function PromptComposer({
         Enter to send · Shift+Enter for newline · Drop files to attach
       </div>
     </Card>
+  );
+}
+
+function ModelSelectInline({
+  modelId,
+  models,
+  routing,
+  onChange,
+}: {
+  modelId: string;
+  models: SynthModelView[];
+  routing?: SynthRoutingPreset[];
+  onChange: (id: string) => void;
+}) {
+  const selectedModel = models.find((m) => m.id === modelId);
+  const selectedRouting = routing?.find((r) => r.id === modelId);
+  const displayLabel = selectedModel?.label ?? selectedRouting?.label ?? modelId;
+
+  return (
+    <Select value={modelId} onValueChange={onChange}>
+      <SelectTrigger size="sm" className="max-w-[155px] border-transparent bg-transparent font-mono text-[10px] text-muted-foreground">
+        <SelectValue aria-label={displayLabel}>
+          <span className="truncate">{displayLabel}</span>
+          {selectedModel?.free && <span className="ml-1 text-synth-success">free</span>}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent align="end" className="max-h-[280px]">
+        {routing && routing.length > 0 && (
+          <>
+            {routing.map((preset) => (
+              <SelectItem key={preset.id} value={preset.id} disabled={!preset.available}>
+                <span>{preset.label}</span>
+              </SelectItem>
+            ))}
+            <div className="my-1 h-px bg-border/60" />
+          </>
+        )}
+        {models.map((model) => (
+          <SelectItem key={model.id} value={model.id} disabled={!model.available}>
+            <div className="flex items-center gap-2">
+              <span className="truncate">{model.label}</span>
+              {model.free && <span className="shrink-0 font-mono text-[8px] text-synth-success">free</span>}
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

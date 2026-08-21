@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import { SynthFooterCredit } from "@/components/branding/synth-brand";
 import { Separator } from "@/components/ui/separator";
+import { getSynthModelLabel } from "@/lib/ai/synth-models";
 import type { ProjectSummary } from "@/types/workspace";
 import type { ProviderHealth } from "@/lib/ai/types";
 
@@ -20,7 +21,6 @@ function useProviderHealth() {
         const data = await res.json();
         const providers: ProviderHealth[] = data.providers ?? [];
         setHealth(providers);
-        // Consider connected if any real provider is connected, or if using mock
         const anyConnected = providers.some((p) => p.status === "connected" || p.providerId === "mock");
         setConnected(anyConnected);
       } catch {
@@ -35,10 +35,10 @@ function useProviderHealth() {
   return { health, connected };
 }
 
-export function StatusBar({ project, model }: { project: ProjectSummary; model: string }) {
+export function StatusBar({ project }: { project: ProjectSummary }) {
   const { health, connected } = useProviderHealth();
 
-  // Find the primary provider to display
+  // Find primary provider for display
   const openrouterHealth = health.find((p) => p.providerId === "openrouter");
   const ollamaHealth = health.find((p) => p.providerId === "ollama");
   const mockHealth = health.find((p) => p.providerId === "mock");
@@ -49,22 +49,17 @@ export function StatusBar({ project, model }: { project: ProjectSummary; model: 
       ? ollamaHealth
       : mockHealth ?? ollamaHealth ?? openrouterHealth;
 
-  const providerLabel = primaryProvider?.providerId === "openrouter"
-    ? "OpenRouter"
-    : primaryProvider?.providerId === "ollama"
-      ? "Ollama"
-      : primaryProvider?.providerId === "mock"
-        ? "Demo"
-        : "Offline";
+  // Use SYNTH product label instead of raw provider/model name
+  const displayModel = getSynthModelLabel(primaryProvider?.model ?? "auto");
 
   return (
     <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-background/90 px-3 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-xl" aria-label="Workspace status">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className={`flex items-center gap-1.5 ${connected ? "text-synth-success" : "text-muted-foreground"}`}>
-          <CheckCircle2 className="size-3" /> {providerLabel}
+          <CheckCircle2 className="size-3" /> SYNTH
         </span>
         <Separator orientation="vertical" className="h-3" />
-        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{primaryProvider?.model ?? model}</b></span>
+        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{displayModel}</b></span>
         <Separator orientation="vertical" className="hidden h-3 sm:block" />
         <span className="hidden md:inline">Memory <b className="font-semibold text-foreground/70">—</b></span>
       </div>

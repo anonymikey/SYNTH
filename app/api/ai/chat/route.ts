@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { parseEngineRequest } from "@/lib/ai/request-schema";
 import { getSynthEngine } from "@/lib/ai/server";
 import { toSseResponse } from "@/lib/transport/stream-response";
+import { resolveSynthModel } from "@/lib/ai/synth-models";
 import type { EngineEvent } from "@/engine/types";
 
 export const runtime = "nodejs";
@@ -10,6 +11,20 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const input = parseEngineRequest(await request.json());
+
+    // SYNTH Model Resolution: resolve SYNTH model IDs to internal provider/model selections.
+    // The browser sends SYNTH model IDs (synth-ultra, synth-code, etc.).
+    // The server resolves them to actual provider + model selections.
+    // Legacy raw model IDs are also normalized server-side for backward compatibility.
+    if (input.model) {
+      try {
+        const selection = resolveSynthModel(input.model);
+        input.provider = selection;
+      } catch {
+        // Unknown model — let the engine handle the error with a clear message
+      }
+    }
+
     const engine = getSynthEngine();
 
     // If this is an initial explicit toolRequest (no toolApproval token), run the engine
@@ -19,18 +34,14 @@ export async function POST(request: Request) {
       for await (const ev of events as AsyncIterable<EngineEvent>) {
         if (request.signal?.aborted) break;
         if (ev.type === "approval-required") {
-          // Do not expose internal server state beyond the opaque approval token and the call info
-          // ev is typed as EngineEvent so TS knows the shape
           return NextResponse.json({ approvalRequired: true, requestId: ev.requestId, approvalToken: ev.approvalToken, call: ev.call });
         }
         if (ev.type === "failed") {
           return NextResponse.json({ error: ev.error?.message ?? "Engine failed" }, { status: 400 });
         }
         if (ev.type === "tool-result") {
-          // In the unlikely case the engine executed immediately, return the result
           return NextResponse.json({ approvalRequired: false, requestId: ev.requestId, result: ev.result });
         }
-        // ignore other events and continue until we find a decisive one
       }
       return NextResponse.json({ error: "No approval event produced by engine." }, { status: 500 });
     }
@@ -46,15 +57,12 @@ export async function POST(request: Request) {
         const ev = next.value;
         buffer.push(ev);
         if (ev.type === "failed" || ev.type === "tool-result") {
-          // decisive
           if (ev.type === "failed") {
             const msg = ev.error?.message ?? "Engine failed";
-            // Determine status: expired/replayed -> 410, authorization -> 403
             const lower = String(msg).toLowerCase();
             const status = lower.includes("expired") || lower.includes("already_consumed") || lower.includes("not_found") ? 410 : 403;
             return NextResponse.json({ error: msg }, { status });
           }
-          // ev.type === 'tool-result' -> stream: first send buffered events then continue streaming remaining events
           const encoder = new TextEncoder();
           const stream = new ReadableStream({
             async start(controller) {
@@ -63,7 +71,6 @@ export async function POST(request: Request) {
                   if (request.signal?.aborted) break;
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify(e)}\n\n`));
                 }
-                // continue streaming remaining events from the iterator
                 while (true) {
                   const n = await iterator.next();
                   if (n.done) break;
@@ -78,7 +85,6 @@ export async function POST(request: Request) {
           });
           return new Response(stream, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", Connection: "keep-alive", "X-Accel-Buffering": "no" } });
         }
-        // otherwise keep buffering
       }
       return NextResponse.json({ error: "No decisive event produced by engine." }, { status: 500 });
     }

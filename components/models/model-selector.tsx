@@ -1,18 +1,19 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectLabel, SelectGroup, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { ModelInfo } from "@/lib/ai/types";
+import type { SynthModelView, SynthRoutingPreset } from "@/modules/models/hooks/use-model-catalog";
 
 interface ModelSelectorProps {
-  models: ModelInfo[];
+  models: SynthModelView[];
   value: string;
   onChange: (value: string) => void;
-  routing?: Array<{ id: string; label: string; description: string; available: boolean }>;
+  routing?: SynthRoutingPreset[];
 }
 
 export function ModelSelector({ models, value, onChange, routing }: ModelSelectorProps) {
   const selectedModel = models.find((m) => m.id === value);
-  const displayLabel = selectedModel?.label ?? routing?.find((r) => r.id === value)?.label ?? value;
+  const selectedRouting = routing?.find((r) => r.id === value);
+  const displayLabel = selectedModel?.label ?? selectedRouting?.label ?? value;
 
   return (
     <Select value={value} onValueChange={onChange}>
@@ -43,15 +44,15 @@ export function ModelSelector({ models, value, onChange, routing }: ModelSelecto
           </>
         )}
 
-        {/* Actual models */}
+        {/* SYNTH model profiles */}
         <SelectGroup>
           <SelectLabel className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Models</SelectLabel>
           {models.map((model) => (
-            <SelectItem key={model.id} value={model.id} disabled={!model.enabled}>
+            <SelectItem key={model.id} value={model.id} disabled={!model.available}>
               <div className="flex items-center gap-2">
                 <span className="truncate">{model.label}</span>
                 {model.free && <span className="shrink-0 font-mono text-[8px] text-synth-success">free</span>}
-                {model.providerId === "mock" && <span className="shrink-0 font-mono text-[8px] text-muted-foreground">demo</span>}
+                {!model.available && <span className="shrink-0 font-mono text-[8px] text-muted-foreground">offline</span>}
               </div>
             </SelectItem>
           ))}
