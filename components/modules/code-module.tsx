@@ -1,41 +1,103 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CodeActions } from "@/components/modules/code-actions";
-import { CodeFileTree } from "@/components/modules/code-file-tree";
+import { Button } from "@/components/ui/button";
+import { useProject } from "@/lib/project/use-project";
+import { CodeExplorer } from "@/components/modules/code-explorer";
 import { CodeViewer } from "@/components/modules/code-viewer";
-import { ModuleEmpty } from "@/components/modules/module-states";
-import { SYNTH_CODE_FILES } from "@/components/modules/mock-data";
-import { useEngineAction } from "@/components/modules/use-engine-action";
+import { CodeForge } from "@/components/modules/code-forge";
+import { ProjectHeader } from "@/components/modules/project-header";
 import type { ModuleAction, ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
+import { useEngineAction } from "@/components/modules/use-engine-action";
 
 export function CodeModule({ project, context, onAction }: WorkspaceModuleProps) {
-  const [selectedPath, setSelectedPath] = useState(context.selectedFile ?? SYNTH_CODE_FILES[0]?.path ?? "");
-  const selectedFile = useMemo(() => SYNTH_CODE_FILES.find((file) => file.path === selectedPath), [selectedPath]);
+  const proj = useProject();
   const engine = useEngineAction({ project, context });
 
   const handleAction = async (id: ModuleActionId, label: string) => {
-    const action: ModuleAction = { id, label, intent: "coding", payload: { path: selectedFile?.path ?? "" } };
+    const action: ModuleAction = {
+      id,
+      label,
+      intent: "coding",
+      payload: { path: proj.selectedPath ?? "" },
+    };
     onAction?.(action);
     await engine.runAction(action);
   };
 
-  if (!SYNTH_CODE_FILES.length) return <ModuleEmpty title="No repository files" description="SYNTH Code has no local files to display yet." />;
+  // Loading state
+  if (proj.loadingProject) {
+    return (
+      <div className="space-y-4" role="status" aria-live="polite">
+        <Card className="border-synth-cyan/20 bg-synth-cyan/5">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="size-5 animate-spin rounded-full border-2 border-synth-cyan/30 border-t-synth-cyan" />
+            <p className="text-sm text-muted-foreground">Loading project context...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  return (
-    <div className="space-y-4">
-      <Card className="border-synth-cyan/20 bg-synth-cyan/5">
-        <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-semibold">Local repository browser</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Browse the current project context, inspect files, and stage AI actions without bypassing the Engine boundary.</p></div>
-          <Badge variant="outline" className="w-fit border-synth-cyan/25 text-[9px] text-synth-cyan">{project.branch} · {project.language}</Badge>
+  // Error state
+  if (proj.error && !proj.project) {
+    return (
+      <Card className="border-destructive/25 bg-destructive/5">
+        <CardContent className="flex items-center gap-3 p-4">
+          <span className="text-destructive text-sm font-medium">Failed to load project.</span>
+          <Button variant="outline" size="sm" onClick={() => proj.refreshFiles()}>Retry</Button>
         </CardContent>
       </Card>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)_16rem]">
-        <CodeFileTree files={SYNTH_CODE_FILES} selectedPath={selectedPath} onSelect={(path) => { setSelectedPath(path); onAction?.({ id: "select-file", label: `Selected ${path}`, intent: "coding", payload: { path } }); }} />
-        <CodeViewer file={selectedFile} />
-        <CodeActions filePath={selectedFile?.path} actionState={engine.state} output={engine.output} error={engine.error} model={engine.model} onAction={handleAction} />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Project Header */}
+      <ProjectHeader
+        project={proj.project}
+        recentFiles={proj.recentFiles}
+        onSelectFile={proj.loadFile}
+      />
+
+      {/* Error banner (non-fatal) */}
+      {proj.error && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          {proj.error}
+        </div>
+      )}
+
+      {/* Three-column layout: Explorer | Viewer | Forge */}
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[14rem_minmax(0,1fr)_16rem]">
+        {/* LEFT: Explorer */}
+        <CodeExplorer
+          files={proj.files}
+          selectedPath={proj.selectedPath}
+          recentFiles={proj.recentFiles}
+          searchResults={proj.searchResults}
+          searching={proj.searching}
+          onSelect={proj.loadFile}
+          onSearch={proj.search}
+        />
+
+        {/* CENTER: Code Viewer */}
+        <CodeViewer
+          file={proj.fileContent}
+          loading={proj.loadingContent}
+          adapterType={proj.project?.adapterType ?? "demo"}
+        />
+
+        {/* RIGHT: Forge / AI Actions */}
+        <CodeForge
+          filePath={proj.selectedPath}
+          fileName={proj.fileContent?.path}
+          actionState={engine.state}
+          output={engine.output}
+          error={engine.error}
+          model={engine.model}
+          onAction={handleAction}
+          readOnly
+        />
       </div>
     </div>
   );

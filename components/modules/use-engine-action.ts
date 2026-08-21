@@ -17,7 +17,7 @@ interface EngineActionError {
   unavailable: boolean;
 }
 
-export function buildModuleEngineRequest(action: ModuleAction, project: ProjectSummary, context: ChatContextView, modelId = "llama3.1:8b"): EngineRequest {
+export function buildModuleEngineRequest(action: ModuleAction, project: ProjectSummary, context: ChatContextView, modelId = "synth-code"): EngineRequest {
   const payloadText = Object.entries(action.payload ?? {}).map(([key, value]) => `${key}: ${value}`).join("\n");
   const explicitText = [action.label, payloadText].filter(Boolean).join("\n");
   return {
@@ -25,7 +25,7 @@ export function buildModuleEngineRequest(action: ModuleAction, project: ProjectS
     messages: [{ role: "user", content: explicitText }],
     mode: modeForIntent(action.intent),
     intent: action.intent,
-    agentId: action.payload?.agentId,
+    agentId: action.payload?.agentId ?? (action.intent === "coding" ? "coder" : undefined),
     model: modelId,
     runtime: "web",
     context: {
