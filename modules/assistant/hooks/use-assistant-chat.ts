@@ -32,6 +32,8 @@ export function useAssistantChat({
   const abortRef = useRef<AbortController | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
 
   // Hydrate from conversation store when conversationId changes
   useEffect(() => {
@@ -50,6 +52,9 @@ export function useAssistantChat({
   // Persist messages after each state change
   useEffect(() => {
     if (!conversationId) return;
+    // Skip if conversationId changed during hydration — prevents saving
+    // old conversation messages to the new conversation's store entry.
+    if (conversationIdRef.current !== conversationId) return;
     // Don't persist while streaming — only persist final states
     if (state.isStreaming) return;
     if (state.messages.length === 0) return;
@@ -108,12 +113,10 @@ export function useAssistantChat({
             requestId,
             messages: conversation,
             mode: agentMode,
+            // Send SYNTH model ID (e.g. "auto", "synth-ultra", "synth-code").
+            // The server resolves SYNTH IDs to internal provider/model selections.
+            // Do NOT send a provider object — the browser does not know internal provider details.
             model: modelId,
-            provider: {
-              providerId,
-              model: modelId,
-              allowFallback: modelId === "auto",
-            },
             runtime: "web",
             context: {
               projectId: project.id,
@@ -165,7 +168,7 @@ export function useAssistantChat({
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [agentMode, context, modelId, project.id, providerId]
+    [agentMode, context, modelId, project.id]
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);

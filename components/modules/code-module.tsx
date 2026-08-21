@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/lib/project/use-project";
@@ -13,8 +14,10 @@ import { useEngineAction } from "@/components/modules/use-engine-action";
 export function CodeModule({ project, context, onAction }: WorkspaceModuleProps) {
   const proj = useProject();
   const engine = useEngineAction({ project, context });
+  const [lastActionLabel, setLastActionLabel] = useState<string | null>(null);
 
-  const handleAction = async (id: ModuleActionId, label: string) => {
+  const handleAction = useCallback(async (id: ModuleActionId, label: string) => {
+    setLastActionLabel(label);
     const action: ModuleAction = {
       id,
       label,
@@ -22,8 +25,12 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
       payload: { path: proj.selectedPath ?? "" },
     };
     onAction?.(action);
-    await engine.runAction(action);
-  };
+    await engine.runAction(action, {
+      fileContent: proj.fileContent,
+      projectInfo: proj.project,
+      searchResults: proj.searchResults,
+    });
+  }, [proj.selectedPath, proj.fileContent, proj.project, proj.searchResults, engine, onAction]);
 
   // Loading state
   if (proj.loadingProject) {
@@ -90,7 +97,9 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         {/* RIGHT: Forge / AI Actions */}
         <CodeForge
           filePath={proj.selectedPath}
-          fileName={proj.fileContent?.path}
+          fileContent={proj.fileContent}
+          project={proj.project}
+          lastActionLabel={lastActionLabel}
           actionState={engine.state}
           output={engine.output}
           error={engine.error}

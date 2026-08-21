@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -36,11 +36,12 @@ function WorkspaceShellInner() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const openNewChat = () => {
+  const openNewChat = useCallback(() => {
     conversations.create();
     setActiveDestination("assistant");
     toast.success("New SYNTH conversation ready");
-  };
+  }, [conversations]);
+  // openNewChat is intentionally memoized — safe for useEffect dep
 
   const handleModuleSelect = (module: ModuleDefinition) => {
     setActiveDestination(module.id as WorkspaceDestination);
@@ -80,7 +81,7 @@ function WorkspaceShellInner() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  });
+  }, [openNewChat]);
 
   return (
     <SidebarProvider defaultOpen>

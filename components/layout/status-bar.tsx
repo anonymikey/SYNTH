@@ -1,39 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import { SynthFooterCredit } from "@/components/branding/synth-brand";
 import { Separator } from "@/components/ui/separator";
 import { getSynthModelLabel } from "@/lib/ai/synth-models";
+import { useProviderHealth } from "@/lib/hooks/use-provider-health";
 import type { ProjectSummary } from "@/types/workspace";
-import type { ProviderHealth } from "@/lib/ai/types";
-
-function useProviderHealth() {
-  const [health, setHealth] = useState<ProviderHealth[]>([]);
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const check = async () => {
-      try {
-        const res = await fetch("/api/ai/health");
-        if (!res.ok || !active) return;
-        const data = await res.json();
-        const providers: ProviderHealth[] = data.providers ?? [];
-        setHealth(providers);
-        const anyConnected = providers.some((p) => p.status === "connected" || p.providerId === "mock");
-        setConnected(anyConnected);
-      } catch {
-        if (active) setConnected(false);
-      }
-    };
-    check();
-    const interval = setInterval(check, 30_000);
-    return () => { active = false; clearInterval(interval); };
-  }, []);
-
-  return { health, connected };
-}
 
 export function StatusBar({ project }: { project: ProjectSummary }) {
   const { health, connected } = useProviderHealth();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,31 +10,10 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/theme/theme-provider";
 import { iconFor } from "@/lib/icons";
-import type { ProviderHealth } from "@/lib/ai/types";
+import { useProviderHealth } from "@/lib/hooks/use-provider-health";
 
 function useProviderStatus() {
-  const [health, setHealth] = useState<ProviderHealth[]>([]);
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const check = async () => {
-      try {
-        const res = await fetch("/api/ai/health");
-        if (!res.ok || !active) return;
-        const data = await res.json();
-        const providers: ProviderHealth[] = data.providers ?? [];
-        setHealth(providers);
-        const anyConnected = providers.some((p) => p.status === "connected" || p.providerId === "mock");
-        setConnected(anyConnected);
-      } catch {
-        if (active) setConnected(false);
-      }
-    };
-    check();
-    const interval = setInterval(check, 30_000);
-    return () => { active = false; clearInterval(interval); };
-  }, []);
+  const { health, connected } = useProviderHealth();
 
   // Determine status label using SYNTH branding
   const openrouterHealth = health.find((p) => p.providerId === "openrouter");
@@ -48,7 +27,6 @@ function useProviderStatus() {
       : mockHealth;
 
   const modelLabel = primaryProvider?.model ?? "auto";
-  // Show SYNTH product name instead of raw provider
   const providerLabel = "SYNTH";
 
   return { connected, modelLabel, providerLabel };

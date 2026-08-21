@@ -5,6 +5,8 @@ import { readSseEvents } from "@/lib/transport/sse";
 import type { EngineEvent, EngineRequest } from "@/engine/types";
 import type { AgentMode, ChatContextView, ProjectSummary } from "@/types/workspace";
 import type { ModuleAction, ModuleActionResult, ModuleActionState } from "@/components/modules/types";
+import type { ProjectFileContent, ProjectInfo, ProjectSearchResult } from "@/lib/project/use-project";
+import { buildForgePrompt } from "@/lib/project/forge-context";
 
 interface UseEngineActionOptions {
   project: ProjectSummary;
@@ -17,9 +19,52 @@ interface EngineActionError {
   unavailable: boolean;
 }
 
-export function buildModuleEngineRequest(action: ModuleAction, project: ProjectSummary, context: ChatContextView, modelId = "synth-code"): EngineRequest {
-  const payloadText = Object.entries(action.payload ?? {}).map(([key, value]) => `${key}: ${value}`).join("\n");
-  const explicitText = [action.label, payloadText].filter(Boolean).join("\n");
+/**
+ * Build a rich Engine request for a SYNTH Forge coding action.
+ * When fileContent is provided, it's included as explicit context
+ * so the model can actually reason about the real code.
+ */
+export function buildModuleEngineRequest(
+  action: ModuleAction,
+  project: ProjectSummary,
+  context: ChatContextView,
+  modelId = "synth-code",
+  options?: {
+    fileContent?: ProjectFileContent | null;
+    projectInfo?: ProjectInfo | null;
+    searchResults?: ProjectSearchResult[];
+  },
+): EngineRequest {
+  const { fileContent, projectInfo, searchResults } = options ?? {};
+
+  // Build rich explicit text for coding actions
+  let explicitText: string;
+
+  if (action.intent === "coding" && fileContent) {
+    // Use the Forge context builder for rich coding prompts
+    explicitText = buildForgePrompt(action.label, {
+      project: projectInfo ?? {
+        id: project.id,
+        name: project.name,
+        adapterType: "local",
+        language: project.language,
+        framework: project.framework,
+        fileCount: project.fileCount,
+        version: project.version,
+        readOnly: true,
+      },
+      fileContent,
+      recentFiles: context.recentFiles.map((f) => f.path),
+      searchResults,
+    });
+  } else {
+    // Fallback: simple payload text for non-coding actions
+    const payloadText = Object.entries(action.payload ?? {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+    explicitText = [action.label, payloadText].filter(Boolean).join("\n");
+  }
+
   return {
     requestId: crypto.randomUUID(),
     messages: [{ role: "user", content: explicitText }],
@@ -36,9 +81,11 @@ export function buildModuleEngineRequest(action: ModuleAction, project: ProjectS
       explicitText,
     },
     metadata: {
-      source: "synth-module",
+      source: "synth-forge",
       actionId: action.id,
       intent: action.intent,
+      actionLabel: action.label,
+      filePath: action.payload?.path ?? "",
     },
   };
 }
@@ -61,14 +108,23 @@ export function useEngineAction({ project, context, modelId }: UseEngineActionOp
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [model, setModel] = useState("");
+  const [activeAction, setActiveAction] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
 
-  const runAction = useCallback(async (action: ModuleAction): Promise<ModuleActionResult> => {
+  const runAction = useCallback(async (
+    action: ModuleAction,
+    options?: {
+      fileContent?: ProjectFileContent | null;
+      projectInfo?: ProjectInfo | null;
+      searchResults?: ProjectSearchResult[];
+    },
+  ): Promise<ModuleActionResult> => {
     abortRef.current?.abort();
     setState("loading");
     setOutput("");
     setError("");
     setModel("");
+    setActiveAction(action.label);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -80,7 +136,9 @@ export function useEngineAction({ project, context, modelId }: UseEngineActionOp
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify(buildModuleEngineRequest(action, project, context, modelId)),
+        body: JSON.stringify(
+          buildModuleEngineRequest(action, project, context, modelId, options),
+        ),
       });
       if (!response.ok) throw new Error(`SYNTH Engine request failed (${response.status})`);
 
@@ -108,8 +166,18 @@ export function useEngineAction({ project, context, modelId }: UseEngineActionOp
         setError(abortedResult.error ?? "The request was stopped.");
         return abortedResult;
       }
-      const engineError = isEngineActionError(caughtError) ? caughtError : { message: caughtError instanceof Error ? caughtError.message : "The SYNTH Engine could not complete this action.", unavailable: false };
-      const result: ModuleActionResult = { state: engineError.unavailable ? "unavailable" : "error", output: responseText, error: engineError.message, model: responseModel };
+      const engineError = isEngineActionError(caughtError)
+        ? caughtError
+        : {
+            message: caughtError instanceof Error ? caughtError.message : "The SYNTH Engine could not complete this action.",
+            unavailable: false,
+          };
+      const result: ModuleActionResult = {
+        state: engineError.unavailable ? "unavailable" : "error",
+        output: responseText,
+        error: engineError.message,
+        model: responseModel,
+      };
       setState(result.state);
       setError(result.error ?? "The SYNTH Engine action failed.");
       return result;
@@ -120,7 +188,7 @@ export function useEngineAction({ project, context, modelId }: UseEngineActionOp
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  return { state, output, error, model, runAction };
+  return { state, output, error, model, activeAction, runAction };
 }
 
 function isEngineActionError(value: unknown): value is EngineActionError {
