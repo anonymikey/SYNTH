@@ -7,7 +7,7 @@ import { PromptComposer, type ComposerAttachment } from "@/components/assistant/
 import { SuggestionGrid } from "@/components/assistant/suggestion-grid";
 import { WelcomeState } from "@/components/assistant/welcome-state";
 import { DEFAULT_CONTEXT } from "@/lib/config/workspace";
-import { mockModels } from "@/mocks/models";
+import { useModelCatalog } from "@/modules/models/hooks/use-model-catalog";
 import { resolveConfiguredModel } from "@/lib/ai/models";
 import { SUGGESTED_PROMPTS } from "@/modules/assistant/constants";
 import { useAssistantChat } from "@/modules/assistant/hooks/use-assistant-chat";
@@ -22,15 +22,19 @@ interface AssistantWorkspaceProps {
 
 export function AssistantWorkspace({ project, conversationId }: AssistantWorkspaceProps) {
   const conversations = useConversations();
+  const { models } = useModelCatalog();
   const [prompt, setPrompt] = useState("");
   const [agentMode, setAgentMode] = useState<AgentMode>("assistant");
   const [modelId, setModelId] = useState("auto");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const selectedModel = mockModels.find((model) => model.id === modelId) ?? resolveConfiguredModel(modelId);
+
+  // Resolve model from catalog (server-merged) or fallback to configured
+  const selectedModel = useMemo(() => {
+    const found = models.find((m) => m.id === modelId);
+    return found ?? resolveConfiguredModel(modelId);
+  }, [models, modelId]);
   const providerId = selectedModel?.providerId ?? "openrouter";
 
-  // Use a ref to track the latest conversation ID so send/suggestion handlers
-  // always see the most recent value even within the same render cycle.
   const activeIdRef = useRef<string | null>(conversationId ?? null);
   useEffect(() => {
     activeIdRef.current = conversationId ?? null;
@@ -58,10 +62,10 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
     conversationId,
     onMessagesChange: handleMessagesChange,
   });
+
   const showWelcome = chat.messages.length === 0;
   const activeModel = useMemo(() => selectedModel, [selectedModel]);
 
-  /** Ensure a conversation exists; create one if needed and return its ID. */
   const ensureConversation = useCallback((): string => {
     if (activeIdRef.current) return activeIdRef.current;
     const id = conversations.create({ agentMode, modelId, providerId });
@@ -87,7 +91,7 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
     const next = files.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
-      kind: file.type.startsWith("image/") ? "image" as const : "file" as const,
+      kind: file.type.startsWith("image/") ? ("image" as const) : ("file" as const),
       size: file.size,
     }));
     setAttachments((current) => [...current, ...next]);
@@ -98,11 +102,6 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
     if (action === "copy") {
       await navigator.clipboard?.writeText(message.content);
       toast.success("Response copied");
-      return;
-    }
-    if (action === "edit") {
-      setPrompt(message.content);
-      toast.info("Response copied into the SYNTH composer");
       return;
     }
     if (action === "regenerate") {
@@ -145,7 +144,7 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
         <ChatThread messages={chat.messages} onAction={handleAction} />
       )}
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">
+      <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">
         <PromptComposer
           value={prompt}
           onChange={setPrompt}
@@ -155,7 +154,7 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
           agentMode={agentMode}
           onAgentModeChange={setAgentMode}
           modelId={modelId}
-          models={mockModels}
+          models={models}
           onModelChange={setModelId}
           attachments={attachments}
           onAddAttachments={addAttachments}

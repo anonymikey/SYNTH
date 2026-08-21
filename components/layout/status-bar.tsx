@@ -1,17 +1,72 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import { SynthFooterCredit } from "@/components/branding/synth-brand";
 import { Separator } from "@/components/ui/separator";
 import type { ProjectSummary } from "@/types/workspace";
+import type { ProviderHealth } from "@/lib/ai/types";
 
-export function StatusBar({ project, model, connected }: { project: ProjectSummary; model: string; connected: boolean }) {
+function useProviderHealth() {
+  const [health, setHealth] = useState<ProviderHealth[]>([]);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const check = async () => {
+      try {
+        const res = await fetch("/api/ai/health");
+        if (!res.ok || !active) return;
+        const data = await res.json();
+        const providers: ProviderHealth[] = data.providers ?? [];
+        setHealth(providers);
+        // Consider connected if any real provider is connected, or if using mock
+        const anyConnected = providers.some((p) => p.status === "connected" || p.providerId === "mock");
+        setConnected(anyConnected);
+      } catch {
+        if (active) setConnected(false);
+      }
+    };
+    check();
+    const interval = setInterval(check, 30_000);
+    return () => { active = false; clearInterval(interval); };
+  }, []);
+
+  return { health, connected };
+}
+
+export function StatusBar({ project, model }: { project: ProjectSummary; model: string }) {
+  const { health, connected } = useProviderHealth();
+
+  // Find the primary provider to display
+  const openrouterHealth = health.find((p) => p.providerId === "openrouter");
+  const ollamaHealth = health.find((p) => p.providerId === "ollama");
+  const mockHealth = health.find((p) => p.providerId === "mock");
+
+  const primaryProvider = openrouterHealth?.status === "connected"
+    ? openrouterHealth
+    : ollamaHealth?.status === "connected"
+      ? ollamaHealth
+      : mockHealth ?? ollamaHealth ?? openrouterHealth;
+
+  const providerLabel = primaryProvider?.providerId === "openrouter"
+    ? "OpenRouter"
+    : primaryProvider?.providerId === "ollama"
+      ? "Ollama"
+      : primaryProvider?.providerId === "mock"
+        ? "Demo"
+        : "Offline";
+
   return (
     <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-background/90 px-3 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-xl" aria-label="Workspace status">
       <div className="flex min-w-0 items-center gap-2.5">
-        <span className="flex items-center gap-1.5 text-synth-success"><CheckCircle2 className="size-3" /> Ollama local</span>
+        <span className={`flex items-center gap-1.5 ${connected ? "text-synth-success" : "text-muted-foreground"}`}>
+          <CheckCircle2 className="size-3" /> {providerLabel}
+        </span>
         <Separator orientation="vertical" className="h-3" />
-        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{model}</b></span>
+        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{primaryProvider?.model ?? model}</b></span>
         <Separator orientation="vertical" className="hidden h-3 sm:block" />
-        <span className="hidden md:inline">Memory <b className="font-semibold text-foreground/70">38%</b></span>
+        <span className="hidden md:inline">Memory <b className="font-semibold text-foreground/70">—</b></span>
       </div>
       <div className="flex items-center gap-2.5">
         <SynthFooterCredit className="hidden lg:block" />
@@ -20,7 +75,9 @@ export function StatusBar({ project, model, connected }: { project: ProjectSumma
         <Separator orientation="vertical" className="h-3" />
         <span>{project.version}</span>
         <Separator orientation="vertical" className="h-3" />
-        <span className={connected ? "flex items-center gap-1.5 text-synth-cyan" : "flex items-center gap-1.5 text-destructive"}><Circle className="size-1.5 fill-current" /> {connected ? "Online" : "Offline"}</span>
+        <span className={connected ? "flex items-center gap-1.5 text-synth-cyan" : "flex items-center gap-1.5 text-destructive"}>
+          <Circle className="size-1.5 fill-current" /> {connected ? "Online" : "Offline"}
+        </span>
       </div>
     </footer>
   );

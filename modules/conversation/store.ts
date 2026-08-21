@@ -28,17 +28,6 @@ function writeAll(conversations: StoredConversation[]): void {
   }
 }
 
-function generateTitle(messages: StoredConversation["messages"]): string {
-  const firstUser = messages.find((m) => m.role === "user");
-  if (!firstUser) return "New conversation";
-  const text =
-    typeof firstUser.content === "string"
-      ? firstUser.content
-      : String(firstUser.content);
-  const trimmed = text.slice(0, 60).trim();
-  return trimmed.length < text.length ? `${trimmed}…` : trimmed;
-}
-
 export const ConversationStore = {
   list(): ConversationSummary[] {
     return readAll()

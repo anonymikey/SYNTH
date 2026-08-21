@@ -165,7 +165,7 @@ export function useAssistantChat({
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [agentMode, context, conversationId, modelId, project.id, providerId]
+    [agentMode, context, modelId, project.id, providerId]
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);

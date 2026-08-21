@@ -32,7 +32,6 @@ function WorkspaceShellInner() {
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("assistant");
   const [contextOpen, setContextOpen] = useState(true);
   const [mobileContextOpen, setMobileContextOpen] = useState(false);
-  const [connected] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -62,7 +61,6 @@ function WorkspaceShellInner() {
 
   const handlePinConversation = (id: string) => {
     conversations.togglePin(id);
-    toast.success("Pin state updated");
   };
 
   useEffect(() => {
@@ -101,8 +99,6 @@ function WorkspaceShellInner() {
       />
       <SidebarInset className="min-w-0 overflow-hidden bg-background">
         <WorkspaceHeader
-          model="Llama 3.1 8B"
-          connected={connected}
           onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
           onOpenCommand={() => setCommandOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
@@ -131,7 +127,7 @@ function WorkspaceShellInner() {
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
           )}
         </div>
-        <StatusBar project={DEFAULT_PROJECT} model="llama3.1:8b" connected={connected} />
+        <StatusBar project={DEFAULT_PROJECT} model="auto" />
       </SidebarInset>
 
       {activeDestination === "assistant" && (

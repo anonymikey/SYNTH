@@ -8,6 +8,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from "@/components/ui/sidebar";
 import { iconFor } from "@/lib/icons";
+import { relativeTime } from "@/lib/dates";
 import { SYNTH_MODULES, WORKSPACE_AREAS, type ModuleDefinition } from "@/lib/config/modules";
 import { cn } from "@/lib/utils";
 import type { ConversationSummary } from "@/modules/conversation/types";
@@ -43,6 +44,7 @@ export function WorkspaceSidebar({
   const [historyOpen, setHistoryOpen] = useState(true);
   const [historySearchOpen, setHistorySearchOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
+
   const visibleHistory = useMemo(() => {
     if (!historyQuery.trim()) return conversations;
     const q = historyQuery.toLowerCase();
@@ -52,9 +54,20 @@ export function WorkspaceSidebar({
         conv.lastMessage.toLowerCase().includes(q)
     );
   }, [conversations, historyQuery]);
+
+  const pinnedConversations = useMemo(
+    () => visibleHistory.filter((c) => c.pinned),
+    [visibleHistory]
+  );
+  const recentConversations = useMemo(
+    () => visibleHistory.filter((c) => !c.pinned),
+    [visibleHistory]
+  );
+
   const SearchIcon = iconFor("search");
-  const MoreIcon = iconFor("more");
   const HistoryIcon = iconFor("history");
+  const PinIcon = iconFor("mapIcon");
+  const MessageIcon = iconFor("messageCircle");
 
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
@@ -131,6 +144,7 @@ export function WorkspaceSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Conversation History */}
         <SidebarGroup className="pt-0 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center justify-between px-2">
             <Button
@@ -139,7 +153,10 @@ export function WorkspaceSidebar({
               onClick={() => setHistoryOpen((open) => !open)}
               aria-expanded={historyOpen}
             >
-              Recent conversations
+              Conversations
+              {conversations.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-muted/50 px-1.5 py-0.5 text-[8px] tabular-nums text-muted-foreground">{conversations.length}</span>
+              )}
             </Button>
             <div className="flex items-center">
               <Button variant="ghost" size="icon-xs" onClick={() => setHistorySearchOpen((open) => !open)} aria-label="Search conversation history">
@@ -153,50 +170,67 @@ export function WorkspaceSidebar({
                 <Input
                   value={historyQuery}
                   onChange={(event) => setHistoryQuery(event.target.value)}
-                  placeholder="Search history..."
-                  aria-label="Search history"
+                  placeholder="Search conversations…"
+                  aria-label="Search conversations"
                   className="mb-2 h-8 text-xs"
                 />
               )}
-              <SidebarMenu>
-                {visibleHistory.length > 0 ? (
-                  visibleHistory.map((conv) => (
-                    <SidebarMenuItem key={conv.id}>
-                      <ContextMenu>
-                        <ContextMenuTrigger asChild>
-                          <SidebarMenuButton
-                            tooltip={conv.title}
-                            size="sm"
-                            isActive={conv.id === activeConversationId}
-                            onClick={() => onSelectConversation(conv.id)}
-                            className={cn(
-                              "text-left",
-                              conv.id === activeConversationId && "bg-synth-cyan/10 text-foreground"
-                            )}
-                          >
-                            <HistoryIcon className={cn("size-3.5", conv.id === activeConversationId ? "text-synth-cyan" : "text-muted-foreground/50")} />
-                            <span className="truncate">{conv.title}</span>
-                          </SidebarMenuButton>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent>
-                          <ContextMenuItem onSelect={() => onPinConversation(conv.id)}>
-                            {conv.pinned ? "Unpin conversation" : "Pin conversation"}
-                          </ContextMenuItem>
-                          <ContextMenuItem onSelect={() => onSelectConversation(conv.id)}>
-                            Open conversation
-                          </ContextMenuItem>
-                          <ContextMenuSeparator />
-                          <ContextMenuItem variant="destructive" onSelect={() => onDeleteConversation(conv.id)}>
-                            Delete conversation
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </SidebarMenuItem>
-                  ))
-                ) : (
-                  <p className="px-2 py-3 text-xs text-muted-foreground">No conversations yet. Start a new chat!</p>
-                )}
-              </SidebarMenu>
+
+              {visibleHistory.length === 0 ? (
+                <div className="px-2 py-4 text-center">
+                  <MessageIcon className="mx-auto mb-2 size-6 text-muted-foreground/30" />
+                  {conversations.length === 0 ? (
+                    <p className="text-[11px] leading-4 text-muted-foreground/60">No conversations yet.<br />Press <Kbd className="mx-0.5">⌘ N</Kbd> to start one.</p>
+                  ) : (
+                    <p className="text-[11px] leading-4 text-muted-foreground/60">No matches found.</p>
+                  )}
+                </div>
+              ) : (
+                <SidebarMenu>
+                  {/* Pinned Section */}
+                  {pinnedConversations.length > 0 && (
+                    <>
+                      <li className="flex items-center gap-1.5 px-2 py-1">
+                        <PinIcon className="size-3 text-synth-violet/70" />
+                        <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-synth-violet/70">Pinned</span>
+                      </li>
+                      {pinnedConversations.map((conv) => (
+                        <ConversationItem
+                          key={conv.id}
+                          conv={conv}
+                          isActive={conv.id === activeConversationId}
+                          onSelect={onSelectConversation}
+                          onDelete={onDeleteConversation}
+                          onPin={onPinConversation}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Recent Section */}
+                  {recentConversations.length > 0 && (
+                    <>
+                      {pinnedConversations.length > 0 && (
+                        <li className="mx-2 my-1 h-px bg-border/60" />
+                      )}
+                      <li className="flex items-center gap-1.5 px-2 py-1">
+                        <HistoryIcon className="size-3 text-muted-foreground/40" />
+                        <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50">Recent</span>
+                      </li>
+                      {recentConversations.map((conv) => (
+                        <ConversationItem
+                          key={conv.id}
+                          conv={conv}
+                          isActive={conv.id === activeConversationId}
+                          onSelect={onSelectConversation}
+                          onDelete={onDeleteConversation}
+                          onPin={onPinConversation}
+                        />
+                      ))}
+                    </>
+                  )}
+                </SidebarMenu>
+              )}
             </SidebarGroupContent>
           )}
         </SidebarGroup>
@@ -215,5 +249,62 @@ export function WorkspaceSidebar({
         </div>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function ConversationItem({
+  conv,
+  isActive,
+  onSelect,
+  onDelete,
+  onPin,
+}: {
+  conv: ConversationSummary;
+  isActive: boolean;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onPin: (id: string) => void;
+}) {
+  const HistoryIcon = iconFor("history");
+  return (
+    <SidebarMenuItem>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <SidebarMenuButton
+            tooltip={conv.title}
+            size="sm"
+            isActive={isActive}
+            onClick={() => onSelect(conv.id)}
+            className={cn(
+              "group/item gap-2 text-left",
+              isActive && "bg-synth-cyan/10 text-foreground"
+            )}
+          >
+            <HistoryIcon className={cn("size-3.5 shrink-0", isActive ? "text-synth-cyan" : "text-muted-foreground/40")} />
+            <span className="min-w-0 flex-1 truncate text-[11px]">{conv.title}</span>
+            <span className="shrink-0 font-mono text-[8px] tabular-nums text-muted-foreground/40 opacity-0 transition-opacity group-hover/item:opacity-100">
+              {relativeTime(conv.updatedAt)}
+            </span>
+          </SidebarMenuButton>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={() => onSelect(conv.id)}>
+            Open conversation
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => onPin(conv.id)}>
+            {conv.pinned ? "Unpin conversation" : "Pin conversation"}
+          </ContextMenuItem>
+          {conv.messageCount > 0 && (
+            <ContextMenuItem disabled className="font-mono text-[10px] text-muted-foreground">
+              {conv.messageCount} message{conv.messageCount !== 1 ? "s" : ""}
+            </ContextMenuItem>
+          )}
+          <ContextMenuSeparator />
+          <ContextMenuItem variant="destructive" onSelect={() => onDelete(conv.id)}>
+            Delete conversation
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </SidebarMenuItem>
   );
 }
