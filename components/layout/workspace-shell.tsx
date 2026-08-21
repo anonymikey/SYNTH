@@ -14,11 +14,21 @@ import { CommandPalette } from "@/components/workspace/command-palette";
 import { AboutDialog } from "@/components/workspace/about-dialog";
 import { NotificationsDialog } from "@/components/workspace/workspace-dialogs";
 import { WorkspaceView, type WorkspaceDestination } from "@/components/workspace/workspace-view";
+import { ConversationProvider, useConversations } from "@/modules/conversation/conversation-provider";
 import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { SYNTH_MODULES, type ModuleDefinition } from "@/lib/config/modules";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 
 export function WorkspaceShell() {
+  return (
+    <ConversationProvider>
+      <WorkspaceShellInner />
+    </ConversationProvider>
+  );
+}
+
+function WorkspaceShellInner() {
+  const conversations = useConversations();
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("assistant");
   const [contextOpen, setContextOpen] = useState(true);
   const [mobileContextOpen, setMobileContextOpen] = useState(false);
@@ -26,11 +36,10 @@ export function WorkspaceShell() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [assistantResetKey, setAssistantResetKey] = useState(0);
 
   const openNewChat = () => {
+    conversations.create();
     setActiveDestination("assistant");
-    setAssistantResetKey((key) => key + 1);
     toast.success("New SYNTH conversation ready");
   };
 
@@ -40,6 +49,21 @@ export function WorkspaceShell() {
   };
 
   const handleAreaSelect = (area: WorkspaceArea) => setActiveDestination(area);
+
+  const handleSelectConversation = (id: string) => {
+    conversations.select(id);
+    setActiveDestination("assistant");
+  };
+
+  const handleDeleteConversation = (id: string) => {
+    conversations.remove(id);
+    toast.success("Conversation deleted");
+  };
+
+  const handlePinConversation = (id: string) => {
+    conversations.togglePin(id);
+    toast.success("Pin state updated");
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -69,6 +93,11 @@ export function WorkspaceShell() {
         onNewChat={openNewChat}
         onSettings={() => setActiveDestination("settings")}
         onOpenCommand={() => setCommandOpen(true)}
+        conversations={conversations.summaries}
+        activeConversationId={conversations.active?.id ?? null}
+        onSelectConversation={handleSelectConversation}
+        onDeleteConversation={handleDeleteConversation}
+        onPinConversation={handlePinConversation}
       />
       <SidebarInset className="min-w-0 overflow-hidden bg-background">
         <WorkspaceHeader
@@ -83,8 +112,20 @@ export function WorkspaceShell() {
         <div className="min-h-0 flex-1 overflow-hidden">
           {activeDestination === "assistant" ? (
             <ResizablePanelGroup orientation="horizontal" className="h-full">
-              <ResizablePanel defaultSize={contextOpen ? 74 : 100} minSize={55} className="min-w-0"><AssistantWorkspace key={assistantResetKey} project={DEFAULT_PROJECT} /></ResizablePanel>
-              {contextOpen && <><ResizableHandle withHandle className="bg-border/60" /><ResizablePanel defaultSize={26} minSize={22} maxSize={38} className="hidden min-w-0 md:block"><ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} /></ResizablePanel></>}
+              <ResizablePanel defaultSize={contextOpen ? 74 : 100} minSize={55} className="min-w-0">
+                <AssistantWorkspace
+                  project={DEFAULT_PROJECT}
+                  conversationId={conversations.active?.id}
+                />
+              </ResizablePanel>
+              {contextOpen && (
+                <>
+                  <ResizableHandle withHandle className="bg-border/60" />
+                  <ResizablePanel defaultSize={26} minSize={22} maxSize={38} className="hidden min-w-0 md:block">
+                    <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} />
+                  </ResizablePanel>
+                </>
+              )}
             </ResizablePanelGroup>
           ) : (
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
@@ -93,7 +134,13 @@ export function WorkspaceShell() {
         <StatusBar project={DEFAULT_PROJECT} model="llama3.1:8b" connected={connected} />
       </SidebarInset>
 
-      {activeDestination === "assistant" && <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}><SheetContent side="right" className="w-[min(92vw,26rem)] p-0 md:hidden"><ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} /></SheetContent></Sheet>}
+      {activeDestination === "assistant" && (
+        <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
+          <SheetContent side="right" className="w-[min(92vw,26rem)] p-0 md:hidden">
+            <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      )}
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} modules={SYNTH_MODULES} onModuleSelect={handleModuleSelect} onNewChat={openNewChat} onSettings={() => setActiveDestination("settings")} onToggleContext={() => setContextOpen((open) => !open)} />
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
       <NotificationsDialog open={notificationsOpen} onOpenChange={setNotificationsOpen} />

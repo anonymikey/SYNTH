@@ -8,6 +8,7 @@ export interface ChatState {
 
 export type ChatAction =
   | { type: "reset" }
+  | { type: "hydrate"; messages: ChatMessage[] }
   | { type: "user-message"; message: ChatMessage; requestId: string }
   | { type: "assistant-start"; message: ChatMessage }
   | { type: "assistant-delta"; messageId: string; delta: string }
@@ -21,6 +22,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case "reset":
       return initialChatState;
+    case "hydrate":
+      return { ...state, messages: action.messages, isStreaming: false };
     case "user-message":
       return { ...state, messages: [...state.messages, action.message], activeRequestId: action.requestId, isStreaming: true };
     case "assistant-start":
