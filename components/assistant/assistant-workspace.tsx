@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatThread } from "@/components/chat/chat-thread";
-import { PromptComposer, type ComposerAttachment } from "@/components/assistant/prompt-composer";
+import { PromptComposer, type ComposerAttachment, type PromptComposerHandle } from "@/components/assistant/prompt-composer";
 import { SuggestionGrid } from "@/components/assistant/suggestion-grid";
 import { WelcomeState } from "@/components/assistant/welcome-state";
 import { DEFAULT_CONTEXT } from "@/lib/config/workspace";
@@ -13,19 +13,23 @@ import { useAssistantChat } from "@/modules/assistant/hooks/use-assistant-chat";
 import { useConversations } from "@/modules/conversation/conversation-provider";
 import type { ChatMessage, MessageAction } from "@/modules/chat/types";
 import type { AgentMode, ProjectSummary } from "@/types/workspace";
+import { useShortcuts } from "@/lib/shortcuts/use-shortcut";
 
 interface AssistantWorkspaceProps {
   project: ProjectSummary;
   conversationId?: string;
+  composerRef?: React.RefObject<PromptComposerHandle | null>;
 }
 
-export function AssistantWorkspace({ project, conversationId }: AssistantWorkspaceProps) {
+export function AssistantWorkspace({ project, conversationId, composerRef }: AssistantWorkspaceProps) {
   const conversations = useConversations();
   const { models, routing } = useModelCatalog();
   const [prompt, setPrompt] = useState("");
   const [agentMode, setAgentMode] = useState<AgentMode>("assistant");
   const [modelId, setModelId] = useState("auto");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const localComposerRef = useRef<PromptComposerHandle>(null);
+  const activeComposerRef = composerRef ?? localComposerRef;
 
   const selectedModel = useMemo(() => models.find((m) => m.id === modelId), [models, modelId]);
 
@@ -113,6 +117,29 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
     toast.success(action === "like" ? "Thanks — response marked helpful" : "Feedback recorded");
   };
 
+  // Message action shortcuts (only when not typing in input)
+  useShortcuts([
+    {
+      key: "c",
+      handler: async () => {
+        const lastAssistant = [...chat.messages].reverse().find((m) => m.role === "assistant" && m.status === "complete");
+        if (lastAssistant?.content) {
+          await navigator.clipboard?.writeText(lastAssistant.content);
+          toast.success("Response copied");
+        }
+      },
+    },
+    {
+      key: "r",
+      handler: async () => {
+        const lastAssistant = [...chat.messages].reverse().find((m) => m.role === "assistant" && m.status === "complete");
+        if (lastAssistant?.content && !chat.isStreaming) {
+          await chat.sendPrompt(lastAssistant.content);
+        }
+      },
+    },
+  ]);
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="synth-grid pointer-events-none absolute inset-0 opacity-50" />
@@ -139,6 +166,7 @@ export function AssistantWorkspace({ project, conversationId }: AssistantWorkspa
 
       <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">
         <PromptComposer
+          ref={activeComposerRef}
           value={prompt}
           onChange={setPrompt}
           onSubmit={send}

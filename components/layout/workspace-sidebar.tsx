@@ -68,10 +68,11 @@ export function WorkspaceSidebar({
   const HistoryIcon = iconFor("history");
   const PinIcon = iconFor("mapIcon");
   const MessageIcon = iconFor("messageCircle");
+  const DashboardIcon = iconFor("dashboard");
 
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
-      <SidebarHeader className="h-16 border-b border-sidebar-border p-3">
+      <SidebarHeader className="h-14 border-b border-sidebar-border px-3 py-2">
         <div className="flex items-center justify-between gap-2">
           <SynthBrand className="group-data-[collapsible=icon]:hidden" />
           <div className="hidden group-data-[collapsible=icon]:block"><SynthBrand compact /></div>
@@ -79,24 +80,40 @@ export function WorkspaceSidebar({
         </div>
       </SidebarHeader>
       <SidebarContent className="custom-scrollbar">
-        <SidebarGroup className="pb-0">
+        {/* ── Dashboard + Quick Actions ── */}
+        <SidebarGroup className="pb-1">
           <SidebarGroupContent>
-            <div className="space-y-2">
-              <Button onClick={onNewChat} variant="outline" className="h-10 w-full justify-start border-synth-cyan/30 bg-synth-cyan/10 text-foreground hover:border-synth-cyan/50 hover:bg-synth-cyan/15 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-                <span className="flex size-5 items-center justify-center rounded-md text-synth-cyan"><span className="text-lg leading-none">+</span></span>
-                <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
-                <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">⌘ N</Kbd>
-              </Button>
-              <Button onClick={onOpenCommand} variant="ghost" className="h-8 w-full justify-start text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-                <SearchIcon className="size-4" />
-                <span className="group-data-[collapsible=icon]:hidden">Command palette</span>
-                <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">⌘ K</Kbd>
-              </Button>
+            <div className="space-y-1">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={activeModule === "dashboard"}
+                    onClick={() => onSelectModule({ id: "assistant", label: "SYNTH Dashboard", description: "Home", icon: "layout-dashboard", status: "active" })}
+                    tooltip="Dashboard"
+                    className="group/dash"
+                  >
+                    <DashboardIcon className={cn("size-4", activeModule === "dashboard" ? "text-synth-cyan" : "text-muted-foreground")} strokeWidth={1.8} />
+                    <span className="font-medium">Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <div className="flex gap-1.5 px-0.5">
+                <Button onClick={onNewChat} variant="outline" size="sm" className="h-8 flex-1 justify-start gap-1.5 border-synth-cyan/30 bg-synth-cyan/10 text-foreground hover:border-synth-cyan/50 hover:bg-synth-cyan/15 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                  <span className="flex size-4 items-center justify-center rounded text-synth-cyan text-xs">+</span>
+                  <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
+                  <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">⌘N</Kbd>
+                </Button>
+                <Button onClick={onOpenCommand} variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden">
+                  <SearchIcon className="size-3.5" />
+                  <span className="text-[10px]">⌘K</span>
+                </Button>
+              </div>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        {/* ── Modules ── */}
+        <SidebarGroup className="pt-0">
           <SidebarGroupLabel className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Modules</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -111,10 +128,10 @@ export function WorkspaceSidebar({
                       className={cn(module.status !== "active" && "text-muted-foreground/70")}
                     >
                       <Icon className={cn("size-4", module.id === "assistant" ? "text-synth-cyan" : module.id === "vision" ? "text-synth-violet" : "text-muted-foreground")} strokeWidth={1.8} />
-                      <span>{module.label}</span>
+                      <span>{module.label.replace("SYNTH ", "")}</span>
                     </SidebarMenuButton>
                     {module.status !== "active" && (
-                      <SidebarMenuBadge className="bg-synth-violet/10 text-[9px] uppercase text-synth-violet">preview</SidebarMenuBadge>
+                      <SidebarMenuBadge className="bg-synth-violet/10 text-[8px] uppercase text-synth-violet">soon</SidebarMenuBadge>
                     )}
                   </SidebarMenuItem>
                 );
@@ -123,6 +140,7 @@ export function WorkspaceSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* ── Workspace Areas ── */}
         <SidebarGroup className="pt-0">
           <SidebarGroupLabel className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -136,7 +154,7 @@ export function WorkspaceSidebar({
                       <span>{area.label}</span>
                     </SidebarMenuButton>
                     {area.id === "projects" && <SidebarMenuBadge>{String(conversations.length).padStart(2, "0")}</SidebarMenuBadge>}
-                    {area.id === "plugins" && <SidebarMenuBadge className="bg-synth-cyan/10 text-[9px] text-synth-cyan">beta</SidebarMenuBadge>}
+                    {area.id === "plugins" && <SidebarMenuBadge className="bg-synth-cyan/10 text-[8px] text-synth-cyan">beta</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 );
               })}
@@ -144,12 +162,12 @@ export function WorkspaceSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Conversation History */}
+        {/* ── Conversation History ── */}
         <SidebarGroup className="pt-0 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center justify-between px-2">
             <Button
               variant="ghost"
-              className="h-8 min-w-0 justify-start p-0 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground hover:bg-transparent hover:text-foreground"
+              className="h-7 min-w-0 justify-start p-0 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground hover:bg-transparent hover:text-foreground"
               onClick={() => setHistoryOpen((open) => !open)}
               aria-expanded={historyOpen}
             >
@@ -172,22 +190,21 @@ export function WorkspaceSidebar({
                   onChange={(event) => setHistoryQuery(event.target.value)}
                   placeholder="Search conversations…"
                   aria-label="Search conversations"
-                  className="mb-2 h-8 text-xs"
+                  className="mb-2 h-7 text-xs"
                 />
               )}
 
               {visibleHistory.length === 0 ? (
                 <div className="px-2 py-4 text-center">
-                  <MessageIcon className="mx-auto mb-2 size-6 text-muted-foreground/30" />
+                  <MessageIcon className="mx-auto mb-2 size-5 text-muted-foreground/30" />
                   {conversations.length === 0 ? (
-                    <p className="text-[11px] leading-4 text-muted-foreground/60">No conversations yet.<br />Press <Kbd className="mx-0.5">⌘ N</Kbd> to start one.</p>
+                    <p className="text-[11px] leading-4 text-muted-foreground/60">No conversations yet.<br />Press <Kbd className="mx-0.5">⌘N</Kbd> to start one.</p>
                   ) : (
                     <p className="text-[11px] leading-4 text-muted-foreground/60">No matches found.</p>
                   )}
                 </div>
               ) : (
                 <SidebarMenu>
-                  {/* Pinned Section */}
                   {pinnedConversations.length > 0 && (
                     <>
                       <li className="flex items-center gap-1.5 px-2 py-1">
@@ -207,7 +224,6 @@ export function WorkspaceSidebar({
                     </>
                   )}
 
-                  {/* Recent Section */}
                   {recentConversations.length > 0 && (
                     <>
                       {pinnedConversations.length > 0 && (
@@ -241,7 +257,7 @@ export function WorkspaceSidebar({
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-synth-cyan/35 bg-synth-cyan/10 font-mono text-[10px] font-semibold text-synth-cyan">AM</div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <p className="truncate text-[11px] font-semibold">ANONYMIKE</p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Creator profile</p>
+            <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground">Creator</p>
           </div>
           <Button onClick={onSettings} variant="ghost" size="icon-sm" className="ml-auto text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden" aria-label="Open SYNTH settings">
             {(() => { const Icon = iconFor("settings"); return <Icon className="size-4" />; })()}

@@ -5,9 +5,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { iconFor } from "@/lib/icons";
 import type { MessageAction } from "@/modules/chat/types";
 
-const actions: Array<{ id: MessageAction; label: string; icon: string }> = [
-  { id: "copy", label: "Copy", icon: "copy" },
-  { id: "regenerate", label: "Regenerate", icon: "refresh" },
+const actions: Array<{ id: MessageAction; label: string; icon: string; shortcut?: string }> = [
+  { id: "copy", label: "Copy", icon: "copy", shortcut: "C" },
+  { id: "regenerate", label: "Regenerate", icon: "refresh", shortcut: "R" },
   { id: "like", label: "Helpful", icon: "thumbsUp" },
   { id: "share", label: "Share", icon: "share" },
 ];
@@ -30,7 +30,12 @@ export function MessageActions({ onAction }: { onAction: (action: MessageAction)
                 <Icon className="size-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{action.label}</TooltipContent>
+            <TooltipContent side="bottom">
+              <span>{action.label}</span>
+              {action.shortcut && (
+                <span className="ml-1.5 font-mono text-[9px] text-muted-foreground/70">{action.shortcut}</span>
+              )}
+            </TooltipContent>
           </Tooltip>
         );
       })}

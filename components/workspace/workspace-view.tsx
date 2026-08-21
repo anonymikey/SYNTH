@@ -15,7 +15,7 @@ import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { useTheme } from "@/components/theme/theme-provider";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 
-export type WorkspaceDestination = "assistant" | "settings" | ModuleDefinition["id"] | WorkspaceArea;
+export type WorkspaceDestination = "dashboard" | "assistant" | "settings" | ModuleDefinition["id"] | WorkspaceArea;
 
 const AREA_LABELS: Record<WorkspaceArea, string> = {
   history: "Conversation History",
