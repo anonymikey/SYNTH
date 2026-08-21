@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useRef, useImperativeHandle } from "react";
+import { forwardRef, useRef, useState, useImperativeHandle } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AgentModeSelect } from "@/components/assistant/agent-mode-select";
+import { TextType } from "@/components/ui/text-type";
 import { iconFor } from "@/lib/icons";
 import type { SynthModelView, SynthRoutingPreset } from "@/modules/models/hooks/use-model-catalog";
 import type { AgentMode } from "@/types/workspace";
@@ -40,26 +41,10 @@ interface PromptComposerProps {
   onRemoveAttachment: (id: string) => void;
 }
 
-function ComposerButton({ label, icon, onClick }: { label: string; icon: string; onClick: () => void }) {
-  const Icon = iconFor(icon);
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="text-muted-foreground hover:text-synth-cyan"
-          aria-label={label}
-          onClick={onClick}
-        >
-          <Icon className="size-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
+const ATTACHMENT_OPTIONS = [
+  { id: "file", label: "Attach", icon: "paperclip", description: "Upload a file" },
+  { id: "image", label: "Images", icon: "image", description: "Upload an image" },
+] as const;
 
 export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerProps>(
   function PromptComposer(
@@ -84,9 +69,11 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [attachMenuOpen, setAttachMenuOpen] = useState(false);
     const SendIcon = iconFor("send");
     const StopIcon = iconFor("x");
     const XIcon = iconFor("x");
+    const PlusIcon = iconFor("plus");
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -130,17 +117,36 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
 
         {/* Textarea */}
         <div className="p-3">
-          <Textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask SYNTH anything…"
-            aria-label="Ask SYNTH Assistant"
-            className="min-h-[4.5rem] resize-none border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0 md:text-base"
-            disabled={isStreaming}
-            rows={3}
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder=""
+              aria-label="Ask SYNTH Assistant"
+              className="min-h-[4.5rem] resize-none border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0 md:text-base"
+              disabled={isStreaming}
+              rows={3}
+            />
+            {!value && !isStreaming && (
+              <div className="pointer-events-none absolute left-1 top-1 text-sm text-muted-foreground/50 md:text-base">
+                <TextType
+                  text={[
+                    "Ask SYNTH anything…",
+                    "Describe your code problem…",
+                    "What should I build today?",
+                    "Explain this codebase…",
+                  ]}
+                  typingSpeed={65}
+                  deletingSpeed={35}
+                  pauseDuration={2000}
+                  showCursor
+                  cursorCharacter="|"
+                />
+              </div>
+            )}
+          </div>
 
           {/* Attachments */}
           {attachments.length > 0 && (
@@ -167,9 +173,58 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
 
           {/* Actions row */}
           <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-0.5">
-              <ComposerButton label="Attach a file" icon="paperclip" onClick={() => fileInputRef.current?.click()} />
-              <ComposerButton label="Add an image" icon="imagePlus" onClick={() => imageInputRef.current?.click()} />
+            <div className="relative flex items-center gap-0.5">
+              {/* Expandable + button */}
+              <div className="relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={attachMenuOpen ? "default" : "ghost"}
+                      size="icon-sm"
+                      className={`text-muted-foreground hover:text-synth-cyan ${attachMenuOpen ? "bg-synth-cyan/10 text-synth-cyan" : ""}`}
+                      onClick={() => setAttachMenuOpen((prev) => !prev)}
+                      aria-label="Add attachment"
+                      aria-expanded={attachMenuOpen}
+                    >
+                      {attachMenuOpen ? <XIcon className="size-4" /> : <PlusIcon className="size-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{attachMenuOpen ? "Close menu" : "Attach files"}</TooltipContent>
+                </Tooltip>
+
+                {/* Dropdown menu */}
+                {attachMenuOpen && (
+                  <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border bg-card/95 shadow-xl backdrop-blur-sm">
+                    <div className="p-1.5">
+                      {ATTACHMENT_OPTIONS.map((option) => {
+                        const OptIcon = iconFor(option.icon);
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
+                            onClick={() => {
+                              if (option.id === "file") fileInputRef.current?.click();
+                              else if (option.id === "image") imageInputRef.current?.click();
+                              setAttachMenuOpen(false);
+                            }}
+                          >
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-synth-cyan/10 text-synth-cyan">
+                              <OptIcon className="size-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-medium text-foreground">{option.label}</span>
+                              <span className="block text-[10px] text-muted-foreground">{option.description}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <input
                 ref={fileInputRef}
                 className="hidden"

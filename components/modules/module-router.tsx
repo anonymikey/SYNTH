@@ -1,17 +1,17 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { ModuleFrame } from "@/components/modules/module-frame";
-import { ModuleLoading, ModuleStateCard } from "@/components/modules/module-states";
+import { ModuleStateCard } from "@/components/modules/module-states";
 import { SYNTH_MODULES } from "@/lib/config/modules";
 import { iconFor } from "@/lib/icons";
 import type { ModuleRouterProps } from "@/components/modules/types";
 
-const AgentModule = dynamic(() => import("@/components/modules/agent-module").then((module) => module.AgentModule), { loading: () => <ModuleLoading label="SYNTH Agent" /> });
-const CodeModule = dynamic(() => import("@/components/modules/code-module").then((module) => module.CodeModule), { loading: () => <ModuleLoading label="SYNTH Code" /> });
-const DocsModule = dynamic(() => import("@/components/modules/docs-module").then((module) => module.DocsModule), { loading: () => <ModuleLoading label="SYNTH Docs" /> });
-const SearchModule = dynamic(() => import("@/components/modules/search-module").then((module) => module.SearchModule), { loading: () => <ModuleLoading label="SYNTH Search" /> });
-const VisionModule = dynamic(() => import("@/components/modules/vision-module").then((module) => module.VisionModule), { loading: () => <ModuleLoading label="SYNTH Vision" /> });
+/* Direct imports — avoids Turbopack dynamic-chunk sharing issues with lib/icons */
+import { AgentModule } from "@/components/modules/agent-module";
+import { CodeModule } from "@/components/modules/code-module";
+import { DocsModule } from "@/components/modules/docs-module";
+import { SearchModule } from "@/components/modules/search-module";
+import { VisionModule } from "@/components/modules/vision-module";
 
 export function ModuleRouter({ destination, onBackToAssistant, ...moduleProps }: ModuleRouterProps) {
   const definition = SYNTH_MODULES.find((module) => module.id === destination);
