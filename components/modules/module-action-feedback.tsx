@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { iconFor } from "@/lib/icons";
 import type { ModuleActionState } from "@/components/modules/types";
