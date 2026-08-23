@@ -37,7 +37,7 @@ export function CodeViewer({ file, loading, adapterType }: CodeViewerProps) {
         <CardContent className="p-4">
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-4 rounded bg-muted/30" style={{ width: `${60 + Math.random() * 35}%` }} />
+              <div key={i} className="h-4 rounded bg-muted/30" style={{ width: `${60 + ((i * 7 + 3) % 10) * 3.5}%` }} />
             ))}
           </div>
         </CardContent>

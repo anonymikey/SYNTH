@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -61,9 +62,12 @@ export function ConversationProvider({
   children: React.ReactNode;
 }) {
   const [active, setActive] = useState<ConversationState | null>(null);
-  const [summaries, setSummaries] = useState<ConversationSummary[]>(() =>
-    ConversationStore.list()
-  );
+  const [summaries, setSummaries] = useState<ConversationSummary[]>([]);
+
+  // Hydrate summaries from localStorage after mount to avoid SSR/client hydration mismatch
+  useEffect(() => {
+    setSummaries(ConversationStore.list());
+  }, []);
 
   const refresh = useCallback(() => {
     setSummaries(ConversationStore.list());
