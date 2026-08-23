@@ -29,15 +29,14 @@ export function ProjectHeader({ project, recentFiles, onSelectFile }: ProjectHea
 
   const badge = sourceBadge(project.adapterType);
   const github = project.github;
+  const ProjectIcon = iconFor(project.adapterType === "github" ? "gitBranch" : "code-2");
 
   return (
     <Card className="border-synth-cyan/20 bg-synth-cyan/5">
       <CardContent className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-synth-cyan/10 text-synth-cyan">
-            {project.adapterType === "github"
-              ? iconFor("gitBranch")({ className: "size-4" })
-              : iconFor("code-2")({ className: "size-4" })}
+            <ProjectIcon className="size-4" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -96,7 +95,7 @@ export function ProjectHeader({ project, recentFiles, onSelectFile }: ProjectHea
                     className="h-6 gap-1 px-2 text-[9px]"
                     onClick={() => onSelectFile(filePath)}
                   >
-                    {iconFor("clock")({ className: "size-2.5 text-muted-foreground/60" })}
+                    {(() => { const ClockIcon = iconFor("clock"); return <ClockIcon className="size-2.5 text-muted-foreground/60" />; })()}
                     {fileName}
                   </Button>
                 );
