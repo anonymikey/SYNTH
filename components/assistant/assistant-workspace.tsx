@@ -6,6 +6,8 @@ import { ChatThread } from "@/components/chat/chat-thread";
 import { PromptComposer, type ComposerAttachment, type PromptComposerHandle } from "@/components/assistant/prompt-composer";
 import { SuggestionGrid } from "@/components/assistant/suggestion-grid";
 import { WelcomeState } from "@/components/assistant/welcome-state";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DEFAULT_CONTEXT } from "@/lib/config/workspace";
 import { useModelCatalog } from "@/modules/models/hooks/use-model-catalog";
 import { SUGGESTED_PROMPTS } from "@/modules/assistant/constants";
@@ -14,6 +16,7 @@ import { useConversations } from "@/modules/conversation/conversation-provider";
 import type { ChatMessage, MessageAction } from "@/modules/chat/types";
 import type { AgentMode, ProjectSummary } from "@/types/workspace";
 import { useShortcuts } from "@/lib/shortcuts/use-shortcut";
+import { iconFor } from "@/lib/icons";
 
 interface AssistantWorkspaceProps {
   project: ProjectSummary;
@@ -140,52 +143,112 @@ export function AssistantWorkspace({ project, conversationId, composerRef }: Ass
     },
   ]);
 
+  const FullscreenIcon = iconFor("maximize");
+  const SettingsIcon = iconFor("settings");
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="synth-grid pointer-events-none absolute inset-0 opacity-50" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[70%] -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--synth-cyan)_10%,transparent),transparent_70%)]" />
+      {/* Background effects */}
+      <div className="synth-grid pointer-events-none absolute inset-0 opacity-30" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[70%] -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--synth-cyan)_8%,transparent),transparent_70%)]" />
 
+      {/* Header bar */}
+      <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-6 py-3">
+        <div>
+          <h1 className="font-heading text-lg font-semibold text-foreground">
+            AI Chatbot
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Ask anything about your code, research, planning, and creativity
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+                <FullscreenIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Fullscreen</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+                <SettingsIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Options</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Main content area */}
       {showWelcome ? (
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          {/* Center content: orb + title */}
           <WelcomeState />
-          <div className="mx-auto max-w-4xl px-4 pb-6 sm:px-6">
-            <SuggestionGrid
-              suggestions={SUGGESTED_PROMPTS}
-              onSelect={async (suggestion) => {
-                if (chat.isStreaming) return;
-                ensureConversation();
-                setPrompt("");
-                await chat.sendPrompt(suggestion.prompt);
-              }}
+
+          {/* Bottom section: composer + suggestions */}
+          <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-4 sm:px-6">
+            {/* Suggestions below composer */}
+            <div className="mb-4">
+              <SuggestionGrid
+                suggestions={SUGGESTED_PROMPTS}
+                onSelect={async (suggestion) => {
+                  if (chat.isStreaming) return;
+                  ensureConversation();
+                  setPrompt("");
+                  await chat.sendPrompt(suggestion.prompt);
+                }}
+              />
+            </div>
+
+            {/* Composer */}
+            <PromptComposer
+              ref={activeComposerRef}
+              value={prompt}
+              onChange={setPrompt}
+              onSubmit={send}
+              onStop={chat.stop}
+              isStreaming={chat.isStreaming}
+              agentMode={agentMode}
+              onAgentModeChange={setAgentMode}
+              modelId={modelId}
+              models={models}
+              routing={routing}
+              onModelChange={setModelId}
+              attachments={attachments}
+              onAddAttachments={addAttachments}
+              onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
             />
           </div>
         </div>
       ) : (
-        <ChatThread messages={chat.messages} onAction={handleAction} />
-      )}
+        <>
+          <ChatThread messages={chat.messages} onAction={handleAction} />
 
-      <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">
-        <PromptComposer
-          ref={activeComposerRef}
-          value={prompt}
-          onChange={setPrompt}
-          onSubmit={send}
-          onStop={chat.stop}
-          isStreaming={chat.isStreaming}
-          agentMode={agentMode}
-          onAgentModeChange={setAgentMode}
-          modelId={modelId}
-          models={models}
-          routing={routing}
-          onModelChange={setModelId}
-          attachments={attachments}
-          onAddAttachments={addAttachments}
-          onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
-        />
-        <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground/60">
-          {selectedModel?.label ?? "SYNTH model"} · Engine scoped context · provider-neutral
-        </p>
-      </div>
+          {/* Bottom composer (when conversation active) */}
+          <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">
+            <PromptComposer
+              ref={activeComposerRef}
+              value={prompt}
+              onChange={setPrompt}
+              onSubmit={send}
+              onStop={chat.stop}
+              isStreaming={chat.isStreaming}
+              agentMode={agentMode}
+              onAgentModeChange={setAgentMode}
+              modelId={modelId}
+              models={models}
+              routing={routing}
+              onModelChange={setModelId}
+              attachments={attachments}
+              onAddAttachments={addAttachments}
+              onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

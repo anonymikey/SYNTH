@@ -3,7 +3,6 @@
 import { forwardRef, useRef, useState, useImperativeHandle } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -41,11 +40,6 @@ interface PromptComposerProps {
   onRemoveAttachment: (id: string) => void;
 }
 
-const ATTACHMENT_OPTIONS = [
-  { id: "file", label: "Attach", icon: "paperclip", description: "Upload a file" },
-  { id: "image", label: "Images", icon: "image", description: "Upload an image" },
-] as const;
-
 export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerProps>(
   function PromptComposer(
     {
@@ -67,13 +61,15 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     ref
   ) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const imageInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [attachMenuOpen, setAttachMenuOpen] = useState(false);
     const SendIcon = iconFor("send");
     const StopIcon = iconFor("x");
     const XIcon = iconFor("x");
     const PlusIcon = iconFor("plus");
+    const GlobeIcon = iconFor("globe");
+    const SparklesIcon = iconFor("sparkles");
+    const CodeIcon = iconFor("code-2");
+    const MicIcon = iconFor("mic");
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -85,72 +81,34 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Shift+Enter inserts newline (default behavior)
       if (event.key === "Enter" && event.shiftKey) return;
-
-      // Enter (without Shift) sends — this covers both bare Enter and Cmd/Ctrl+Enter
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         onSubmit();
-        return;
       }
     };
 
+    const ACTION_BUTTONS = [
+      { id: "attach", icon: PlusIcon, label: "Attach file", onClick: () => fileInputRef.current?.click() },
+      { id: "globe", icon: GlobeIcon, label: "Search web", onClick: () => {} },
+      { id: "magic", icon: SparklesIcon, label: "AI enhance", onClick: () => {} },
+      { id: "code", icon: CodeIcon, label: "Code mode", onClick: () => {} },
+    ] as const;
+
     return (
-      <Card
-        className="glass-panel overflow-hidden rounded-2xl p-0"
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault();
-          readFiles(event.dataTransfer.files);
-        }}
-      >
-        {/* Top bar: agent mode + model selector */}
-        <div className="flex items-center justify-between gap-3 border-b border-border/80 px-3 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <AgentModeSelect value={agentMode} onChange={onAgentModeChange} />
-            <span className="hidden h-3 w-px bg-border sm:block" />
-            <span className="hidden text-[10px] text-muted-foreground/60 sm:inline">provider-neutral</span>
-          </div>
-          <ModelSelectInline modelId={modelId} models={models} routing={routing} onChange={onModelChange} />
-        </div>
-
-        {/* Textarea */}
-        <div className="p-3">
-          <div className="relative">
-            <Textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(event) => onChange(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder=""
-              aria-label="Ask SYNTH Assistant"
-              className="min-h-[4.5rem] resize-none border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0 md:text-base"
-              disabled={isStreaming}
-              rows={3}
-            />
-            {!value && !isStreaming && (
-              <div className="pointer-events-none absolute left-1 top-1 text-sm text-muted-foreground/50 md:text-base">
-                <TextType
-                  text={[
-                    "Ask SYNTH anything…",
-                    "Describe your code problem…",
-                    "What should I build today?",
-                    "Explain this codebase…",
-                  ]}
-                  typingSpeed={65}
-                  deletingSpeed={35}
-                  pauseDuration={2000}
-                  showCursor
-                  cursorCharacter="|"
-                />
-              </div>
-            )}
-          </div>
-
+      <div className="relative w-full">
+        {/* Main composer container */}
+        <div
+          className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-lg backdrop-blur-sm"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            readFiles(event.dataTransfer.files);
+          }}
+        >
           {/* Attachments */}
           {attachments.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Selected attachments">
+            <div className="flex flex-wrap gap-1.5 border-b border-border/50 px-4 pt-3" aria-label="Selected attachments">
               {attachments.map((attachment) => (
                 <Badge
                   key={attachment.id}
@@ -171,59 +129,56 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
             </div>
           )}
 
-          {/* Actions row */}
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="relative flex items-center gap-0.5">
-              {/* Expandable + button */}
-              <div className="relative">
-                <Tooltip>
+          {/* Textarea */}
+          <div className="px-4 pt-3">
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder=""
+                aria-label="Ask SYNTH anything"
+                className="min-h-[2.5rem] resize-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 md:text-base"
+                disabled={isStreaming}
+                rows={1}
+              />
+              {!value && !isStreaming && (
+                <div className="pointer-events-none absolute left-0 top-0 text-sm text-muted-foreground/50 md:text-base">
+                  <TextType
+                    text={["Ask anything..."]}
+                    typingSpeed={65}
+                    deletingSpeed={35}
+                    pauseDuration={2000}
+                    showCursor
+                    cursorCharacter="|"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom action bar */}
+          <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
+            {/* Left action buttons */}
+            <div className="flex items-center gap-1">
+              {ACTION_BUTTONS.map((btn) => (
+                <Tooltip key={btn.id}>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
-                      variant={attachMenuOpen ? "default" : "ghost"}
+                      variant="ghost"
                       size="icon-sm"
-                      className={`text-muted-foreground hover:text-synth-cyan ${attachMenuOpen ? "bg-synth-cyan/10 text-synth-cyan" : ""}`}
-                      onClick={() => setAttachMenuOpen((prev) => !prev)}
-                      aria-label="Add attachment"
-                      aria-expanded={attachMenuOpen}
+                      className="size-8 text-muted-foreground/60 hover:text-foreground"
+                      onClick={btn.onClick}
+                      aria-label={btn.label}
                     >
-                      {attachMenuOpen ? <XIcon className="size-4" /> : <PlusIcon className="size-4" />}
+                      <btn.icon className="size-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{attachMenuOpen ? "Close menu" : "Attach files"}</TooltipContent>
+                  <TooltipContent>{btn.label}</TooltipContent>
                 </Tooltip>
-
-                {/* Dropdown menu */}
-                {attachMenuOpen && (
-                  <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border bg-card/95 shadow-xl backdrop-blur-sm">
-                    <div className="p-1.5">
-                      {ATTACHMENT_OPTIONS.map((option) => {
-                        const OptIcon = iconFor(option.icon);
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-                            onClick={() => {
-                              if (option.id === "file") fileInputRef.current?.click();
-                              else if (option.id === "image") imageInputRef.current?.click();
-                              setAttachMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-synth-cyan/10 text-synth-cyan">
-                              <OptIcon className="size-4" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-medium text-foreground">{option.label}</span>
-                              <span className="block text-[10px] text-muted-foreground">{option.description}</span>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+              ))}
 
               <input
                 ref={fileInputRef}
@@ -236,61 +191,68 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
                 }}
                 aria-label="Attach files"
               />
-              <input
-                ref={imageInputRef}
-                className="hidden"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(event) => {
-                  if (event.target.files) readFiles(event.target.files);
-                  event.currentTarget.value = "";
-                }}
-                aria-label="Attach images"
-              />
             </div>
 
-            {isStreaming ? (
+            {/* Right buttons: mic + send */}
+            <div className="flex items-center gap-1.5">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="icon"
-                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                    onClick={onStop}
-                    aria-label="Stop generating"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-8 text-muted-foreground/60 hover:text-foreground"
+                    aria-label="Voice input"
                   >
-                    <StopIcon className="size-4" />
+                    <MicIcon className="size-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Stop generating</TooltipContent>
+                <TooltipContent>Voice input</TooltipContent>
               </Tooltip>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="bg-synth-cyan text-slate-950 hover:bg-synth-cyan/85"
-                    onClick={onSubmit}
-                    disabled={!value.trim()}
-                    aria-label="Send prompt"
-                  >
-                    <SendIcon className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Send · Enter</TooltipContent>
-              </Tooltip>
-            )}
+
+              {isStreaming ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      className="size-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+                      onClick={onStop}
+                      aria-label="Stop generating"
+                    >
+                      <StopIcon className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Stop generating</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      className="size-8 bg-synth-cyan text-slate-950 hover:bg-synth-cyan/85"
+                      onClick={onSubmit}
+                      disabled={!value.trim()}
+                      aria-label="Send prompt"
+                    >
+                      <SendIcon className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Send &middot; Enter</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Footer hint */}
-        <div className="border-t border-border/70 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground/60">
-          Enter to send · ⇧+Enter for newline · Drop files to attach
+        {/* Top-right controls (agent mode + model) */}
+        <div className="absolute right-3 top-2 flex items-center gap-2">
+          <AgentModeSelect value={agentMode} onChange={onAgentModeChange} />
+          <ModelSelectInline modelId={modelId} models={models} routing={routing} onChange={onModelChange} />
         </div>
-      </Card>
+      </div>
     );
   }
 );
@@ -312,10 +274,9 @@ function ModelSelectInline({
 
   return (
     <Select value={modelId} onValueChange={onChange}>
-      <SelectTrigger size="sm" className="max-w-[155px] border-transparent bg-transparent font-mono text-[10px] text-muted-foreground">
+      <SelectTrigger size="sm" className="max-w-[120px] border-transparent bg-transparent font-mono text-[10px] text-muted-foreground">
         <SelectValue aria-label={displayLabel}>
           <span className="truncate">{displayLabel}</span>
-          {selectedModel?.free && <span className="ml-1 text-synth-success">free</span>}
         </SelectValue>
       </SelectTrigger>
       <SelectContent align="end" className="max-h-[280px]">

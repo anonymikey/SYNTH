@@ -1,36 +1,24 @@
-import { Badge } from "@/components/ui/badge";
-import { iconFor } from "@/lib/icons";
-
 export function WelcomeState() {
-  const AssistantIcon = iconFor("sparkles");
-
   return (
-    <section className="mx-auto max-w-3xl px-4 pb-4 pt-8 text-center sm:pt-12">
-      {/* Icon */}
-      <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl border border-synth-cyan/20 bg-synth-cyan/8 text-synth-cyan shadow-[0_0_50px_color-mix(in_srgb,var(--synth-cyan)_8%,transparent)]">
-        <AssistantIcon className="size-7" />
+    <section className="relative flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-4">
+      {/* Glowing orb animation */}
+      <div className="pointer-events-none relative mb-8">
+        {/* Outer glow */}
+        <div className="absolute left-1/2 top-1/2 size-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--synth-cyan)_12%,transparent),transparent_70%)] blur-2xl" />
+        {/* Middle ring */}
+        <div className="absolute left-1/2 top-1/2 size-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-synth-cyan/15 shadow-[0_0_60px_color-mix(in_srgb,var(--synth-cyan)_8%,transparent)]" />
+        {/* Inner orb */}
+        <div className="relative flex size-24 items-center justify-center rounded-full bg-[radial-gradient(circle_at_40%_40%,color-mix(in_srgb,var(--synth-cyan)_18%,transparent),color-mix(in_srgb,var(--synth-violet)_8%,transparent)_60%,transparent_80%)] shadow-[0_0_80px_color-mix(in_srgb,var(--synth-cyan)_10%,transparent),inset_0_0_40px_color-mix(in_srgb,var(--synth-cyan)_5%,transparent)]">
+          <div className="size-16 rounded-full border border-synth-cyan/20 shadow-[0_0_30px_var(--synth-cyan)_20%]" />
+        </div>
       </div>
 
-      {/* Status badge */}
-      <Badge
-        variant="outline"
-        className="mb-5 gap-2 rounded-full border-synth-cyan/20 bg-synth-cyan/5 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-synth-cyan"
-      >
-        <span className="size-1.5 rounded-full bg-synth-success shadow-[0_0_10px_var(--synth-success)]" />
-        SYNTH Assistant / ready
-      </Badge>
-
-      {/* Main heading */}
-      <h1 className="font-heading text-3xl font-extrabold tracking-[-0.06em] text-foreground sm:text-5xl">
-        What are we{" "}
-        <span className="bg-gradient-to-r from-synth-cyan to-blue-400 bg-clip-text text-transparent">
-          building
-        </span>{" "}
-        today?
+      {/* Title */}
+      <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        SYNTH Assistant
       </h1>
-
-      <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
-        Your AI assistant for conversations, coding, research, and creativity.
+      <p className="mt-2 max-w-md text-center text-sm text-muted-foreground">
+        Ask anything about your code, research, planning, and creativity.
       </p>
     </section>
   );
