@@ -177,8 +177,8 @@ export function SynthDashboard({
           <SectionHeading label="Current Project" />
           <Card className="mt-3">
             <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-synth-cyan/10 text-synth-cyan">
-                <span className="font-heading text-sm font-bold">S</span>
+              <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-synth-cyan/10">
+                <img src="/synth-logo.png" alt="" className="size-full object-cover" width={40} height={40} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{DEFAULT_PROJECT.name}</p>

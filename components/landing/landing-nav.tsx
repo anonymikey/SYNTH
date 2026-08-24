@@ -31,8 +31,8 @@ export function LandingNav() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-synth-cyan/50 bg-synth-cyan/10 text-synth-cyan shadow-[0_0_16px_color-mix(in_srgb,var(--synth-cyan)_12%,transparent)]">
-            <span className="font-heading text-xs font-bold">S</span>
+          <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-synth-cyan/50 bg-synth-cyan/10 shadow-[0_0_16px_color-mix(in_srgb,var(--synth-cyan)_12%,transparent)]">
+            <img src="/synth-logo.png" alt="" className="size-full object-cover" width={28} height={28} />
           </div>
           <span className="font-heading text-sm font-extrabold tracking-[-0.04em] text-foreground">
             SYNTH
