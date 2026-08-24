@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useProject } from "@/lib/project/use-project";
 import { CodeToolbar } from "@/components/modules/code-toolbar";
@@ -83,7 +84,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   if (proj.loadingProject) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="size-6 animate-spin rounded-full border-2 border-synth-cyan/30 border-t-synth-cyan" />
+        <ThinkingOrb state="connecting" size={64} theme="dark" />
         <p className="text-xs text-muted-foreground">Loading project context...</p>
       </div>
     );

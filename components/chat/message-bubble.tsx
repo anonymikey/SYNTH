@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { Badge } from "@/components/ui/badge";
 import { iconFor } from "@/lib/icons";
 import type { ChatMessage, MessageAction } from "@/modules/chat/types";
@@ -71,9 +72,12 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
             <CheckIcon className="size-3 text-synth-success" />
           )}
           {!isUser && message.status === "streaming" && (
-            <Badge variant="outline" className="gap-1 border-synth-cyan/25 bg-synth-cyan/5 px-1.5 py-0 font-mono text-[8px] text-synth-cyan">
-              <span className="size-1 animate-pulse rounded-full bg-synth-cyan" /> streaming
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <ThinkingOrb state="weaving" size={20} theme="dark" />
+              <Badge variant="outline" className="border-synth-cyan/25 bg-synth-cyan/5 px-1.5 py-0 font-mono text-[8px] text-synth-cyan">
+                streaming
+              </Badge>
+            </div>
           )}
         </div>
 
@@ -81,9 +85,9 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
         {message.content ? (
           <MessageContent content={message.content} />
         ) : message.status === "pending" ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-            <span className="size-1.5 animate-pulse rounded-full bg-synth-cyan" />
-            Thinking…
+          <div className="flex items-center gap-3 py-1">
+            <ThinkingOrb state="working" size={20} theme="dark" />
+            <span className="text-sm text-muted-foreground/70">Thinking…</span>
           </div>
         ) : null}
 

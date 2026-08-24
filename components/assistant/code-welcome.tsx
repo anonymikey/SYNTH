@@ -1,5 +1,6 @@
 "use client";
 
+import { ThinkingOrb } from "thinking-orbs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,8 +41,8 @@ export function CodeWelcome({ project, onOpenFiles, onQuickAction }: CodeWelcome
       <div className="relative mx-auto w-full max-w-3xl px-4 pb-12 pt-8 sm:px-6 sm:pt-16">
         {/* Icon + Badge */}
         <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl border border-synth-cyan/25 bg-synth-cyan/10 text-synth-cyan shadow-[0_0_40px_color-mix(in_srgb,var(--synth-cyan)_10%,transparent)]">
-            <CodeIcon className="size-6" />
+          <div className="mb-4">
+            <ThinkingOrb state="searching" size={64} theme="dark" />
           </div>
 
           <Badge

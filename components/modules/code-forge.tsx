@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -136,14 +137,16 @@ export function CodeForge({
           {/* Welcome / context */}
           {messages.length === 0 && !showResult && (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-synth-violet/10 text-synth-violet">
-                <span className="text-[10px] font-bold">⚡</span>
-              </div>
+              <ThinkingOrb
+                state={filePath ? "connecting" : "breathing"}
+                size={20}
+                theme="dark"
+              />
               <div>
                 <p className="text-[11px] font-medium text-foreground">SYNTH Forge</p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">
                   {filePath
-                    ? `Analyzing ${filePath.split("/").pop()}`
+                    ? `Ready to analyze ${filePath.split("/").pop()}`
                     : "Select a file to begin"}
                 </p>
               </div>
@@ -177,8 +180,8 @@ export function CodeForge({
                 )}
               </div>
               {isBusy && !hasOutput && (
-                <div className="flex items-center gap-2 py-2">
-                  <div className="size-3 animate-spin rounded-full border-2 border-synth-violet/30 border-t-synth-violet" />
+                <div className="flex items-center gap-2.5 py-2">
+                  <ThinkingOrb state="solving" size={20} theme="dark" />
                   <span className="text-[10px] text-muted-foreground">Analyzing...</span>
                 </div>
               )}
