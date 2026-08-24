@@ -24,7 +24,7 @@ export function CTASection() {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/auth"
+              href="/app"
               className="group inline-flex items-center gap-2.5 rounded-xl bg-synth-cyan px-8 py-4 font-heading text-sm font-bold tracking-tight text-[#061014] shadow-[0_0_40px_color-mix(in_srgb,var(--synth-cyan)_20%,transparent)] transition-all duration-200 hover:shadow-[0_0_60px_color-mix(in_srgb,var(--synth-cyan)_32%,transparent)] hover:brightness-110"
             >
               Launch SYNTH

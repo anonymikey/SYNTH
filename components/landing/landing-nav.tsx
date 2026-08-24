@@ -55,7 +55,7 @@ export function LandingNav() {
         {/* CTA */}
         <div className="flex items-center gap-3">
           <Link
-            href="/auth"
+            href="/app"
             className="rounded-lg bg-synth-cyan/10 px-4 py-1.5 font-heading text-[11px] font-bold tracking-tight text-synth-cyan transition-all hover:bg-synth-cyan/20"
           >
             Launch
