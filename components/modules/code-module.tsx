@@ -127,6 +127,10 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
             setShowIDE(true);
             void handleAction("run-code-action", action);
           }}
+          onSendMessage={(msg) => {
+            setShowIDE(true);
+            void handleAction("run-code-action", msg);
+          }}
         />
       </div>
     );
