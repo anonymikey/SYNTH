@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { iconFor } from "@/lib/icons";
@@ -32,7 +31,7 @@ export function CodeExplorer({
 }: CodeExplorerProps) {
   const [tab, setTab] = useState<ExplorerTab>("files");
   const [query, setQuery] = useState("");
-  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(["src", "app", "components", "lib"]));
 
   // Build a tree structure from flat file list
   const tree = useMemo(() => {
@@ -91,7 +90,7 @@ export function CodeExplorer({
         setTab("files");
       }
     },
-    [onSearch, tab]
+    [onSearch, tab],
   );
 
   const FileIcon = iconFor("fileCode");
@@ -101,150 +100,156 @@ export function CodeExplorer({
   const SearchIcon = iconFor("search");
 
   return (
-    <Card className="min-w-0">
-      <CardHeader className="gap-2 border-b border-border/70 pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm">Explorer</CardTitle>
-          <Badge variant="outline" className="font-mono text-[9px]">{files.length}</Badge>
-        </div>
-        {/* Tab switcher */}
-        <div className="flex gap-1">
+    <div className="flex h-full min-w-0 flex-col border-r border-border/60 bg-background/50">
+      {/* Tab bar */}
+      <div className="flex h-8 shrink-0 items-center gap-0 border-b border-border/40 px-1">
+        {([
+          { id: "files" as const, label: "Files", icon: iconFor("files") },
+          { id: "search" as const, label: "Search", icon: SearchIcon },
+          { id: "recent" as const, label: "Recent", icon: ClockIcon },
+        ]).map((t) => (
           <Button
+            key={t.id}
             type="button"
-            variant={tab === "files" ? "default" : "ghost"}
-            size="sm"
-            className="h-7 gap-1 px-2 text-[10px]"
-            onClick={() => { setTab("files"); setQuery(""); }}
+            variant="ghost"
+            className={`h-6 gap-1 px-2 text-[10px] ${
+              tab === t.id
+                ? "bg-synth-cyan/10 text-synth-cyan"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => {
+              setTab(t.id);
+              if (t.id !== "search") setQuery("");
+            }}
           >
-            {(() => { const Ic = iconFor("files"); return <Ic className="size-3" />; })()} Files
+            <t.icon className="size-3" />
+            {t.label}
           </Button>
-          <Button
-            type="button"
-            variant={tab === "search" ? "default" : "ghost"}
-            size="sm"
-            className="h-7 gap-1 px-2 text-[10px]"
-            onClick={() => setTab("search")}
-          >
-            <SearchIcon className="size-3" /> Search
-          </Button>
-          <Button
-            type="button"
-            variant={tab === "recent" ? "default" : "ghost"}
-            size="sm"
-            className="h-7 gap-1 px-2 text-[10px]"
-            onClick={() => setTab("recent")}
-          >
-            <ClockIcon className="size-3" /> Recent
-          </Button>
-        </div>
-        {tab === "files" && (
+        ))}
+        <div className="flex-1" />
+        <Badge variant="outline" className="font-mono text-[7px] text-muted-foreground/60">
+          {files.length}
+        </Badge>
+      </div>
+
+      {/* Search/filter input */}
+      {tab === "files" && (
+        <div className="px-2 py-1.5">
           <Input
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Filter files..."
             aria-label="Filter files"
-            className="h-7 text-xs"
+            className="h-6 text-[10px]"
           />
-        )}
-      </CardHeader>
-      <CardContent className="p-2">
-        <ScrollArea className="h-[20rem] lg:h-[32rem]">
+        </div>
+      )}
+
+      {/* Content */}
+      <ScrollArea className="flex-1">
+        <div className="p-1">
           {/* FILES TAB */}
           {tab === "files" && (
-            <div className="space-y-0.5 pr-2" role="list" aria-label="Project file tree">
-              {/* Directories first */}
+            <div className="space-y-px" role="list" aria-label="Project file tree">
               {dirPaths.map((dirPath) => {
                 const isExpanded = expandedDirs.has(dirPath);
                 const children = tree.dirs.get(dirPath) ?? [];
                 const dirName = dirPath.split("/").pop() ?? dirPath;
+                const depth = dirPath.split("/").length - 1;
                 return (
                   <div key={`dir-${dirPath}`}>
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-left text-muted-foreground hover:text-foreground"
+                      className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-[3px] text-left text-muted-foreground hover:bg-synth-cyan/5 hover:text-foreground`}
+                      style={{ paddingLeft: `${depth * 12 + 4}px` }}
                       onClick={() => toggleDir(dirPath)}
                       aria-expanded={isExpanded}
                     >
-                      {isExpanded
-                        ? <DirOpenIcon className="size-3.5 shrink-0 text-synth-cyan" />
-                        : <DirIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
-                      }
+                      {isExpanded ? (
+                        <DirOpenIcon className="size-3.5 shrink-0 text-synth-cyan" />
+                      ) : (
+                        <DirIcon className="size-3.5 shrink-0 text-muted-foreground/40" />
+                      )}
                       <span className="text-[11px] font-medium">{dirName}/</span>
-                    </Button>
+                    </button>
                     {isExpanded && children.map((file) => (
-                      <FileRow key={file.path} file={file} selectedPath={selectedPath} onSelect={onSelect} depth={1} />
+                      <FileRow key={file.path} file={file} selectedPath={selectedPath} onSelect={onSelect} depth={depth + 1} />
                     ))}
                   </div>
                 );
               })}
-              {/* Root files */}
               {tree.rootFiles.map((file) => (
                 <FileRow key={file.path} file={file} selectedPath={selectedPath} onSelect={onSelect} depth={0} />
               ))}
               {filteredFiles.length === 0 && (
-                <p className="px-2 py-5 text-center text-[11px] text-muted-foreground">No files match that filter.</p>
+                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">No files match.</p>
               )}
             </div>
           )}
 
           {/* SEARCH TAB */}
           {tab === "search" && (
-            <div className="space-y-0.5 pr-2">
-              <Input
-                value={query}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search files and content..."
-                aria-label="Search files"
-                className="h-7 text-xs"
-              />
+            <div className="space-y-px">
+              <div className="px-1 py-1.5">
+                <Input
+                  value={query}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search files and content..."
+                  aria-label="Search files"
+                  className="h-6 text-[10px]"
+                />
+              </div>
               {searching && (
-                <p className="px-2 py-3 text-center text-[11px] text-muted-foreground">Searching...</p>
+                <p className="px-2 py-4 text-center text-[10px] text-muted-foreground">Searching...</p>
               )}
               {!searching && searchResults.length === 0 && query.trim().length >= 2 && (
-                <p className="px-2 py-5 text-center text-[11px] text-muted-foreground">No results found.</p>
+                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">No results found.</p>
               )}
               {searchResults.map((result, i) => (
-                <Button
+                <button
                   key={`${result.path}-${result.line ?? i}`}
                   type="button"
-                  variant="ghost"
-                  className="h-auto w-full justify-start gap-2 px-2 py-2 text-left"
+                  className="flex w-full items-start gap-2 rounded-sm px-2 py-2 text-left hover:bg-synth-cyan/5"
                   onClick={() => onSelect(result.path)}
                 >
-                  <FileIcon className="size-3.5 shrink-0 text-synth-cyan" />
+                  <FileIcon className="mt-0.5 size-3.5 shrink-0 text-synth-cyan" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[11px] font-medium text-foreground">{result.path}{result.line ? `:${result.line}` : ""}</span>
-                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{result.snippet}</span>
+                    <span className="block truncate text-[11px] font-medium text-foreground">
+                      {result.path}{result.line ? `:${result.line}` : ""}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">
+                      {result.snippet}
+                    </span>
                   </span>
-                </Button>
+                </button>
               ))}
             </div>
           )}
 
           {/* RECENT TAB */}
           {tab === "recent" && (
-            <div className="space-y-0.5 pr-2">
+            <div className="space-y-px">
               {recentFiles.length === 0 && (
-                <p className="px-2 py-5 text-center text-[11px] text-muted-foreground">No recently viewed files.</p>
+                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">
+                  No recently viewed files.
+                </p>
               )}
               {recentFiles.map((filePath) => (
-                <Button
+                <button
                   key={filePath}
                   type="button"
-                  variant="ghost"
-                  className="h-auto w-full justify-start gap-2 px-2 py-2 text-left"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-synth-cyan/5"
                   onClick={() => onSelect(filePath)}
                 >
-                  <ClockIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
+                  <ClockIcon className="size-3.5 shrink-0 text-muted-foreground/40" />
                   <span className="min-w-0 truncate text-[11px] text-muted-foreground">{filePath}</span>
-                </Button>
+                </button>
               ))}
             </div>
           )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
 
@@ -260,24 +265,33 @@ function FileRow({
   depth: number;
 }) {
   const isSelected = file.path === selectedPath;
-  const FileIcon = iconFor(file.extension === "css" ? "fileText" : "fileCode");
+  const ext = file.extension;
+  const iconKey = ext === "css" || ext === "scss" ? "fileText" : ext === "json" ? "fileText" : "fileCode";
+  const FileIcon = iconFor(iconKey);
   const fileName = file.path.split("/").pop() ?? file.path;
 
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      className={`h-auto w-full justify-start gap-2 px-2 py-1.5 text-left ${depth > 0 ? "ml-3" : ""} ${isSelected ? "border border-synth-cyan/25 bg-synth-cyan/5 text-foreground" : "text-muted-foreground"}`}
+      className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-[3px] text-left ${
+        isSelected
+          ? "bg-synth-cyan/10 text-foreground"
+          : "text-muted-foreground hover:bg-synth-cyan/5 hover:text-foreground"
+      }`}
+      style={{ paddingLeft: `${depth * 12 + 4}px` }}
       onClick={() => onSelect(file.path)}
       aria-pressed={isSelected}
     >
-      <FileIcon className={`size-3.5 shrink-0 ${isSelected ? "text-synth-cyan" : "text-muted-foreground/60"}`} aria-hidden="true" />
+      <FileIcon
+        className={`size-3.5 shrink-0 ${isSelected ? "text-synth-cyan" : "text-muted-foreground/40"}`}
+        aria-hidden="true"
+      />
       <span className="min-w-0 flex-1 truncate text-[11px]">{fileName}</span>
       {file.size > 0 && (
-        <span className="shrink-0 font-mono text-[8px] text-muted-foreground/50">
+        <span className="shrink-0 font-mono text-[7px] text-muted-foreground/40">
           {file.size < 1024 ? `${file.size}B` : `${(file.size / 1024).toFixed(1)}K`}
         </span>
       )}
-    </Button>
+    </button>
   );
 }

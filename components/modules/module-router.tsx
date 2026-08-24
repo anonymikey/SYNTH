@@ -20,9 +20,17 @@ export function ModuleRouter({ destination, onBackToAssistant, ...moduleProps }:
   const title = definition?.label ?? "SYNTH module";
   const description = definition?.description ?? "A provider-neutral SYNTH workspace module.";
 
+  /* Code gets its own full-bleed IDE layout — no ModuleFrame wrapper */
+  if (destination === "code") {
+    return (
+      <section className="relative min-h-0 flex-1 overflow-hidden">
+        <CodeModule {...moduleProps} />
+      </section>
+    );
+  }
+
   let content: React.ReactNode;
   if (destination === "agent") content = <AgentModule {...moduleProps} />;
-  else if (destination === "code") content = <CodeModule {...moduleProps} />;
   else if (destination === "docs") content = <DocsModule {...moduleProps} />;
   else if (destination === "search") content = <SearchModule {...moduleProps} />;
   else if (destination === "vision") content = <VisionModule {...moduleProps} />;
