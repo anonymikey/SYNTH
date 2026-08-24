@@ -9,6 +9,7 @@ import { CodeTabs, type Tab } from "@/components/modules/code-tabs";
 import { CodeViewer } from "@/components/modules/code-viewer";
 import { CodePreview } from "@/components/modules/code-preview";
 import { CodeForge } from "@/components/modules/code-forge";
+import { CodeWelcome } from "@/components/assistant/code-welcome";
 import type { ModuleAction, ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
 import { useEngineAction } from "@/components/modules/use-engine-action";
 
@@ -23,6 +24,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   // Tab management
   const [openTabs, setOpenTabs] = useState<Tab[]>([]);
+  const [showIDE, setShowIDE] = useState(false);
 
   // Sync selected file with tabs
   useEffect(() => {
@@ -103,6 +105,33 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
     );
   }
 
+  // Welcome state: show CodeWelcome when no file is selected and IDE not yet opened
+  if (!showIDE && !proj.selectedPath) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden">
+        {/* Toolbar */}
+        <CodeToolbar
+          project={proj.project}
+          showExplorer={showExplorer}
+          showPreview={showPreview}
+          showForge={showForge}
+          onToggleExplorer={() => setShowExplorer((o) => !o)}
+          onTogglePreview={() => setShowPreview((o) => !o)}
+          onToggleForge={() => setShowForge((o) => !o)}
+        />
+        <CodeWelcome
+          project={proj.project}
+          onOpenFiles={() => setShowIDE(true)}
+          onQuickAction={(action) => {
+            setShowIDE(true);
+            void handleAction("run-code-action", action);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Once a file is selected or IDE is opened, show the full IDE
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Toolbar */}
