@@ -16,6 +16,7 @@ interface CodeToolbarProps {
   onTogglePreview: () => void;
   onToggleForge: () => void;
   onToggleSidebar?: () => void;
+  onNewChat?: () => void;
 }
 
 export function CodeToolbar({
@@ -27,11 +28,13 @@ export function CodeToolbar({
   onTogglePreview,
   onToggleForge,
   onToggleSidebar,
+  onNewChat,
 }: CodeToolbarProps) {
-  const ProjectIcon = iconFor(project?.adapterType === "github" ? "gitBranch" : "code-2");
+  const ProjectIcon = iconFor(project?.adapterType === "github" ? "gitBranch" : "code");
   const FilesIcon = iconFor("files");
   const PreviewIcon = iconFor("panelRight");
   const ForgeIcon = iconFor("sparkles");
+  const PlusIcon = iconFor("plus");
 
   return (
     <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border/60 bg-background/95 px-2 backdrop-blur-sm">
@@ -99,6 +102,27 @@ export function CodeToolbar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* New chat button */}
+      {onNewChat && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 px-2 text-[9px] text-muted-foreground hover:text-foreground"
+              onClick={onNewChat}
+            >
+              <PlusIcon className="size-3" />
+              <span className="hidden sm:inline">New Chat</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Start new conversation</TooltipContent>
+        </Tooltip>
+      )}
+
+      <Separator orientation="vertical" className="mx-0.5 h-3" />
 
       {/* Panel toggles */}
       <div className="flex items-center gap-0.5">

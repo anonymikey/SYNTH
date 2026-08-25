@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
+import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useProject } from "@/lib/project/use-project";
 import { CodeToolbar } from "@/components/modules/code-toolbar";
@@ -10,10 +11,20 @@ import { CodeTabs, type Tab } from "@/components/modules/code-tabs";
 import { CodeViewer } from "@/components/modules/code-viewer";
 import { CodePreview } from "@/components/modules/code-preview";
 import { CodeForge } from "@/components/modules/code-forge";
-import { CodeSidebar, type CodeDraft } from "@/components/modules/code-sidebar";
 import { CodeWelcome, type CodeChatMessage } from "@/components/assistant/code-welcome";
 import type { ModuleAction, ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
 import { useEngineAction } from "@/components/modules/use-engine-action";
+import { iconFor } from "@/lib/icons";
+
+/* ------------------------------------------------------------------ */
+/*  Mobile tab type                                                     */
+/* ------------------------------------------------------------------ */
+
+type MobileTab = "code" | "preview" | "forge";
+
+/* ------------------------------------------------------------------ */
+/*  CodeModule                                                          */
+/* ------------------------------------------------------------------ */
 
 export function CodeModule({ project, context, onAction }: WorkspaceModuleProps) {
   const proj = useProject();
@@ -21,18 +32,29 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   /* ---- Layout state ---- */
   const [showIDE, setShowIDE] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
   const [showExplorer, setShowExplorer] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [showForge, setShowForge] = useState(true);
 
+  /* ---- Mobile ---- */
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("code");
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+
   /* ---- Chat / drafts state ---- */
   const [chatMessages, setChatMessages] = useState<CodeChatMessage[]>([]);
-  const [drafts, setDrafts] = useState<CodeDraft[]>([]);
-  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
 
   /* ---- Tab management ---- */
   const [openTabs, setOpenTabs] = useState<Tab[]>([]);
+
+  /* ---- Responsive detection ---- */
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Sync selected file with tabs
   useEffect(() => {
@@ -55,17 +77,17 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   const handleTabClose = useCallback(
     (path: string) => {
-      setOpenTabs((prev) => prev.filter((t) => t.path !== path));
-      if (proj.selectedPath === path) {
-        setOpenTabs((prev) => {
-          const idx = openTabs.findIndex((t) => t.path === path);
-          const next = prev[idx] ?? prev[idx - 1];
-          if (next) proj.loadFile(next.path);
-          return prev;
-        });
-      }
+      setOpenTabs((prev) => {
+        const next = prev.filter((t) => t.path !== path);
+        if (proj.selectedPath === path) {
+          const idx = prev.findIndex((t) => t.path === path);
+          const fallback = next[idx] ?? next[idx - 1];
+          if (fallback) proj.loadFile(fallback.path);
+        }
+        return next;
+      });
     },
-    [proj, openTabs],
+    [proj],
   );
 
   /* ---- Forge action handler ---- */
@@ -90,7 +112,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   /* ---- Send message from welcome state ---- */
   const handleSendMessage = useCallback(
     (text: string) => {
-      // Add user message
       const userMsg: CodeChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
@@ -98,33 +119,10 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         timestamp: Date.now(),
       };
       setChatMessages((prev) => [...prev, userMsg]);
-
-      // Create draft if none active
-      if (!activeDraftId) {
-        const draftId = crypto.randomUUID();
-        const draft: CodeDraft = {
-          id: draftId,
-          title: text.slice(0, 60),
-          timestamp: Date.now(),
-          messageCount: 1,
-        };
-        setDrafts((prev) => [draft, ...prev]);
-        setActiveDraftId(draftId);
-      } else {
-        setDrafts((prev) =>
-          prev.map((d) =>
-            d.id === activeDraftId
-              ? { ...d, timestamp: Date.now(), messageCount: d.messageCount + 1 }
-              : d,
-          ),
-        );
-      }
-
-      // Open IDE and send to forge
       setShowIDE(true);
       void handleAction("run-code-action", text);
     },
-    [activeDraftId, handleAction],
+    [handleAction],
   );
 
   /* ---- Quick action from welcome state ---- */
@@ -134,44 +132,32 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         setShowIDE(true);
         return;
       }
+      // Handle open:file actions
+      if (action.startsWith("open:")) {
+        const path = action.slice(5);
+        setShowIDE(true);
+        proj.loadFile(path);
+        return;
+      }
       handleSendMessage(action);
     },
-    [handleSendMessage],
+    [handleSendMessage, proj],
   );
 
   /* ---- New chat ---- */
   const handleNewChat = useCallback(() => {
     setChatMessages([]);
-    setActiveDraftId(null);
     setShowIDE(false);
     proj.clearSelection();
     setOpenTabs([]);
   }, [proj]);
 
-  /* ---- Select draft ---- */
-  const handleSelectDraft = useCallback((_id: string) => {
-    // For now, just select — full draft persistence is a future feature
-    setActiveDraftId(_id);
-  }, []);
-
-  /* ---- Responsive: collapse sidebar on mobile ---- */
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    if (mq.matches) setShowSidebar(false);
-    const handler = (e: MediaQueryListEvent) => {
-      if (e.matches) setShowSidebar(false);
-      else setShowSidebar(true);
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
   // Loading state
   if (proj.loadingProject) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
-        <ThinkingOrb state="connecting" size={64} theme="dark" />
-        <p className="text-xs text-muted-foreground">Loading project context...</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <ThinkingOrb state="connecting" size={20} theme="dark" />
+        <p className="text-[10px] text-muted-foreground/50">Loading project...</p>
       </div>
     );
   }
@@ -179,11 +165,11 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   // Error state
   if (proj.error && !proj.project) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm font-medium text-destructive">Failed to load project.</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <p className="text-xs font-medium text-destructive">Failed to load project.</p>
         <button
           type="button"
-          className="text-xs text-synth-cyan hover:underline"
+          className="text-[10px] text-synth-cyan hover:underline"
           onClick={() => proj.refreshFiles()}
         >
           Retry
@@ -193,158 +179,256 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   }
 
   /* ================================================================= */
-  /*  WELCOME STATE — v0-style: sidebar + center chat                  */
+  /*  MOBILE LAYOUT                                                     */
   /* ================================================================= */
-  if (!showIDE && !proj.selectedPath) {
+  if (isMobile) {
     return (
-      <div className="flex h-full overflow-hidden">
-        {/* Sidebar */}
-        <CodeSidebar
-          project={proj.project}
-          drafts={drafts}
-          activeDraftId={activeDraftId}
-          onSelectDraft={handleSelectDraft}
-          onNewChat={handleNewChat}
-          isOpen={showSidebar}
-          onToggle={() => setShowSidebar((o) => !o)}
-          onOpenFiles={() => setShowIDE(true)}
-          isIDEActive={false}
-        />
-
-        {/* Center: chat panel */}
-        <div className="min-w-0 flex-1">
-          <CodeWelcome
-            project={proj.project}
-            messages={chatMessages}
-            isBusy={engine.state === "loading"}
-            output={engine.output}
-            error={engine.error}
-            model={engine.model}
-            actionState={engine.state}
-            onSendMessage={handleSendMessage}
-            onQuickAction={handleQuickAction}
-            onOpenFiles={() => setShowIDE(true)}
-          />
+      <div className="flex h-full flex-col overflow-hidden">
+        {/* Mobile header */}
+        <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-3">
+          <button
+            type="button"
+            className="text-[11px] font-semibold text-foreground"
+            onClick={handleNewChat}
+          >
+            SYNTH Code
+          </button>
+          <div className="flex-1" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground"
+            onClick={() => setShowMobileDrawer(true)}
+          >
+            {(() => { const I = iconFor("files"); return <I className="size-3.5" />; })()}
+          </Button>
         </div>
+
+        {/* Mobile tabs */}
+        <div className="flex shrink-0 items-center border-b border-border/40">
+          {(["code", "preview", "forge"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={`flex-1 py-2 text-center text-[10px] font-medium capitalize transition-colors ${
+                mobileTab === tab
+                  ? "border-b-2 border-synth-cyan text-synth-cyan"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setMobileTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile content */}
+        <div className="min-h-0 flex-1">
+          {mobileTab === "code" && (
+            <div className="flex h-full flex-col">
+              <CodeTabs
+                tabs={openTabs}
+                activePath={proj.selectedPath}
+                onSelect={handleTabSelect}
+                onClose={handleTabClose}
+              />
+              <div className="min-h-0 flex-1">
+                {showIDE && proj.selectedPath ? (
+                  <CodeViewer
+                    file={proj.fileContent}
+                    loading={proj.loadingContent}
+                    adapterType={proj.project?.adapterType ?? "demo"}
+                  />
+                ) : (
+                  <CodeWelcome
+                    project={proj.project}
+                    recentFiles={proj.recentFiles}
+                    messages={chatMessages}
+                    isBusy={engine.state === "loading"}
+                    output={engine.output}
+                    error={engine.error}
+                    model={engine.model}
+                    actionState={engine.state}
+                    onSendMessage={handleSendMessage}
+                    onQuickAction={handleQuickAction}
+                    onOpenFiles={() => { setShowIDE(true); setMobileTab("code"); }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+          {mobileTab === "preview" && <CodePreview project={proj.project} />}
+          {mobileTab === "forge" && (
+            <CodeForge
+              filePath={proj.selectedPath}
+              fileContent={proj.fileContent}
+              project={proj.project}
+              lastActionLabel={engine.activeAction || null}
+              actionState={engine.state}
+              output={engine.output}
+              error={engine.error}
+              model={engine.model}
+              onAction={handleAction}
+              readOnly
+            />
+          )}
+        </div>
+
+        {/* Mobile explorer drawer */}
+        {showMobileDrawer && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowMobileDrawer(false)}
+            />
+            <div className="fixed inset-y-0 left-0 z-50 w-72">
+              <CodeExplorer
+                files={proj.files}
+                selectedPath={proj.selectedPath}
+                recentFiles={proj.recentFiles}
+                searchResults={proj.searchResults}
+                searching={proj.searching}
+                onSelect={(p) => {
+                  proj.loadFile(p);
+                  setShowIDE(true);
+                  setShowMobileDrawer(false);
+                  setMobileTab("code");
+                }}
+                onSearch={proj.search}
+              />
+            </div>
+          </>
+        )}
       </div>
     );
   }
 
   /* ================================================================= */
-  /*  IDE STATE — full workspace with explorer/editor/forge/preview     */
+  /*  WELCOME STATE — compact: center chat + composer                   */
+  /* ================================================================= */
+  if (!showIDE && !proj.selectedPath) {
+    return (
+      <div className="flex h-full overflow-hidden">
+        <CodeWelcome
+          project={proj.project}
+          recentFiles={proj.recentFiles}
+          messages={chatMessages}
+          isBusy={engine.state === "loading"}
+          output={engine.output}
+          error={engine.error}
+          model={engine.model}
+          actionState={engine.state}
+          onSendMessage={handleSendMessage}
+          onQuickAction={handleQuickAction}
+          onOpenFiles={() => setShowIDE(true)}
+        />
+      </div>
+    );
+  }
+
+  /* ================================================================= */
+  /*  DESKTOP IDE — Explorer | Editor | Forge (3-column)               */
   /* ================================================================= */
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Sidebar — collapsed to icons in IDE mode */}
-      <CodeSidebar
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Toolbar */}
+      <CodeToolbar
         project={proj.project}
-        drafts={drafts}
-        activeDraftId={activeDraftId}
-        onSelectDraft={handleSelectDraft}
-        onNewChat={handleNewChat}
-        isOpen={showSidebar}
-        onToggle={() => setShowSidebar((o) => !o)}
-        onOpenFiles={() => setShowIDE(true)}
-        isIDEActive={true}
+        showExplorer={showExplorer}
+        showPreview={showPreview}
+        showForge={showForge}
+        onToggleExplorer={() => setShowExplorer((o) => !o)}
+        onTogglePreview={() => setShowPreview((o) => !o)}
+        onToggleForge={() => setShowForge((o) => !o)}
       />
 
-      {/* Main IDE area */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Toolbar */}
-        <CodeToolbar
-          project={proj.project}
-          showExplorer={showExplorer}
-          showPreview={showPreview}
-          showForge={showForge}
-          onToggleExplorer={() => setShowExplorer((o) => !o)}
-          onTogglePreview={() => setShowPreview((o) => !o)}
-          onToggleForge={() => setShowForge((o) => !o)}
-          onToggleSidebar={() => setShowSidebar((o) => !o)}
-        />
+      {/* Error banner */}
+      {proj.error && (
+        <div className="shrink-0 border-b border-destructive/20 bg-destructive/5 px-3 py-1 text-[9px] text-destructive">
+          {proj.error}
+        </div>
+      )}
 
-        {/* Error banner */}
-        {proj.error && (
-          <div className="shrink-0 border-b border-destructive/20 bg-destructive/5 px-3 py-1.5 text-[10px] text-destructive">
-            {proj.error}
-          </div>
+      {/* IDE panels */}
+      <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
+        {/* Explorer */}
+        {showExplorer && (
+          <>
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="min-w-0">
+              <CodeExplorer
+                files={proj.files}
+                selectedPath={proj.selectedPath}
+                recentFiles={proj.recentFiles}
+                searchResults={proj.searchResults}
+                searching={proj.searching}
+                onSelect={proj.loadFile}
+                onSearch={proj.search}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle className="bg-border/40" />
+          </>
         )}
 
-        {/* IDE panels */}
-        <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-          {/* Explorer */}
-          {showExplorer && (
-            <>
-              <ResizablePanel defaultSize={18} minSize={12} maxSize={30} className="min-w-0">
-                <CodeExplorer
-                  files={proj.files}
-                  selectedPath={proj.selectedPath}
-                  recentFiles={proj.recentFiles}
-                  searchResults={proj.searchResults}
-                  searching={proj.searching}
-                  onSelect={proj.loadFile}
-                  onSearch={proj.search}
+        {/* Center: Editor + Preview (vertical split or standalone) */}
+        <ResizablePanel
+          defaultSize={showForge ? (showPreview ? 45 : 55) : showPreview ? 60 : 100}
+          minSize={25}
+          className="min-w-0"
+        >
+          <ResizablePanelGroup orientation="vertical">
+            {/* Editor */}
+            <ResizablePanel defaultSize={showPreview ? 60 : 100} minSize={20} className="min-w-0">
+              <div className="flex h-full flex-col">
+                <CodeTabs
+                  tabs={openTabs}
+                  activePath={proj.selectedPath}
+                  onSelect={handleTabSelect}
+                  onClose={handleTabClose}
                 />
-              </ResizablePanel>
-              <ResizableHandle withHandle className="bg-border/40" />
-            </>
-          )}
-
-          {/* Center: Editor + Forge (vertical split) */}
-          <ResizablePanel defaultSize={showPreview ? 50 : 65} minSize={30} className="min-w-0">
-            <ResizablePanelGroup orientation="vertical">
-              {/* Editor */}
-              <ResizablePanel defaultSize={showForge ? 60 : 100} minSize={30} className="min-w-0">
-                <div className="flex h-full flex-col">
-                  <CodeTabs
-                    tabs={openTabs}
-                    activePath={proj.selectedPath}
-                    onSelect={handleTabSelect}
-                    onClose={handleTabClose}
+                <div className="min-h-0 flex-1">
+                  <CodeViewer
+                    file={proj.fileContent}
+                    loading={proj.loadingContent}
+                    adapterType={proj.project?.adapterType ?? "demo"}
                   />
-                  <div className="min-h-0 flex-1">
-                    <CodeViewer
-                      file={proj.fileContent}
-                      loading={proj.loadingContent}
-                      adapterType={proj.project?.adapterType ?? "demo"}
-                    />
-                  </div>
                 </div>
-              </ResizablePanel>
+              </div>
+            </ResizablePanel>
 
-              {/* Forge (bottom) */}
-              {showForge && (
-                <>
-                  <ResizableHandle withHandle className="bg-border/40" />
-                  <ResizablePanel defaultSize={40} minSize={20} maxSize={60} className="min-w-0">
-                    <CodeForge
-                      filePath={proj.selectedPath}
-                      fileContent={proj.fileContent}
-                      project={proj.project}
-                      lastActionLabel={engine.activeAction || null}
-                      actionState={engine.state}
-                      output={engine.output}
-                      error={engine.error}
-                      model={engine.model}
-                      onAction={handleAction}
-                      readOnly
-                    />
-                  </ResizablePanel>
-                </>
-              )}
-            </ResizablePanelGroup>
-          </ResizablePanel>
+            {/* Preview (bottom) */}
+            {showPreview && (
+              <>
+                <ResizableHandle withHandle className="bg-border/40" />
+                <ResizablePanel defaultSize={40} minSize={15} maxSize={60} className="min-w-0">
+                  <CodePreview project={proj.project} />
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
+        </ResizablePanel>
 
-          {/* Preview */}
-          {showPreview && (
-            <>
-              <ResizableHandle withHandle className="bg-border/40" />
-              <ResizablePanel defaultSize={30} minSize={15} maxSize={45} className="min-w-0">
-                <CodePreview project={proj.project} />
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-      </div>
+        {/* Forge (right panel) */}
+        {showForge && (
+          <>
+            <ResizableHandle withHandle className="bg-border/40" />
+            <ResizablePanel defaultSize={30} minSize={20} maxSize={40} className="min-w-0">
+              <CodeForge
+                filePath={proj.selectedPath}
+                fileContent={proj.fileContent}
+                project={proj.project}
+                lastActionLabel={engine.activeAction || null}
+                actionState={engine.state}
+                output={engine.output}
+                error={engine.error}
+                model={engine.model}
+                onAction={handleAction}
+                readOnly
+              />
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }
