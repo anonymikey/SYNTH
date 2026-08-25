@@ -15,6 +15,7 @@ interface CodeToolbarProps {
   onToggleExplorer: () => void;
   onTogglePreview: () => void;
   onToggleForge: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export function CodeToolbar({
@@ -25,6 +26,7 @@ export function CodeToolbar({
   onToggleExplorer,
   onTogglePreview,
   onToggleForge,
+  onToggleSidebar,
 }: CodeToolbarProps) {
   const ProjectIcon = iconFor(project?.adapterType === "github" ? "gitBranch" : "code-2");
   const FilesIcon = iconFor("files");
@@ -33,6 +35,24 @@ export function CodeToolbar({
 
   return (
     <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border/60 bg-background/95 px-2 backdrop-blur-sm">
+      {/* Sidebar toggle */}
+      {onToggleSidebar && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={onToggleSidebar}
+            >
+              <FilesIcon className="size-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Toggle sidebar</TooltipContent>
+        </Tooltip>
+      )}
+
       {/* Project identity */}
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex size-5 shrink-0 items-center justify-center rounded bg-synth-cyan/10 text-synth-cyan">
