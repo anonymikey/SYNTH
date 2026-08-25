@@ -112,6 +112,7 @@ export function CodeSidebar({
 
   const ChevronIcon = iconFor("chevronDown");
   const PlusIcon = iconFor("plus");
+  const XIcon = iconFor("x");
 
   return (
     <>
@@ -164,7 +165,7 @@ export function CodeSidebar({
             className="size-6 text-muted-foreground hover:text-foreground lg:hidden"
             onClick={onToggle}
           >
-            {iconFor("x")({ className: "size-3.5" })}
+            <XIcon className="size-3.5" />
           </Button>
         </div>
 
