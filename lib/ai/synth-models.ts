@@ -170,5 +170,10 @@ export function getSynthModelLabel(modelId: string): string {
   // Routing presets
   const preset = SYNTH_ROUTING_PRESETS.find((r) => r.id === modelId);
   if (preset) return preset.label;
+  // Reverse lookup: raw provider model ID → SYNTH label
+  // This handles cases where the health endpoint returns raw model names
+  // like "openai/gpt-4o-mini" instead of the SYNTH public ID.
+  const reverseMatch = SYNTH_MODEL_CATALOG.find((m) => m.internal.model === modelId);
+  if (reverseMatch) return reverseMatch.label;
   return modelId;
 }

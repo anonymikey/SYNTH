@@ -11,7 +11,7 @@ import { CodeTabs, type Tab } from "@/components/modules/code-tabs";
 import { CodeViewer } from "@/components/modules/code-viewer";
 import { CodePreview } from "@/components/modules/code-preview";
 import { CodeForge } from "@/components/modules/code-forge";
-import { CodeWelcome, type CodeChatMessage } from "@/components/assistant/code-welcome";
+import { CodeWelcome } from "@/components/assistant/code-welcome";
 import type { ModuleAction, ModuleActionId, WorkspaceModuleProps } from "@/components/modules/types";
 import { useEngineAction } from "@/components/modules/use-engine-action";
 import { iconFor } from "@/lib/icons";
@@ -40,9 +40,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   const [isMobile, setIsMobile] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("code");
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-
-  /* ---- Chat / drafts state ---- */
-  const [chatMessages, setChatMessages] = useState<CodeChatMessage[]>([]);
 
   /* ---- Tab management ---- */
   const [openTabs, setOpenTabs] = useState<Tab[]>([]);
@@ -109,17 +106,12 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
     [proj.selectedPath, proj.fileContent, proj.project, proj.searchResults, engine, onAction],
   );
 
-  /* ---- Send message from welcome state ---- */
+  /* ---- Send message from welcome state ---- Routes to Forge ---- */
   const handleSendMessage = useCallback(
     (text: string) => {
-      const userMsg: CodeChatMessage = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: text,
-        timestamp: Date.now(),
-      };
-      setChatMessages((prev) => [...prev, userMsg]);
+      // Switch to IDE view — Forge panel becomes visible
       setShowIDE(true);
+      // Fire the engine action — Forge will display user message + streaming response
       void handleAction("run-code-action", text);
     },
     [handleAction],
@@ -146,11 +138,15 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   /* ---- New chat ---- */
   const handleNewChat = useCallback(() => {
-    setChatMessages([]);
     setShowIDE(false);
     proj.clearSelection();
     setOpenTabs([]);
-  }, [proj]);
+    // Reset engine state
+    engine.runAction(
+      { id: "run-code-action", label: "New Chat", intent: "coding", payload: {} },
+      {},
+    );
+  }, [proj, engine]);
 
   // Loading state
   if (proj.loadingProject) {
@@ -244,12 +240,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
                   <CodeWelcome
                     project={proj.project}
                     recentFiles={proj.recentFiles}
-                    messages={chatMessages}
-                    isBusy={engine.state === "loading"}
-                    output={engine.output}
-                    error={engine.error}
-                    model={engine.model}
-                    actionState={engine.state}
                     onSendMessage={handleSendMessage}
                     onQuickAction={handleQuickAction}
                     onOpenFiles={() => { setShowIDE(true); setMobileTab("code"); }}
@@ -259,11 +249,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
             </div>
           )}
           {mobileTab === "preview" && <CodePreview project={proj.project} />}
-          {mobileTab === "forge" && (
-            <CodeForge
-              filePath={proj.selectedPath}
-              fileContent={proj.fileContent}
-              project={proj.project}
+          {mobileTab === "forge" && (              <CodeForge filePath={proj.selectedPath} fileContent={proj.fileContent}
               lastActionLabel={engine.activeAction || null}
               actionState={engine.state}
               output={engine.output}
@@ -305,7 +291,8 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   }
 
   /* ================================================================= */
-  /*  WELCOME STATE — compact: center chat + composer                   */
+  /*  WELCOME STATE — compact: centered welcome + composer               */
+  /*  When user submits → transitions to IDE with Forge active           */
   /* ================================================================= */
   if (!showIDE && !proj.selectedPath) {
     return (
@@ -313,12 +300,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         <CodeWelcome
           project={proj.project}
           recentFiles={proj.recentFiles}
-          messages={chatMessages}
-          isBusy={engine.state === "loading"}
-          output={engine.output}
-          error={engine.error}
-          model={engine.model}
-          actionState={engine.state}
           onSendMessage={handleSendMessage}
           onQuickAction={handleQuickAction}
           onOpenFiles={() => setShowIDE(true)}
@@ -341,6 +322,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         onToggleExplorer={() => setShowExplorer((o) => !o)}
         onTogglePreview={() => setShowPreview((o) => !o)}
         onToggleForge={() => setShowForge((o) => !o)}
+        onNewChat={handleNewChat}
       />
 
       {/* Error banner */}
@@ -408,15 +390,14 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
           </ResizablePanelGroup>
         </ResizablePanel>
 
-        {/* Forge (right panel) */}
+        {/* Forge (right panel) — always shows conversation + streaming output */}
         {showForge && (
           <>
             <ResizableHandle withHandle className="bg-border/40" />
-            <ResizablePanel defaultSize={30} minSize={20} maxSize={40} className="min-w-0">
+            <ResizablePanel defaultSize={30} minSize={25} maxSize={45} className="min-w-0">
               <CodeForge
                 filePath={proj.selectedPath}
                 fileContent={proj.fileContent}
-                project={proj.project}
                 lastActionLabel={engine.activeAction || null}
                 actionState={engine.state}
                 output={engine.output}

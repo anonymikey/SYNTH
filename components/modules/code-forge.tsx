@@ -41,7 +41,6 @@ const QUICK_ACTIONS: ForgeAction[] = [
 interface CodeForgeProps {
   filePath: string | null;
   fileContent: ProjectFileContent | null;
-  project: ProjectInfo | null;
   lastActionLabel: string | null;
   actionState: ModuleActionState;
   output?: string;
@@ -58,24 +57,48 @@ interface CodeForgeProps {
 export function CodeForge({
   filePath,
   fileContent,
-  project,
   lastActionLabel,
   actionState,
   output,
   error,
   model,
   onAction,
-  readOnly = true,
+  readOnly: _readOnly = true,
 }: CodeForgeProps) {
   const [messages, setMessages] = useState<ForgeMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["reasoning"]));
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const prevActionLabelRef = useRef<string | null>(null);
 
   const forgeLabel = getAgentDisplayName("coder");
   const isBusy = actionState === "loading";
   const fileName = filePath?.split("/").pop() ?? null;
+
+  // Detect when CodeModule fires a new action from the welcome state
+  // The lastActionLabel contains the user's prompt text
+  useEffect(() => {
+    if (lastActionLabel && lastActionLabel !== prevActionLabelRef.current && isBusy) {
+      // Check if this message is already in the list (avoid duplicates)
+      const alreadyExists = messages.some(
+        (m) => m.role === "user" && m.content === lastActionLabel,
+      );
+      if (!alreadyExists) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "user",
+            content: lastActionLabel,
+            actionLabel: lastActionLabel.length > 60 ? lastActionLabel.slice(0, 60) + "..." : undefined,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
+      prevActionLabelRef.current = lastActionLabel;
+    }
+  }, [lastActionLabel, isBusy, messages]);
 
   // Auto-scroll
   useEffect(() => {
@@ -97,7 +120,7 @@ export function CodeForge({
       const msg: ForgeMessage = {
         id: crypto.randomUUID(),
         role: "user",
-        content: action.label,
+        content: prompt,
         actionLabel: action.label,
         timestamp: Date.now(),
       };
@@ -142,7 +165,7 @@ export function CodeForge({
   }, []);
 
   return (
-    <div className="flex h-full min-w-0 flex-col border-l border-border/60 bg-background/80">
+    <div className="flex h-full min-w-[280px] flex-col border-l border-border/60 bg-background/80">
       {/* ---- Header ---- */}
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/40 px-3">
         <div className="flex items-center gap-2">
@@ -152,7 +175,7 @@ export function CodeForge({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 px-2 text-[9px]">
-              {iconFor("chat") ? <span className="text-[9px]">Chat</span> : <span className="text-[9px]">Chat</span>}
+              <span className="text-[9px]">Chat</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Open chat</TooltipContent>
@@ -253,7 +276,7 @@ export function CodeForge({
                     <span className="text-[9px] font-semibold text-synth-violet">{forgeLabel}</span>
                     {lastActionLabel && (
                       <Badge variant="outline" className="h-3.5 border-synth-violet/20 px-1 text-[7px] text-synth-violet">
-                        {lastActionLabel}
+                        {lastActionLabel.length > 30 ? lastActionLabel.slice(0, 30) + "..." : lastActionLabel}
                       </Badge>
                     )}
                   </div>
@@ -279,7 +302,6 @@ export function CodeForge({
                   {output && output.length > 0 && (
                     <ForgeStructuredOutput
                       text={output}
-                      fileName={fileName}
                       expandedSections={expandedSections}
                       onToggleSection={toggleSection}
                     />
@@ -345,12 +367,10 @@ export function CodeForge({
 
 function ForgeStructuredOutput({
   text,
-  fileName,
   expandedSections,
   onToggleSection,
 }: {
   text: string;
-  fileName: string | null;
   expandedSections: Set<string>;
   onToggleSection: (id: string) => void;
 }) {
@@ -360,7 +380,7 @@ function ForgeStructuredOutput({
   return (
     <div className="space-y-2.5">
       {/* Reasoning section */}
-      {sections.reasoning && (
+      {sections.reasoning.length > 0 && (
         <div className="rounded-lg border border-border/40 bg-white/[0.01]">
           <button
             type="button"
@@ -488,7 +508,7 @@ function parseForgeOutput(text: string): ParsedOutput {
         }
       }
 
-      // Detect file change patterns like "+34 -12" or "components/Hero.tsx"
+      // Detect file change patterns
       const changeMatch = trimmed.match(/^([a-zA-Z\/\.\-]+\.\w{1,4})\s*[+]?(\d+)?\s*[-]?(\d+)?$/m);
       if (changeMatch) {
         result.fileChanges.push({
