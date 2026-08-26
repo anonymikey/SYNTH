@@ -5,6 +5,7 @@ import { ThinkingOrb } from "thinking-orbs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { iconFor } from "@/lib/icons";
+import { IntegrationCarousel } from "@/components/ui/integration-carousel";
 import type { ProjectInfo } from "@/lib/project/use-project";
 
 /* ------------------------------------------------------------------ */
@@ -211,6 +212,11 @@ export function CodeWelcome({
         <p className="text-[10px] text-white/20">
           Enter to send · Shift+Enter for new line
         </p>
+      </div>
+
+      {/* Integration carousel — scrolling tool icons */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <IntegrationCarousel />
       </div>
     </div>
   );
