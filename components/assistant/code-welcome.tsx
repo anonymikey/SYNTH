@@ -18,10 +18,9 @@ interface Suggestion {
 }
 
 const SUGGESTIONS: Suggestion[] = [
-  { id: "explain", label: "Explain Project", icon: "lightbulb" },
-  { id: "review", label: "Review Code", icon: "gitCompare" },
-  { id: "browse", label: "Browse Files", icon: "files" },
-  { id: "responsive", label: "Make Responsive", icon: "panelRight" },
+  { id: "create-website", label: "Create a website", icon: "globe" },
+  { id: "build-app", label: "Build a mobile app", icon: "blocks" },
+  { id: "design-dashboard", label: "Design a dashboard", icon: "dashboard" },
 ];
 
 interface CodeWelcomeProps {
@@ -33,7 +32,7 @@ interface CodeWelcomeProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  CodeWelcome — cinematic welcome with ThinkingOrb                    */
+/*  CodeWelcome — cinematic welcome matching Codient reference         */
 /* ------------------------------------------------------------------ */
 
 export function CodeWelcome({
@@ -64,45 +63,48 @@ export function CodeWelcome({
 
   const handleSuggestion = useCallback(
     (s: Suggestion) => {
-      if (s.id === "browse") {
-        onOpenFiles();
-      } else {
-        onQuickAction?.(s.id);
-      }
+      const prompts: Record<string, string> = {
+        "create-website":
+          "Create a responsive website with a hero section, features, pricing, and CTA.",
+        "build-app":
+          "Build a mobile app with navigation, screens, and a clean UI.",
+        "design-dashboard":
+          "Design a dashboard with analytics cards, charts, and a sidebar.",
+      };
+      onSendMessage(prompts[s.id] || s.label);
     },
-    [onOpenFiles, onQuickAction],
+    [onSendMessage],
   );
 
   const SendIcon = iconFor("arrowUp");
   const PlusIcon = iconFor("plus");
   const SparkleIcon = iconFor("sparkles");
+  const PaperclipIcon = iconFor("paperclip");
+  const WrenchIcon = iconFor("wrench");
 
   return (
-    <div className="w-full px-4 py-12 flex flex-col items-center justify-center min-h-full relative overflow-hidden bg-[#080a12]">
+    <div className="w-full max-w-3xl px-4 py-12 flex flex-col items-center justify-center min-h-full relative overflow-hidden bg-[#080a12]">
       {/* Ambient background glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.06)_0%,transparent_70%)] blur-3xl" />
-        <div className="absolute left-1/3 top-1/2 h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.04)_0%,transparent_70%)] blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.04)_0%,transparent_70%)] blur-3xl" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center max-w-2xl w-full mx-auto">
         {/* ThinkingOrb */}
-        <div className="mb-6 pointer-events-none">
+        <div className="mb-5 pointer-events-none">
           <ThinkingOrb state="listening" size={64} theme="dark" />
         </div>
 
-        {/* Title */}
-        <h1 className="text-2xl font-semibold text-white tracking-tight sm:text-3xl mb-1">
-          SYNTH Code
+        {/* Main heading — matches reference */}
+        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2 text-center">
+          What do you want to build?
         </h1>
-        <p className="text-[13px] text-white/40 mb-4">
-          Your AI development workspace
-        </p>
 
         {/* Project info */}
         {project && (
-          <div className="flex items-center gap-2 mb-6 text-[10px] text-white/30">
+          <div className="flex items-center gap-2 mt-2 mb-6 text-[10px] text-white/30">
             <span>{project.name}</span>
             <span className="text-white/10">·</span>
             <span>{project.language}</span>
@@ -111,11 +113,27 @@ export function CodeWelcome({
           </div>
         )}
 
-        {/* Composer — glass morphism with gradient border */}
+        {!project && <div className="mb-6" />}
+
+        {/* Suggestion chips — matching reference style */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className="rounded-full border border-white/[0.12] bg-white/[0.04] px-4 py-2 text-[13px] text-white/60 transition-all hover:border-[#2dd4bf]/30 hover:bg-[#2dd4bf]/[0.08] hover:text-white/90"
+              onClick={() => handleSuggestion(s)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Composer — glass morphism matching reference */}
         <div className="w-full max-w-xl mb-5">
-          <div className="relative rounded-2xl bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] shadow-2xl overflow-hidden">
-            {/* Gradient top edge */}
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#2dd4bf]/40 to-transparent" />
+          <div className="relative rounded-2xl bg-[#14161e]/80 backdrop-blur-xl border border-white/[0.08] shadow-2xl overflow-hidden">
+            {/* Gradient top edge — green-to-cyan like reference */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500/60 via-[#2dd4bf]/50 to-cyan-500/60" />
 
             <textarea
               ref={textareaRef}
@@ -126,10 +144,10 @@ export function CodeWelcome({
                 e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Describe what you want SYNTH Forge to build..."
+              placeholder="Ask a follow-up..."
               className={cn(
                 "w-full resize-none border-none bg-transparent px-5 pt-4 pb-2 text-[14px] text-white/90",
-                "placeholder:text-white/30 focus:outline-none",
+                "placeholder:text-white/25 focus:outline-none",
                 "min-h-[44px]",
               )}
               style={{ overflow: "hidden" }}
@@ -137,24 +155,39 @@ export function CodeWelcome({
 
             {/* Bottom action row */}
             <div className="flex items-center justify-between px-4 pb-3">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                {/* Attach */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.05]"
+                  className="size-7 rounded-lg text-white/30 hover:text-white/50 hover:bg-white/[0.05]"
                 >
                   <PlusIcon className="size-4" />
                 </Button>
+                {/* Sparkle / AI */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.05]"
+                  className="size-7 rounded-lg text-white/30 hover:text-white/50 hover:bg-white/[0.05]"
                 >
                   <SparkleIcon className="size-4" />
                 </Button>
+                {/* Builder button — matching reference */}
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+                  onClick={() => {
+                    onSendMessage(input.trim() || "Open the builder");
+                    setInput("");
+                  }}
+                >
+                  <WrenchIcon className="size-3" />
+                  <span>Builder</span>
+                </button>
               </div>
+              {/* Send button */}
               <Button
                 type="button"
                 size="icon"
@@ -173,25 +206,7 @@ export function CodeWelcome({
           </div>
         </div>
 
-        {/* Quick action chips */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-          {SUGGESTIONS.map((s) => {
-            const SIcon = iconFor(s.icon);
-            return (
-              <button
-                key={s.id}
-                type="button"
-                className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/50 transition-all hover:border-[#2dd4bf]/30 hover:bg-[#2dd4bf]/[0.06] hover:text-white/80"
-                onClick={() => handleSuggestion(s)}
-              >
-                <SIcon className="size-3.5" />
-                <span>{s.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Hint */}
+        {/* Keyboard hint */}
         <p className="text-[10px] text-white/20">
           Enter to send · Shift+Enter for new line
         </p>

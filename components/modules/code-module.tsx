@@ -210,7 +210,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE ────────────────────────────────────────────── */
   if (!showIDE && !proj.selectedPath) {
     return (
-      <div className="flex h-full flex-col items-center justify-center overflow-hidden bg-[#080a12]">
+      <div className="h-full overflow-hidden bg-[#080a12] grid place-items-center">
         <CodeWelcome
           project={proj.project}
           recentFiles={proj.recentFiles}
@@ -273,7 +273,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
             {showIDE || proj.selectedPath ? (
               <CodeViewer file={proj.fileContent} loading={proj.loadingContent} adapterType={proj.project?.adapterType ?? "demo"} />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="h-full grid place-items-center">
                 <div className="text-center">
                   <div className="text-3xl text-white/20 mb-3">&lt;/&gt;</div>
                   <p className="text-sm text-white/40">Select a file to inspect</p>

@@ -4,7 +4,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getSynthModelLabel } from "@/lib/ai/synth-models";
-import { Lightbulb, GitCompare, Bug, Shuffle, Plus, Sparkles, ArrowUp } from "lucide-react";
+import { Lightbulb, GitCompare, Bug, Shuffle, ChevronDown, Wrench } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -142,7 +142,7 @@ export function Forge({
                 </svg>
               </div>
               <p className="text-[13px] text-white/60 mb-1">
-                {fileName ? `Analyse "${fileName}"` : 'What shall we build?'}
+                {fileName ? `Analyse "${fileName}"` : "What shall we build?"}
               </p>
               <p className="text-[10px] text-white/30 mb-4">
                 Ask Forge or use a quick action below.
@@ -172,14 +172,12 @@ export function Forge({
             <div className="space-y-3">
               {messages.map((msg, i) => (
                 <div key={`${msg.requestId}-${i}`}>
-                  {/* User message */}
                   {msg.role === 'user' && (
                     <div className="rounded-lg border border-white/[.06] bg-white/[.03] p-3">
-                      <span className="text-[9px] font-semibold text-white/40 block mb-1">You</span>
+                      <span className="text-[9px] font-semibold text-white/40 block mb-1 uppercase tracking-wider">You</span>
                       <p className="text-[12px] leading-relaxed text-white/75 whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   )}
-                  {/* Assistant message (from completed responses) */}
                   {msg.role === 'assistant' && (
                     <div className="rounded-lg border border-[#8b5cf6]/10 bg-[#8b5cf6]/[0.03] p-3">
                       <div className="flex items-center gap-1.5 mb-2">
@@ -232,15 +230,31 @@ export function Forge({
               e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
             }}
             onKeyDown={handleKeyDown}
-            placeholder={fileName ? `Ask about ${fileName}...` : 'Ask Forge anything...'}
+            placeholder={fileName ? `Ask Forge to change your project...` : 'Ask Forge anything...'}
             disabled={isBusy}
             rows={1}
             className="w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[12px] text-white/80 placeholder:text-white/20 focus:outline-none disabled:opacity-40"
             style={{ minHeight: 40 }}
           />
           <div className="flex items-center justify-between px-3 pb-2">
-            <div className="flex items-center gap-1 text-white/20 text-[10px]">
-              <span className="cursor-pointer hover:text-white/40 transition-colors">+</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="rounded-md p-1 text-white/25 hover:text-white/50 hover:bg-white/[0.05] transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+              {/* Builder button */}
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[9px] text-white/35 hover:text-white/55 hover:bg-white/[0.05] transition-colors"
+              >
+                <Wrench className="size-2.5" />
+                <span>Builder</span>
+              </button>
             </div>
             <button
               type="button"
@@ -276,11 +290,10 @@ function iconFor(name: string) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Formatted Output — renders markdown-like structured output          */
+/*  Formatted Output — renders markdown with collapsible REASONING     */
 /* ------------------------------------------------------------------ */
 
 function FormattedOutput({ text }: { text: string }) {
-  // Split into sections by double newlines
   const sections = text.split(/\n{2,}/);
 
   return (
@@ -291,11 +304,13 @@ function FormattedOutput({ text }: { text: string }) {
 
         // Code block
         if (trimmed.startsWith('```')) {
+          const langMatch = trimmed.match(/^```(\w*)/);
+          const lang = langMatch?.[1] || 'code';
           const code = trimmed.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
           return (
             <div key={i} className="rounded-md border border-white/[.04] bg-[#0a0c14] overflow-hidden">
               <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[.04]">
-                <span className="text-[8px] font-mono text-white/30">code</span>
+                <span className="text-[8px] font-mono text-white/30">{lang}</span>
                 <button
                   type="button"
                   className="text-[8px] text-white/30 hover:text-[#2dd4bf] transition-colors"
@@ -309,8 +324,19 @@ function FormattedOutput({ text }: { text: string }) {
           );
         }
 
-        // Check for section headers (PLAN, AFFECTED FILES, PROPOSED CHANGES, etc.)
-        const headerMatch = trimmed.match(/^(PLAN|AFFECTED FILES|PROPOSED CHANGES|REASONING|SUMMARY|CHANGES|FILES MODIFIED|IMPLEMENTATION):?\s*/i);
+        // REASONING section — collapsible
+        const reasoningMatch = trimmed.match(/^(REASONING|REASONING\s*:?)(?:\s*)/i);
+        if (reasoningMatch) {
+          const body = trimmed.slice(reasoningMatch[0].length).trim();
+          return (
+            <CollapsibleSection key={i} title="Reasoning">
+              <p className="text-[11px] leading-relaxed text-white/55 whitespace-pre-wrap">{body}</p>
+            </CollapsibleSection>
+          );
+        }
+
+        // Other section headers
+        const headerMatch = trimmed.match(/^(PLAN|AFFECTED FILES|PROPOSED CHANGES|SUMMARY|CHANGES|FILES MODIFIED|IMPLEMENTATION):?\s*/i);
         if (headerMatch) {
           const header = headerMatch[1].toUpperCase();
           const body = trimmed.slice(headerMatch[0].length);
@@ -336,6 +362,42 @@ function FormattedOutput({ text }: { text: string }) {
           <p key={i} className="text-[12px] leading-relaxed text-white/65 whitespace-pre-wrap">{trimmed}</p>
         );
       })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  CollapsibleSection — for Reasoning etc.                            */
+/* ------------------------------------------------------------------ */
+
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-md border border-white/[.04] bg-white/[0.015] overflow-hidden">
+      <button
+        type="button"
+        className="flex w-full items-center gap-1.5 px-2.5 py-2 text-left hover:bg-white/[0.02] transition-colors"
+        onClick={() => setOpen(o => !o)}
+      >
+        <ChevronDown
+          className={`size-3 text-white/30 transition-transform duration-200 ${open ? "rotate-0" : "-rotate-90"}`}
+        />
+        <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">{title}</span>
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2.5 pt-0">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
