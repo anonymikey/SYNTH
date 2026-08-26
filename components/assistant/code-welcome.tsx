@@ -209,13 +209,13 @@ export function CodeWelcome({
         </div>
 
         {/* Keyboard hint */}
-        <p className="text-[10px] text-white/20">
+        <p className="text-[10px] text-white/20 mb-2">
           Enter to send · Shift+Enter for new line
         </p>
       </div>
 
-      {/* Integration carousel — scrolling tool icons */}
-      <div className="absolute bottom-0 left-0 right-0">
+      {/* Integration carousel — scrolling brand icons */}
+      <div className="relative z-10 w-full max-w-3xl mx-auto">
         <IntegrationCarousel />
       </div>
     </div>
