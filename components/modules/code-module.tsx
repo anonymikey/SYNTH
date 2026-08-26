@@ -1,24 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
-import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useProject } from "@/lib/project/use-project";
 import { CodeToolbar } from "@/components/modules/code-toolbar";
 import { CodeExplorer } from "@/components/modules/code-explorer";
 import { CodeTabs, type Tab } from "@/components/modules/code-tabs";
 import { CodeViewer } from "@/components/modules/code-viewer";
-import { CodePreview } from "@/components/modules/code-preview";
 import { Forge, type ForgeMessage } from "@/components/modules/code-forge";
 import { CodeWelcome } from "@/components/assistant/code-welcome";
-import type { ModuleAction, ModuleActionId, ModuleActionState, WorkspaceModuleProps } from "@/components/modules/types";
+import type { WorkspaceModuleProps } from "@/components/modules/types";
 import { useEngineAction } from "@/components/modules/use-engine-action";
-import { iconFor } from "@/lib/icons";
 
 type MobileTab = "code" | "forge";
 
-export function CodeModule({ project, context, onAction }: WorkspaceModuleProps) {
+export function CodeModule({ project, context }: WorkspaceModuleProps) {
   const proj = useProject();
   const engine = useEngineAction({ project, context });
 
@@ -34,7 +30,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   // --- Forge conversation state (lifted here for stability) ---
   const [forgeMessages, setForgeMessages] = useState<ForgeMessage[]>([]);
-  const activeActionIdRef = useRef<string | null>(null);
 
   // --- Tab management ---
   const [openTabs, setOpenTabs] = useState<Tab[]>([]);
@@ -59,11 +54,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
     }
   }, [proj.selectedPath, proj.fileContent]);
 
-  const handleTabSelect = useCallback(
-    (path: string) => { proj.loadFile(path); },
-    [proj],
-  );
-
   const handleTabClose = useCallback(
     (path: string) => {
       setOpenTabs(prev => {
@@ -82,13 +72,10 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   // --- Forge submission (the critical path) ---
   const sendToForge = useCallback(
     (userMessage: string) => {
-      // Prevent duplicate rapid submissions
       if (engine.state === "loading") return;
 
-      // Generate a unique request ID for this submission
       const requestId = crypto.randomUUID();
 
-      // Record the user message (this happens synchronously, no useEffect)
       setForgeMessages(prev => [...prev, {
         role: "user" as const,
         content: userMessage,
@@ -96,8 +83,6 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
         label: userMessage.length > 60 ? userMessage.slice(0, 60) + "..." : undefined,
       }]);
 
-      // Launch the engine action — this triggers state changes in useEngineAction
-      // which Forge renders via props. No intermediate useEffect needed.
       engine.runAction({
         id: "run-code-action",
         label: userMessage,
@@ -131,16 +116,16 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   // --- Loading/Error states ---
   if (proj.loadingProject) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3">
-        <ThinkingOrb state="connecting" size={20} theme="dark" />
-        <p className="text-[10px] text-muted-foreground/50">Loading project…</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#080a12]">
+        <ThinkingOrb state="connecting" size={64} theme="dark" />
+        <p className="text-[11px] text-white/30">Loading project...</p>
       </div>
     );
   }
 
   if (proj.error && !proj.project) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
+      <div className="flex flex-col items-center justify-center h-full gap-3 bg-[#080a12]">
         <p className="text-xs font-medium text-red-400">Failed to load project.</p>
         <button className="text-xs text-[#2dd4bf] underline" onClick={() => proj.refreshFiles()}>Retry</button>
       </div>
@@ -162,14 +147,29 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   /* ─── MOBILE ────────────────────────────────────────────────────── */
   if (isMobile) {
     return (
-      <div className="flex h-full flex-col bg-[#0a0c14]">
-        <div className="flex items-center justify-between h-10 px-3 border-b border-white/[.06] shrink-0">
-          <button type="button" className="text-[11px] font-semibold text-white" onClick={handleNewChat}>
-            AI Code
+      <div className="flex h-full flex-col bg-[#080a12]">
+        {/* Mobile tab bar */}
+        <div className="flex items-center h-10 px-3 border-b border-white/[.06] shrink-0 gap-2">
+          <button type="button" className="text-[11px] font-semibold text-white/80" onClick={handleNewChat}>
+            SYNTH Code
           </button>
-          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setMobileTab(mobileTab === "code" ? "forge" : "code")}>
-            {mobileTab === "code" ? "AI" : "Code"}
-          </Button>
+          <div className="flex-1" />
+          <div className="flex items-center rounded-lg bg-white/[0.04] border border-white/[.06] p-0.5">
+            <button
+              type="button"
+              className={`px-3 py-1 rounded-md text-[10px] font-medium transition-colors ${mobileTab === "code" ? "bg-white/[0.08] text-white" : "text-white/40"}`}
+              onClick={() => setMobileTab("code")}
+            >
+              Code
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1 rounded-md text-[10px] font-medium transition-colors ${mobileTab === "forge" ? "bg-white/[0.08] text-white" : "text-white/40"}`}
+              onClick={() => setMobileTab("forge")}
+            >
+              Forge
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -210,7 +210,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
   /* ─── WELCOME STATE ────────────────────────────────────────────── */
   if (!showIDE && !proj.selectedPath) {
     return (
-      <div className="flex h-full overflow-hidden bg-[#0a0c14]">
+      <div className="flex h-full overflow-hidden bg-[#080a12]">
         <CodeWelcome
           project={proj.project}
           recentFiles={proj.recentFiles}
@@ -233,7 +233,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
 
   /* ─── DESKTOP IDE (3-column: Explorer | Editor | Forge) ──────── */
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[#0a0c14]">
+    <div className="flex h-full flex-col overflow-hidden bg-[#080a12]">
       <CodeToolbar
         project={proj.project}
         showExplorer={showExplorer}
@@ -252,9 +252,9 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
       )}
 
       <div className="flex-1 flex min-h-0">
-        {/* Explorer */}
+        {/* Explorer — 240px fixed */}
         {showExplorer && (
-          <div className="flex-[0_0_220px] min-w-0 border-r border-white/[.06] max-xl:hidden">
+          <div className="w-[240px] shrink-0 border-r border-white/[.06] overflow-hidden max-xl:hidden">
             <CodeExplorer
               files={proj.files}
               selectedPath={proj.selectedPath}
@@ -267,7 +267,7 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
           </div>
         )}
 
-        {/* Editor or Welcome */}
+        {/* Center — Editor or empty state */}
         <div className="flex-1 min-w-0 flex flex-col">
           <div className="flex-1 min-h-0">
             {showIDE || proj.selectedPath ? (
@@ -275,15 +275,15 @@ export function CodeModule({ project, context, onAction }: WorkspaceModuleProps)
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="text-3xl text-white/30 mb-3">&lt;/&gt;</div>
-                  <p className="text-sm text-white/60">Select a file to inspect</p>
+                  <div className="text-3xl text-white/20 mb-3">&lt;/&gt;</div>
+                  <p className="text-sm text-white/40">Select a file to inspect</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Forge panel — shrink-0 prevents flex from squeezing it */}
+        {/* Forge — 380px fixed, never shrinks */}
         {forgeVisible && (
           <div className="w-[380px] shrink-0 border-l border-white/[.06] overflow-hidden">
             <Forge {...forgeProps} />

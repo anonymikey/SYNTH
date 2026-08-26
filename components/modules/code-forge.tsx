@@ -2,10 +2,9 @@
 
 import { useCallback, useRef, useState, useEffect } from "react";
 import { ThinkingOrb } from "thinking-orbs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getSynthModelLabel } from "@/lib/ai/synth-models";
+import { Lightbulb, GitCompare, Bug, Shuffle, Plus, Sparkles, ArrowUp } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -21,13 +20,14 @@ export interface ForgeMessage {
 interface ForgeAction {
   label: string;
   prompt: string;
+  icon: string;
 }
 
 const QUICK_ACTIONS: ForgeAction[] = [
-  { label: "Explain", prompt: "Explain the selected file's purpose, architecture, and key functions." },
-  { label: "Review", prompt: "Review the selected file for bugs, code smells, and maintainability." },
-  { label: "Find Issues", prompt: "Find potential bugs, runtime errors, and edge cases in the selected file." },
-  { label: "Suggest Refactor", prompt: "Suggest refactoring improvements for the selected file." },
+  { label: "Explain", prompt: "Explain the selected file's purpose, architecture, and key functions.", icon: "lightbulb" },
+  { label: "Review", prompt: "Review the selected file for bugs, code smells, and maintainability.", icon: "gitCompare" },
+  { label: "Find Issues", prompt: "Find potential bugs, runtime errors, and edge cases in the selected file.", icon: "bug" },
+  { label: "Refactor", prompt: "Suggest refactoring improvements for the selected file.", icon: "shuffle" },
 ];
 
 interface ForgeProps {
@@ -43,7 +43,7 @@ interface ForgeProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Forge (stateless - receives messages/output/error as props)         */
+/*  Forge — premium AI coding panel                                    */
 /* ------------------------------------------------------------------ */
 export function Forge({
   filePath,
@@ -59,12 +59,11 @@ export function Forge({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [localInput, setLocalInput] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["section-general"]));
 
   const fileName = filePath?.split("/").pop() ?? null;
   const hasMessages = messages.length > 0;
 
-  // Auto-scroll when content changes
+  // Auto-scroll
   const prevLen = useRef(0);
   const prevOutput = useRef("");
   useEffect(() => {
@@ -80,51 +79,54 @@ export function Forge({
     if (!text || isBusy) return;
     onAction(text);
     setLocalInput("");
-    if (inputRef.current) inputRef.current.style.height = "36px";
+    if (inputRef.current) inputRef.current.style.height = "40px";
   }, [localInput, isBusy, onAction]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   }, [handleSubmit]);
 
-  const toggle = useCallback((id: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
-
   return (
-    <div className="flex h-full flex-col border-l border-border/60 bg-[#0a0c14]">
+    <div className="flex h-full flex-col bg-[#0c0e16]">
       {/* ---- Header ---- */}
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/[.06] px-3 bg-[#0c0e18]">
-        <svg width="16" height="16" viewBox="0 0 24 24" className="text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M20 12A8 8 0 0 0 12 4v8h8z" opacity=".4"/></svg>
-        <span className="text-[11px] font-semibold tracking-wide text-white/90">SYNTH Forge</span>
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/[.06] px-3">
+        <div className="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" className="text-[#2dd4bf]" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+            <path d="M20 12A8 8 0 0 0 12 4v8h8z" opacity=".4" />
+          </svg>
+          <span className="text-[11px] font-semibold text-white/90">SYNTH Forge</span>
+        </div>
         <div className="flex-1" />
-        {currentLabel && (
-          <span className="rounded border border-white/10 px-1.5 py-0.5 text-[9px] text-cyan-400/80">
-            {currentLabel}
-          </span>
-        )}
-        <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400/70 font-mono">
+        <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-[#2dd4bf]/10 text-[#2dd4bf]/70 font-mono">
           {getSynthModelLabel(model || "synth-code")}
         </span>
       </div>
 
+      {/* ---- Status bar (when busy) ---- */}
+      {isBusy && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[.04] bg-[#2dd4bf]/[0.03]">
+          <ThinkingOrb state={currentOutput ? "weaving" : "working"} size={20} theme="dark" />
+          <span className="text-[11px] text-white/60">
+            {currentLabel || "Analyzing..."}
+          </span>
+          <span className="ml-auto text-[9px] text-white/25 animate-pulse">streaming</span>
+        </div>
+      )}
+
       {/* ---- Content ---- */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
         <div className="p-4">
-          {/* File card */}
+          {/* File context card */}
           {fileName && (
-            <div className="mb-4 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-cyan-400">{(fileName.split('.').pop() || 'F').toUpperCase().slice(0,3)}</span>
+            <div className="mb-4 rounded-lg border border-white/[.06] bg-white/[0.02] p-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-[#2dd4bf]/10 flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-[#2dd4bf]">{(fileName.split('.').pop() || 'F').toUpperCase().slice(0, 3)}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-white/90 truncate">{fileName}</p>
-                  <p className="text-[10px] text-white/40 mt-0.5">{fileContent?.language || 'unknown'} — {fileContent?.content.split('\n').length || 0} lines</p>
+                  <p className="text-[12px] font-medium text-white/80 truncate">{fileName}</p>
+                  <p className="text-[9px] text-white/30">{fileContent?.language || 'unknown'} · {fileContent?.content.split('\n').length || 0} lines</p>
                 </div>
               </div>
             </div>
@@ -132,71 +134,81 @@ export function Forge({
 
           {/* Empty state */}
           {!hasMessages && !isBusy && !currentOutput && !error && (
-            <div className="py-8 text-center">
-              <div className="mx-auto w-10 h-10 mb-4 rounded-full bg-cyan-900/30 flex items-center justify-center">
-                <span className="text-[18px] text-cyan-400/70">&lt;/&gt;</span>
+            <div className="py-6 text-center">
+              <div className="mx-auto w-9 h-9 mb-3 rounded-full bg-[#2dd4bf]/10 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" className="text-[#2dd4bf]/60" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                  <path d="M20 12A8 8 0 0 0 12 4v8h8z" opacity=".4" />
+                </svg>
               </div>
-              <p className="text-[13px] text-white/70 mb-1">
+              <p className="text-[13px] text-white/60 mb-1">
                 {fileName ? `Analyse "${fileName}"` : 'What shall we build?'}
               </p>
-              <p className="text-[11px] text-white/40">
-                Ask, or use a quick action below.
+              <p className="text-[10px] text-white/30 mb-4">
+                Ask Forge or use a quick action below.
               </p>
-              <div className="mt-5 grid grid-cols-2 gap-2 max-w-sm mx-auto">
-                {QUICK_ACTIONS.map(a => (
-                  <button
-                    key={a.label}
-                    type="button"
-                    disabled={!fileName}
-                    onClick={() => onAction(a.prompt)}
-                    className="rounded-lg border border-white/[.06] bg-white/[.03] px-3 py-2.5 text-left text-[11px] text-white/70 hover:border-[#2dd4bf40] hover:bg-[#2dd4bf08] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span className="font-medium text-white/85">{a.label}</span>
-                    <br /><span className="text-[9px] text-white/40">{a.label === 'Explain' ? 'Understand the code' : a.label === 'Review' ? 'Check for issues' : a.label === 'Find Issues' ? 'Spot bugs & edge-cases' : 'Improve quality'}</span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-1.5 max-w-[240px] mx-auto">
+                {QUICK_ACTIONS.map(a => {
+                  const AIcon = iconFor(a.icon);
+                  return (
+                    <button
+                      key={a.label}
+                      type="button"
+                      disabled={!fileName}
+                      onClick={() => onAction(a.prompt)}
+                      className="flex items-center gap-1.5 rounded-md border border-white/[.05] bg-white/[.02] px-2.5 py-2 text-left text-[10px] text-white/60 hover:border-[#2dd4bf]/20 hover:bg-[#2dd4bf]/[0.04] hover:text-white/80 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <AIcon className="size-3 shrink-0" />
+                      <span>{a.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Messages */}
-          {messages.length > 0 && (
+          {hasMessages && (
             <div className="space-y-3">
               {messages.map((msg, i) => (
-                <div key={`${msg.requestId}-${i}`} className={`rounded-lg border p-3 text-[13px] leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-white/[.03] border-white/[.06] text-white/80'
-                    : 'bg-[#0e1225] border-[#1e243a] text-[#a0aec0]'
-                }`}>
-                  <span className={`text-[9px] font-semibold block mb-1 ${msg.role === 'user' ? 'text-white/50' : 'text-[#9f7aea]/60'}`}>
-                    {msg.role === 'user' ? 'You' : 'SYNTH Forge'}
-                    {msg.label ? <span className="ml-1.5 text-[8px] opacity-60">({msg.label})</span> : null}
-                  </span>
-                  {msg.content}
+                <div key={`${msg.requestId}-${i}`}>
+                  {/* User message */}
+                  {msg.role === 'user' && (
+                    <div className="rounded-lg border border-white/[.06] bg-white/[.03] p-3">
+                      <span className="text-[9px] font-semibold text-white/40 block mb-1">You</span>
+                      <p className="text-[12px] leading-relaxed text-white/75 whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  )}
+                  {/* Assistant message (from completed responses) */}
+                  {msg.role === 'assistant' && (
+                    <div className="rounded-lg border border-[#8b5cf6]/10 bg-[#8b5cf6]/[0.03] p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" className="text-[#8b5cf6]" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                          <path d="M20 12A8 8 0 0 0 12 4v8h8z" opacity=".4" />
+                        </svg>
+                        <span className="text-[9px] font-semibold text-[#8b5cf6]/70">SYNTH Forge</span>
+                      </div>
+                      <FormattedOutput text={msg.content} />
+                    </div>
+                  )}
                 </div>
               ))}
 
               {/* Live streaming output */}
               {(isBusy || (currentOutput && currentOutput.length > 0) || error) && (
-                <div className="rounded-lg bg-[#0e1225] border border-[#1e243a] p-3">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="rounded-lg border border-[#8b5cf6]/10 bg-[#8b5cf6]/[0.03] p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
                     {isBusy && <ThinkingOrb state={currentOutput ? "weaving" : "working"} size={20} theme="dark" />}
-                    <span className="text-[9px] font-semibold text-[#9f7aea]">
+                    <span className="text-[9px] font-semibold text-[#8b5cf6]/70">
                       {isBusy ? "Forge — analyzing" : "Forge"}
                     </span>
-                    {isBusy && <span className="ml-auto text-[9px] text-white/30 animate-pulse">processing...</span>}
                   </div>
-                  {isBusy && !currentOutput && (
-                    <div className="flex items-center gap-2 py-2">
-                      <ThinkingOrb state="working" size={20} theme="dark" />
-                      <span className="text-[10px] text-white/40">Analyzing{fileName ? ` ${fileName}` : ''}...</span>
-                    </div>
-                  )}
                   {error && !currentOutput && (
                     <p className="text-[11px] text-red-400 py-2">{error}</p>
                   )}
                   {currentOutput && currentOutput.length > 0 && (
-                    <FormattedOutput text={currentOutput} expanded={expandedSections} onToggle={toggle} />
+                    <FormattedOutput text={currentOutput} />
                   )}
                 </div>
               )}
@@ -206,36 +218,43 @@ export function Forge({
       </ScrollArea>
 
       {/* ---- Composer ---- */}
-      <div className="shrink-0 border-t border-[#1e243a] bg-[#080b14]">
-        <div className="m-2 rounded-lg border border-white/[.06] bg-[#141829]">
+      <div className="shrink-0 border-t border-white/[.06] bg-[#0a0c14]">
+        <div className="m-2 rounded-xl border border-white/[.06] bg-white/[0.03] overflow-hidden">
+          {/* Gradient top edge */}
+          <div className="h-px bg-gradient-to-r from-transparent via-[#2dd4bf]/20 to-transparent" />
+
           <textarea
             ref={inputRef}
             value={localInput}
             onChange={e => {
               setLocalInput(e.target.value);
-              e.target.style.height = "36px";
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              e.target.style.height = "40px";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
             }}
             onKeyDown={handleKeyDown}
-            placeholder={fileName ? `Ask about ${fileName}...` : 'What do you want to build?'}
+            placeholder={fileName ? `Ask about ${fileName}...` : 'Ask Forge anything...'}
             disabled={isBusy}
             rows={1}
-            className="w-full resize-none border-none bg-transparent px-3 py-2.5 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none disabled:opacity-50"
-            style={{ minHeight: 36 }}
+            className="w-full resize-none border-none bg-transparent px-3.5 py-2.5 text-[12px] text-white/80 placeholder:text-white/20 focus:outline-none disabled:opacity-40"
+            style={{ minHeight: 40 }}
           />
-          <div className="flex items-center justify-between px-2.5 pb-2">
-            <div className="flex items-center gap-1.5 text-white/25 text-[10px]">
-              <span className="cursor-pointer hover:text-white/50 transition-colors">⊕</span>
+          <div className="flex items-center justify-between px-3 pb-2">
+            <div className="flex items-center gap-1 text-white/20 text-[10px]">
+              <span className="cursor-pointer hover:text-white/40 transition-colors">+</span>
             </div>
             <button
               type="button"
               disabled={!localInput.trim() || isBusy}
               onClick={handleSubmit}
-              className="rounded-lg p-1.5 transition-colors disabled:opacity-20"
-              style={{ background: localInput.trim() ? '#2dd4bf' : 'rgba(255,255,255,0.05)', color: localInput.trim() ? '#000' : undefined }}
+              className="rounded-lg p-1.5 transition-all disabled:opacity-15"
+              style={{
+                background: localInput.trim() ? '#2dd4bf' : 'rgba(255,255,255,0.05)',
+                color: localInput.trim() ? '#080a12' : undefined,
+              }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12"/>
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5 12 12 5 19 12" />
               </svg>
             </button>
           </div>
@@ -245,29 +264,78 @@ export function Forge({
   );
 }
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  lightbulb: Lightbulb,
+  gitCompare: GitCompare,
+  bug: Bug,
+  shuffle: Shuffle,
+};
+
+function iconFor(name: string) {
+  return ICON_MAP[name] || (() => null);
+}
+
 /* ------------------------------------------------------------------ */
-/*  Structured Output                                                  */
+/*  Formatted Output — renders markdown-like structured output          */
 /* ------------------------------------------------------------------ */
 
-function FormattedOutput({ text, expanded, onToggle }: {
-  text: string
-  expanded: Set<string>
-  onToggle: (id: string) => void
-}) {
-  const sections = text.split(/\n{2,}/)
+function FormattedOutput({ text }: { text: string }) {
+  // Split into sections by double newlines
+  const sections = text.split(/\n{2,}/);
+
   return (
     <div className="space-y-2">
-      {sections.map((s, i) => {
-        if (s.startsWith('```')) {
-          const code = s.replace(/^```\w*\n?/, '').replace(/\n?```$/, '')
+      {sections.map((section, i) => {
+        const trimmed = section.trim();
+        if (!trimmed) return null;
+
+        // Code block
+        if (trimmed.startsWith('```')) {
+          const code = trimmed.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
           return (
-            <div key={i} className="bg-[#0c0e14] border border-white/5 rounded-md overflow-hidden">
-              <pre className="p-3 text-[12px] font-mono text-white/70 overflow-x-auto whitespace-pre">{code}</pre>
+            <div key={i} className="rounded-md border border-white/[.04] bg-[#0a0c14] overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[.04]">
+                <span className="text-[8px] font-mono text-white/30">code</span>
+                <button
+                  type="button"
+                  className="text-[8px] text-white/30 hover:text-[#2dd4bf] transition-colors"
+                  onClick={() => navigator.clipboard.writeText(code)}
+                >
+                  copy
+                </button>
+              </div>
+              <pre className="p-3 text-[11px] font-mono text-white/65 overflow-x-auto whitespace-pre leading-relaxed">{code}</pre>
             </div>
-          )
+          );
         }
-        return <p key={i} className="text-[13px] leading-relaxed text-white/75 whitespace-pre-wrap">{s.trim()}</p>
+
+        // Check for section headers (PLAN, AFFECTED FILES, PROPOSED CHANGES, etc.)
+        const headerMatch = trimmed.match(/^(PLAN|AFFECTED FILES|PROPOSED CHANGES|REASONING|SUMMARY|CHANGES|FILES MODIFIED|IMPLEMENTATION):?\s*/i);
+        if (headerMatch) {
+          const header = headerMatch[1].toUpperCase();
+          const body = trimmed.slice(headerMatch[0].length);
+          return (
+            <div key={i} className="rounded-md border border-white/[.04] bg-white/[0.015] p-2.5">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-[#2dd4bf]/70 mb-1.5">{header}</p>
+              <div className="text-[11px] leading-relaxed text-white/60 whitespace-pre-wrap">{body}</div>
+            </div>
+          );
+        }
+
+        // Numbered list items
+        if (/^\d+\.\s/.test(trimmed)) {
+          return (
+            <div key={i} className="text-[11px] leading-relaxed text-white/60 whitespace-pre-wrap pl-1">
+              {trimmed}
+            </div>
+          );
+        }
+
+        // Regular paragraph
+        return (
+          <p key={i} className="text-[12px] leading-relaxed text-white/65 whitespace-pre-wrap">{trimmed}</p>
+        );
       })}
     </div>
-  )
+  );
 }
