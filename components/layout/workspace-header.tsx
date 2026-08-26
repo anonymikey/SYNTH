@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,13 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
   const { theme, toggleTheme } = useTheme();
   const { connected, providerLabel } = useProviderStatus();
   const [workspace, setWorkspace] = useState("ANONYMIKE/LABS");
+  const [accountLabel, setAccountLabel] = useState("Account");
+  const supabase = createClient();
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setAccountLabel(data.user.email);
+    });
+  }, [supabase]);
   const FolderIcon = iconFor("folders");
   const ChevronIcon = iconFor("chevronDown");
   const ActivityIcon = iconFor("activity");
@@ -156,12 +164,13 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
-              <p className="text-xs">ANONYMIKE</p>
+              <p className="max-w-[170px] truncate text-xs">{accountLabel}</p>
               <p className="font-mono text-[9px] font-normal uppercase tracking-[0.12em] text-muted-foreground">Creator</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onOpenSettings}><SettingsIcon className="size-4" aria-hidden="true" /> Settings</DropdownMenuItem>
             <DropdownMenuItem onClick={onOpenAbout}><ActivityIcon className="size-4" aria-hidden="true" /> About SYNTH</DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => { await supabase.auth.signOut(); window.location.assign("/"); }}>Sign out</DropdownMenuItem>
             <DropdownMenuItem className="gap-3" onSelect={(event) => event.preventDefault()}>
               <SunIcon className="size-4" aria-hidden="true" /> Light mode
               <Switch className="ml-auto" checked={theme === "light"} onCheckedChange={() => toggleTheme()} aria-label="Light mode" />
