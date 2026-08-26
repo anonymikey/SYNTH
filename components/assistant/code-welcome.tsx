@@ -78,7 +78,7 @@ export function CodeWelcome({
   const SparkleIcon = iconFor("sparkles");
 
   return (
-    <div className="flex h-full min-w-0 flex-col items-center justify-center bg-[#080a12] px-4 relative overflow-hidden">
+    <div className="w-full px-4 py-12 flex flex-col items-center justify-center min-h-full relative overflow-hidden bg-[#080a12]">
       {/* Ambient background glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.06)_0%,transparent_70%)] blur-3xl" />
@@ -86,7 +86,7 @@ export function CodeWelcome({
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center max-w-2xl w-full">
+      <div className="relative z-10 flex flex-col items-center max-w-2xl w-full mx-auto">
         {/* ThinkingOrb */}
         <div className="mb-6 pointer-events-none">
           <ThinkingOrb state="listening" size={64} theme="dark" />
