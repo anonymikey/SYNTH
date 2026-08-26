@@ -78,6 +78,11 @@
   --synth-success: #0b9460;
   --synth-surface: #ffffff;
   --synth-surface-elevated: #e8edf5;
+  --auth-panel: #ffffff;
+  --auth-foreground: #132044;
+  --auth-muted: #6d7891;
+  --auth-border: #d7dce5;
+  --auth-accent: #1455ff;
   --radius: 0.75rem;
 }
 
