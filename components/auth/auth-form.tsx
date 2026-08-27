@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, Sparkles } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
   const isRecovery = mode === "forgot" || mode === "reset";
   const title = isLogin ? "Welcome back" : isSignup ? "Create your account" : mode === "forgot" ? "Recover access" : "Set a new password";
   const description = isLogin ? "Sign in to continue building with SYNTH." : isSignup ? "Start turning ambitious ideas into shipped work." : mode === "forgot" ? "Enter your email and we’ll send a secure reset link." : "Choose a strong password for your account.";
+  const headlineLines = ["Build clearly.", "Think expansively.", "Ship what matters."];
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setHeadlineIndex((current) => (current + 1) % headlineLines.length);
+    }, 2800);
+    return () => window.clearInterval(interval);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background p-0 sm:p-4 lg:p-6">
@@ -89,7 +98,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
           </Link>
           <div className="absolute bottom-8 left-8 right-8 z-10 text-white">
             <div className="mb-5 flex items-center gap-2 text-sm font-semibold tracking-[0.2em]"><Sparkles aria-hidden="true" className="text-[var(--auth-accent)]" /> SYNTH</div>
-            <p className="max-w-md font-heading text-3xl font-semibold leading-tight">Build clearly. Think expansively. Ship what matters.</p>
+            <p aria-live="polite" className="max-w-md font-heading text-3xl font-semibold leading-tight tracking-tight text-pretty [text-shadow:0_0_18px_rgb(167_139_250_/_0.28)] sm:text-4xl">
+              <span key={headlineIndex} className="inline-block animate-in fade-in slide-in-from-bottom-3 duration-700" style={{ WebkitTextStroke: "0.6px var(--auth-accent)" }}>
+                {headlineLines[headlineIndex]}
+              </span>
+            </p>
           </div>
         </div>
 
