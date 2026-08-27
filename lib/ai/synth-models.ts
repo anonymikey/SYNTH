@@ -45,7 +45,7 @@ export const SYNTH_MODEL_CATALOG: SynthModelProfile[] = [
     category: "coding",
     available: true,
     free: true,
-    internal: { providerId: "openrouter", model: "stealth/ox-alpha", allowFallback: true },
+    internal: { providerId: "openrouter", model: "cohere/north-mini-code:free", allowFallback: true },
   },
   {
     id: "synth-reason",
@@ -151,7 +151,7 @@ export function resolveSynthModel(modelId: string): ProviderSelection {
   const legacyMap: Record<string, ProviderSelection> = {
     "openai/gpt-4o-mini": { providerId: "openrouter", model: "openai/gpt-4o-mini", allowFallback: true },
     "qwen/qwen3-30b-a3b:free": { providerId: "openrouter", model: "qwen/qwen3-30b-a3b:free", allowFallback: true },
-    "stealth/ox-alpha": { providerId: "openrouter", model: "stealth/ox-alpha", allowFallback: true },
+    "cohere/north-mini-code:free": { providerId: "openrouter", model: "cohere/north-mini-code:free", allowFallback: true },
     "deepseek/deepseek-r1:free": { providerId: "openrouter", model: "deepseek/deepseek-r1:free", allowFallback: true },
     "google/gemini-2.0-flash-001": { providerId: "openrouter", model: "google/gemini-2.0-flash-001", allowFallback: true },
     "llama3.1:8b": { providerId: "ollama", model: "llama3.1:8b", allowFallback: false },

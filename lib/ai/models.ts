@@ -4,7 +4,7 @@ const openRouterCapabilities = { streaming: true, vision: false, tools: false, e
 
 export const configuredModels: ModelInfo[] = [
   { id: "openai/gpt-4o-mini", label: "GPT-4o mini", providerId: "openrouter", contextWindow: 128000, capabilities: openRouterCapabilities, category: "chat", enabled: true, free: false, priority: 100 },
-  { id: "stealth/ox-alpha", label: "Ox Alpha · Free", providerId: "openrouter", contextWindow: 1000000, capabilities: openRouterCapabilities, category: "coding", enabled: true, free: true, priority: 90 },
+  { id: "cohere/north-mini-code:free", label: "North Mini Code · Free", providerId: "openrouter", contextWindow: 128000, capabilities: openRouterCapabilities, category: "coding", enabled: true, free: true, priority: 90 },
   { id: "qwen/qwen3-30b-a3b:free", label: "Qwen 3 30B · Free", providerId: "openrouter", contextWindow: 32768, capabilities: openRouterCapabilities, category: "coding", enabled: true, free: true, priority: 80 },
   { id: "deepseek/deepseek-r1:free", label: "DeepSeek R1 · Free", providerId: "openrouter", contextWindow: 65536, capabilities: openRouterCapabilities, category: "reasoning", enabled: true, free: true, priority: 70 },
   { id: "google/gemini-2.0-flash-001", label: "Gemini 2.0 Flash", providerId: "openrouter", contextWindow: 1000000, capabilities: { ...openRouterCapabilities, vision: true }, category: "vision", enabled: true, free: false, priority: 60 },
