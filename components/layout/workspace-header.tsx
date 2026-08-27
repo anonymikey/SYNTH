@@ -61,13 +61,28 @@ const DEST_LABELS: Record<string, string> = {
 export function WorkspaceHeader({ destination = "assistant", onContextToggle, onOpenCommand, onOpenNotifications, onOpenSettings, onOpenAbout }: WorkspaceHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { connected, providerLabel } = useProviderStatus();
-  const [workspace, setWorkspace] = useState("ANONYMIKE/LABS");
+  const [workspace, setWorkspace] = useState("SYNTH Workspace");
   const [accountLabel, setAccountLabel] = useState("Account");
+  const [accountInitials, setAccountInitials] = useState("SY");
   const supabase = createClient();
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setAccountLabel(data.user.email);
+    let active = true;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!active || !data.user) return;
+      const displayName = typeof data.user.user_metadata?.display_name === "string"
+        ? data.user.user_metadata.display_name.trim()
+        : "";
+      const label = displayName || data.user.email || "Account";
+      const initials = label
+        .split(/[\\s@._-]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("") || "SY";
+      setAccountLabel(label);
+      setAccountInitials(initials);
     });
+    return () => { active = false; };
   }, [supabase]);
   const FolderIcon = iconFor("folders");
   const ChevronIcon = iconFor("chevronDown");
@@ -96,7 +111,7 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Switch workspace</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => { setWorkspace("ANONYMIKE/LABS"); toast.success("ANONYMIKE/LABS selected"); }}>
+              <DropdownMenuItem onClick={() => { setWorkspace("SYNTH Workspace"); toast.success("SYNTH Workspace selected"); }}>
                 <FolderIcon className="size-4 text-synth-cyan" aria-hidden="true" /> ANONYMIKE/LABS
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => { setWorkspace("SYNTH Sandbox"); toast.success("SYNTH Sandbox selected"); }}>
@@ -158,14 +173,14 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="size-8 rounded-full p-0" aria-label="Open profile menu">
               <Avatar className="size-8 border border-synth-cyan/35 bg-synth-cyan/10">
-                <AvatarFallback className="bg-transparent font-mono text-[10px] text-synth-cyan">AM</AvatarFallback>
+                <AvatarFallback className="bg-transparent font-mono text-[10px] text-synth-cyan">{accountInitials}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
               <p className="max-w-[170px] truncate text-xs">{accountLabel}</p>
-              <p className="font-mono text-[9px] font-normal uppercase tracking-[0.12em] text-muted-foreground">Creator</p>
+              <p className="font-mono text-[9px] font-normal uppercase tracking-[0.12em] text-muted-foreground">SYNTH account</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onOpenSettings}><SettingsIcon className="size-4" aria-hidden="true" /> Settings</DropdownMenuItem>
