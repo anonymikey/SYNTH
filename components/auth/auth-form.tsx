@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const sourceImage = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-VdPM7A3CDb94ZLsrxLun8eRQm4lcMH.png";
+const sourceImage = "/synth-auth-portal.png";
 
 function safeError(message: string) {
   const lower = message.toLowerCase();
