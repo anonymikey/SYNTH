@@ -93,16 +93,13 @@ export function CodeExplorer({
     [onSearch, tab],
   );
 
-  const FileIcon = iconFor("fileCode");
-  const DirIcon = iconFor("folder");
-  const DirOpenIcon = iconFor("folderOpen");
-  const ClockIcon = iconFor("clock");
   const SearchIcon = iconFor("search");
+  const ClockIcon = iconFor("clock");
 
   return (
-    <div className="flex h-full min-w-0 flex-col border-r border-border/60 bg-background/50">
+    <div className="flex h-full min-w-0 flex-col bg-[#0c0e16]/80">
       {/* Tab bar */}
-      <div className="flex h-8 shrink-0 items-center gap-0 border-b border-border/40 px-1">
+      <div className="flex h-7 shrink-0 items-center gap-0 border-b border-white/[.06] px-1">
         {([
           { id: "files" as const, label: "Files", icon: iconFor("files") },
           { id: "search" as const, label: "Search", icon: SearchIcon },
@@ -112,42 +109,42 @@ export function CodeExplorer({
             key={t.id}
             type="button"
             variant="ghost"
-            className={`h-6 gap-1 px-2 text-[10px] ${
+            className={`h-5 gap-1 px-1.5 text-[9px] ${
               tab === t.id
-                ? "bg-synth-cyan/10 text-synth-cyan"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-[#2dd4bf]/70 bg-[#2dd4bf]/[0.06]"
+                : "text-white/30 hover:text-white/50"
             }`}
             onClick={() => {
               setTab(t.id);
               if (t.id !== "search") setQuery("");
             }}
           >
-            <t.icon className="size-3" />
+            <t.icon className="size-2.5" />
             {t.label}
           </Button>
         ))}
         <div className="flex-1" />
-        <Badge variant="outline" className="font-mono text-[7px] text-muted-foreground/60">
+        <Badge variant="outline" className="font-mono text-[6px] text-white/20 border-white/[0.06]">
           {files.length}
         </Badge>
       </div>
 
       {/* Search/filter input */}
       {tab === "files" && (
-        <div className="px-2 py-1.5">
+        <div className="px-1.5 py-1">
           <Input
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Filter files..."
             aria-label="Filter files"
-            className="h-6 text-[10px]"
+            className="h-5 text-[9px] bg-white/[0.03] border-white/[0.06]"
           />
         </div>
       )}
 
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="p-1">
+        <div className="p-0.5">
           {/* FILES TAB */}
           {tab === "files" && (
             <div className="space-y-px" role="list" aria-label="Project file tree">
@@ -156,21 +153,18 @@ export function CodeExplorer({
                 const children = tree.dirs.get(dirPath) ?? [];
                 const dirName = dirPath.split("/").pop() ?? dirPath;
                 const depth = dirPath.split("/").length - 1;
+                const DirIcon = iconFor(isExpanded ? "folderOpen" : "folder");
                 return (
                   <div key={`dir-${dirPath}`}>
                     <button
                       type="button"
-                      className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-[3px] text-left text-muted-foreground hover:bg-synth-cyan/5 hover:text-foreground`}
-                      style={{ paddingLeft: `${depth * 12 + 4}px` }}
+                      className="flex w-full items-center gap-1 rounded-sm px-1 py-[2px] text-left text-white/40 hover:bg-[#2dd4bf]/[0.04] hover:text-white/60 transition-colors"
+                      style={{ paddingLeft: `${depth * 10 + 4}px` }}
                       onClick={() => toggleDir(dirPath)}
                       aria-expanded={isExpanded}
                     >
-                      {isExpanded ? (
-                        <DirOpenIcon className="size-3.5 shrink-0 text-synth-cyan" />
-                      ) : (
-                        <DirIcon className="size-3.5 shrink-0 text-muted-foreground/40" />
-                      )}
-                      <span className="text-[11px] font-medium">{dirName}/</span>
+                      <DirIcon className={`size-3 shrink-0 ${isExpanded ? "text-[#2dd4bf]/50" : "text-white/20"}`} />
+                      <span className="text-[10px] font-medium">{dirName}/</span>
                     </button>
                     {isExpanded && children.map((file) => (
                       <FileRow key={file.path} file={file} selectedPath={selectedPath} onSelect={onSelect} depth={depth + 1} />
@@ -182,7 +176,7 @@ export function CodeExplorer({
                 <FileRow key={file.path} file={file} selectedPath={selectedPath} onSelect={onSelect} depth={0} />
               ))}
               {filteredFiles.length === 0 && (
-                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">No files match.</p>
+                <p className="px-2 py-4 text-center text-[9px] text-white/20">No files match.</p>
               )}
             </div>
           )}
@@ -190,39 +184,42 @@ export function CodeExplorer({
           {/* SEARCH TAB */}
           {tab === "search" && (
             <div className="space-y-px">
-              <div className="px-1 py-1.5">
+              <div className="px-1 py-1">
                 <Input
                   value={query}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search files and content..."
                   aria-label="Search files"
-                  className="h-6 text-[10px]"
+                  className="h-5 text-[9px] bg-white/[0.03] border-white/[0.06]"
                 />
               </div>
               {searching && (
-                <p className="px-2 py-4 text-center text-[10px] text-muted-foreground">Searching...</p>
+                <p className="px-2 py-3 text-center text-[9px] text-white/20">Searching...</p>
               )}
               {!searching && searchResults.length === 0 && query.trim().length >= 2 && (
-                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">No results found.</p>
+                <p className="px-2 py-4 text-center text-[9px] text-white/20">No results found.</p>
               )}
-              {searchResults.map((result, i) => (
-                <button
-                  key={`${result.path}-${result.line ?? i}`}
-                  type="button"
-                  className="flex w-full items-start gap-2 rounded-sm px-2 py-2 text-left hover:bg-synth-cyan/5"
-                  onClick={() => onSelect(result.path)}
-                >
-                  <FileIcon className="mt-0.5 size-3.5 shrink-0 text-synth-cyan" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[11px] font-medium text-foreground">
-                      {result.path}{result.line ? `:${result.line}` : ""}
+              {searchResults.map((result, i) => {
+                const ResultFileIcon = iconFor("fileCode");
+                return (
+                  <button
+                    key={`${result.path}-${result.line ?? i}`}
+                    type="button"
+                    className="flex w-full items-start gap-1.5 rounded-sm px-1.5 py-1.5 text-left hover:bg-[#2dd4bf]/[0.04] transition-colors"
+                    onClick={() => onSelect(result.path)}
+                  >
+                    <ResultFileIcon className="mt-0.5 size-3 shrink-0 text-[#2dd4bf]/40" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[10px] font-medium text-white/65">
+                        {result.path}{result.line ? `:${result.line}` : ""}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[8px] text-white/25">
+                        {result.snippet}
+                      </span>
                     </span>
-                    <span className="mt-0.5 block truncate text-[9px] text-muted-foreground">
-                      {result.snippet}
-                    </span>
-                  </span>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -230,21 +227,24 @@ export function CodeExplorer({
           {tab === "recent" && (
             <div className="space-y-px">
               {recentFiles.length === 0 && (
-                <p className="px-2 py-6 text-center text-[10px] text-muted-foreground">
+                <p className="px-2 py-4 text-center text-[9px] text-white/20">
                   No recently viewed files.
                 </p>
               )}
-              {recentFiles.map((filePath) => (
-                <button
-                  key={filePath}
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left hover:bg-synth-cyan/5"
-                  onClick={() => onSelect(filePath)}
-                >
-                  <ClockIcon className="size-3.5 shrink-0 text-muted-foreground/40" />
-                  <span className="min-w-0 truncate text-[11px] text-muted-foreground">{filePath}</span>
-                </button>
-              ))}
+              {recentFiles.map((filePath) => {
+                const ClockSmallIcon = iconFor("clock");
+                return (
+                  <button
+                    key={filePath}
+                    type="button"
+                    className="flex w-full items-center gap-1.5 rounded-sm px-1.5 py-1.5 text-left hover:bg-[#2dd4bf]/[0.04] transition-colors"
+                    onClick={() => onSelect(filePath)}
+                  >
+                    <ClockSmallIcon className="size-3 shrink-0 text-white/20" />
+                    <span className="min-w-0 truncate text-[10px] text-white/40">{filePath}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -266,29 +266,47 @@ function FileRow({
 }) {
   const isSelected = file.path === selectedPath;
   const ext = file.extension;
-  const iconKey = ext === "css" || ext === "scss" ? "fileText" : ext === "json" ? "fileText" : "fileCode";
-  const FileIcon = iconFor(iconKey);
   const fileName = file.path.split("/").pop() ?? file.path;
+
+  // Extension color
+  const extColor = (() => {
+    switch (ext) {
+      case "tsx":
+      case "ts":
+        return "text-blue-400";
+      case "jsx":
+      case "js":
+        return "text-yellow-400";
+      case "css":
+      case "scss":
+        return "text-pink-400";
+      case "json":
+        return "text-green-400";
+      case "md":
+        return "text-white/40";
+      case "html":
+        return "text-orange-400";
+      default:
+        return "text-white/30";
+    }
+  })();
 
   return (
     <button
       type="button"
-      className={`flex w-full items-center gap-1.5 rounded-sm px-1.5 py-[3px] text-left ${
+      className={`flex w-full items-center gap-1 rounded-sm px-1 py-[2px] text-left transition-colors ${
         isSelected
-          ? "bg-synth-cyan/10 text-foreground"
-          : "text-muted-foreground hover:bg-synth-cyan/5 hover:text-foreground"
+          ? "bg-[#2dd4bf]/[0.08] text-white/80"
+          : "text-white/35 hover:bg-[#2dd4bf]/[0.04] hover:text-white/60"
       }`}
-      style={{ paddingLeft: `${depth * 12 + 4}px` }}
+      style={{ paddingLeft: `${depth * 10 + 4}px` }}
       onClick={() => onSelect(file.path)}
       aria-pressed={isSelected}
     >
-      <FileIcon
-        className={`size-3.5 shrink-0 ${isSelected ? "text-synth-cyan" : "text-muted-foreground/40"}`}
-        aria-hidden="true"
-      />
-      <span className="min-w-0 flex-1 truncate text-[11px]">{fileName}</span>
+      <span className={`size-2 shrink-0 rounded-sm ${extColor}`} aria-hidden="true" />
+      <span className="min-w-0 flex-1 truncate text-[10px]">{fileName}</span>
       {file.size > 0 && (
-        <span className="shrink-0 font-mono text-[7px] text-muted-foreground/40">
+        <span className="shrink-0 font-mono text-[7px] text-white/15">
           {file.size < 1024 ? `${file.size}B` : `${(file.size / 1024).toFixed(1)}K`}
         </span>
       )}

@@ -126,6 +126,93 @@
   50% { opacity: 0.6; transform: scale(1.05); }
 }
 
+@keyframes orb-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(45,212,191,0.15), 0 0 40px rgba(45,212,191,0.05); }
+  50% { box-shadow: 0 0 30px rgba(45,212,191,0.25), 0 0 60px rgba(45,212,191,0.1); }
+}
+
+@keyframes orb-active {
+  0%, 100% { box-shadow: 0 0 25px rgba(45,212,191,0.3), 0 0 50px rgba(45,212,191,0.15); }
+  50% { box-shadow: 0 0 40px rgba(45,212,191,0.5), 0 0 80px rgba(45,212,191,0.2); }
+}
+
+@keyframes orb-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-scale {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes expand-panel {
+  from { opacity: 0; max-width: 0; }
+  to { opacity: 1; max-width: 500px; }
+}
+
+@keyframes collapse-composer {
+  from { max-height: 300px; opacity: 1; }
+  to { max-height: 0; opacity: 0; }
+}
+
+@keyframes progress-step {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@utility synth-glow {
+  box-shadow: 0 0 20px rgba(45,212,191,0.15), 0 0 40px rgba(45,212,191,0.05);
+}
+
+@utility synth-glow-active {
+  box-shadow: 0 0 30px rgba(45,212,191,0.3), 0 0 60px rgba(45,212,191,0.1);
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+@utility animate-fade-in-scale {
+  animation: fade-in-scale 0.3s ease-out both;
+}
+
+@utility animate-slide-in-right {
+  animation: slide-in-right 0.35s ease-out both;
+}
+
+@utility animate-slide-in-left {
+  animation: slide-in-left 0.35s ease-out both;
+}
+
+@utility panel-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@utility ide-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .auth-headline-line {
   position: absolute;
   inset: 0 auto auto 0;

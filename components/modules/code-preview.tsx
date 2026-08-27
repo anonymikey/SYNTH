@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,43 +23,40 @@ const DEVICE_WIDTHS: Record<PreviewDevice, string> = {
   mobile: "375px",
 };
 
+const DEVICE_LABELS: Record<PreviewDevice, string> = {
+  desktop: "Desktop",
+  tablet: "Tablet",
+  mobile: "Mobile",
+};
+
 export function CodePreview({ project }: CodePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
 
-  const DesktopIcon = iconFor("dashboard");
-  const TabletIcon = iconFor("panelRight");
-  const MobileIcon = iconFor("panelRight");
-  const RefreshIcon = iconFor("refresh");
-
   return (
-    <div className="flex h-full min-w-0 flex-col border-l border-border/60 bg-background/50">
+    <div className="flex h-full min-w-0 flex-col bg-[#0c0e16]">
       {/* Preview toolbar */}
-      <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border/40 px-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Preview</span>
+      <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[.06] px-2">
+        <span className="text-[10px] font-medium text-white/60">Preview</span>
         <div className="flex-1" />
 
         {/* Device switcher */}
-        <div className="flex items-center gap-0.5 rounded-md bg-muted/30 p-0.5">
-          {([
-            { id: "desktop" as const, Icon: DesktopIcon, label: "Desktop" },
-            { id: "tablet" as const, Icon: TabletIcon, label: "Tablet" },
-            { id: "mobile" as const, Icon: MobileIcon, label: "Mobile" },
-          ]).map((d) => (
-            <Tooltip key={d.id}>
+        <div className="flex items-center gap-0.5 rounded-md bg-white/[0.03] border border-white/[0.05] p-0.5">
+          {(["desktop", "tablet", "mobile"] as const).map((d) => (
+            <Tooltip key={d}>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className={`rounded p-1 transition-colors ${
-                    device === d.id
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                  className={`rounded px-1.5 py-0.5 text-[8px] font-medium transition-colors ${
+                    device === d
+                      ? "bg-white/[0.08] text-white/80"
+                      : "text-white/30 hover:text-white/50"
                   }`}
-                  onClick={() => setDevice(d.id)}
+                  onClick={() => setDevice(d)}
                 >
-                  <d.Icon className="size-3" />
+                  {DEVICE_LABELS[d]}
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{d.label}</TooltipContent>
+              <TooltipContent>{DEVICE_LABELS[d]} preview</TooltipContent>
             </Tooltip>
           ))}
         </div>
@@ -66,7 +64,7 @@ export function CodePreview({ project }: CodePreviewProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button type="button" variant="ghost" size="sm" className="h-5 p-1">
-              <RefreshIcon className="size-3 text-muted-foreground" />
+              {(() => { const RefreshIcon = iconFor("refresh"); return <RefreshIcon className="size-3 text-white/30" />; })()}
             </Button>
           </TooltipTrigger>
           <TooltipContent>Refresh preview</TooltipContent>
@@ -74,41 +72,53 @@ export function CodePreview({ project }: CodePreviewProps) {
       </div>
 
       {/* Preview content */}
-      <div className="flex flex-1 items-start justify-center overflow-auto bg-muted/10 p-4">
+      <div className="flex flex-1 items-start justify-center overflow-auto bg-[#080a12]/50 p-4">
         <div
-          className="flex h-full w-full flex-col items-center rounded-lg border border-border/40 bg-background shadow-sm transition-all duration-200"
+          className="flex h-full w-full flex-col items-center rounded-lg border border-white/[.06] bg-[#11151d] transition-all duration-300"
           style={{ maxWidth: DEVICE_WIDTHS[device] }}
         >
           {/* Browser chrome */}
-          <div className="flex h-7 w-full shrink-0 items-center gap-1.5 border-b border-border/40 px-2.5">
+          <div className="flex h-7 w-full shrink-0 items-center gap-1.5 border-b border-white/[.06] px-2.5 bg-[#0c0e16]">
             <div className="flex gap-1">
-              <span className="size-2 rounded-full bg-destructive/40" />
-              <span className="size-2 rounded-full bg-yellow-400/40" />
-              <span className="size-2 rounded-full bg-synth-success/40" />
+              <span className="size-1.5 rounded-full bg-red-400/40" />
+              <span className="size-1.5 rounded-full bg-yellow-400/40" />
+              <span className="size-1.5 rounded-full bg-green-400/40" />
             </div>
-            <div className="mx-2 flex-1 rounded bg-muted/30 px-2 py-0.5">
-              <span className="font-mono text-[8px] text-muted-foreground/60">
+            <div className="mx-2 flex-1 rounded bg-white/[0.04] px-2 py-0.5">
+              <span className="font-mono text-[7px] text-white/30">
                 {project?.name?.toLowerCase().replace(/\s+/g, "-") ?? "project"}.local
               </span>
             </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="p-0.5 text-white/20 hover:text-white/40 transition-colors">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Open in new tab</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Preview area */}
-          <div className="flex flex-1 items-center justify-center p-6">
-            <PreviewUnavailable project={project} />
+          <div className="flex flex-1 items-center justify-center p-6 w-full">
+            <PreviewPreparingState project={project} />
           </div>
         </div>
       </div>
 
       {/* Status bar */}
-      <div className="flex h-5 shrink-0 items-center justify-between border-t border-border/40 bg-background/80 px-3">
-        <div className="flex items-center gap-2 text-[8px] text-muted-foreground/60">
-          <Badge variant="outline" className="h-3.5 border-muted-foreground/20 px-1 text-[7px]">
+      <div className="flex h-5 shrink-0 items-center justify-between border-t border-white/[.06] bg-[#0c0e16] px-3">
+        <div className="flex items-center gap-2 text-[8px] text-white/30">
+          <Badge variant="outline" className="h-3.5 border-white/[0.08] px-1 text-[7px] text-white/25">
             No preview
           </Badge>
           <span>{device}</span>
         </div>
-        <span className="font-mono text-[8px] text-muted-foreground/40">
+        <span className="font-mono text-[7px] text-white/20">
           {DEVICE_WIDTHS[device]}
         </span>
       </div>
@@ -116,40 +126,48 @@ export function CodePreview({ project }: CodePreviewProps) {
   );
 }
 
-function PreviewUnavailable({
-  project,
+/* ------------------------------------------------------------------ */
+/*  PreviewPreparingState — ORB-based preparation animation            */
+/* ------------------------------------------------------------------ */
+
+function PreviewPreparingState({
+  project: _project,
 }: {
   project: CodePreviewProps["project"];
 }) {
-  const InfoIcon = iconFor("info");
+  const steps = [
+    { label: "Analyzing project", active: true },
+    { label: "Building interface", active: false },
+    { label: "Preparing viewport", active: false },
+  ];
 
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground/40">
-        <InfoIcon className="size-5" />
+    <div className="flex flex-col items-center gap-4 text-center">
+      {/* ORB */}
+      <div className="relative">
+        <ThinkingOrb state="listening" size={64} theme="dark" />
+        <div className="absolute inset-0 rounded-full bg-[#2dd4bf]/5 animate-[breathe_3s_ease-in-out_infinite]" />
       </div>
-      <div>
-        <p className="text-xs font-medium text-muted-foreground">Preview unavailable</p>
-        <p className="mt-1 max-w-[200px] text-[10px] text-muted-foreground/60">
-          {project?.adapterType === "github"
-            ? "Connect a GitHub repository with a deploy preview to see live output."
-            : project?.adapterType === "local"
-              ? "Start a local dev server to preview this project."
-              : "Select a project with preview support."}
-        </p>
+
+      {/* Status text */}
+      <div className="flex flex-col items-center gap-1">
+        <p className="text-[12px] text-white/50 font-medium">Preparing preview</p>
+        <div className="flex flex-col items-center gap-1 mt-1">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <div className={`size-1 rounded-full ${step.active ? "bg-[#2dd4bf]" : "bg-white/10"}`} />
+              <span className={`text-[9px] ${step.active ? "text-white/40" : "text-white/15"}`}>
+                {step.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-      {project?.github?.url && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-6 gap-1 text-[9px]"
-          asChild
-        >
-          <a href={project.github.url} target="_blank" rel="noopener noreferrer">
-            View on GitHub
-          </a>
-        </Button>
-      )}
+
+      {/* Progress bar */}
+      <div className="w-32 h-0.5 rounded-full bg-white/[0.04] overflow-hidden">
+        <div className="h-full w-1/3 bg-gradient-to-r from-[#2dd4bf]/40 to-[#9670ff]/40 rounded-full animate-[shimmer_2s_linear_infinite]" style={{ backgroundSize: "200% 100%" }} />
+      </div>
     </div>
   );
 }

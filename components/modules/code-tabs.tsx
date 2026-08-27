@@ -29,11 +29,11 @@ function extensionColor(ext: string): string {
     case "json":
       return "text-green-400";
     case "md":
-      return "text-muted-foreground";
+      return "text-white/40";
     case "html":
       return "text-orange-400";
     default:
-      return "text-muted-foreground/60";
+      return "text-white/30";
   }
 }
 
@@ -42,14 +42,14 @@ export function CodeTabs({ tabs, activePath, onSelect, onClose }: CodeTabsProps)
 
   if (tabs.length === 0) {
     return (
-      <div className="flex h-8 shrink-0 items-center border-b border-border/40 px-3">
-        <span className="text-[10px] text-muted-foreground/50">No files open</span>
+      <div className="flex h-7 shrink-0 items-center border-b border-white/[.06] px-3 bg-[#11151d]">
+        <span className="text-[9px] text-white/20">No files open</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-8 shrink-0 items-center gap-0 overflow-x-auto border-b border-border/40 scrollbar-none">
+    <div className="flex h-7 shrink-0 items-center gap-0 overflow-x-auto border-b border-white/[.06] bg-[#11151d] scrollbar-none">
       {tabs.map((tab) => {
         const isActive = tab.path === activePath;
         const ext = tab.path.split(".").pop() ?? "";
@@ -58,32 +58,32 @@ export function CodeTabs({ tabs, activePath, onSelect, onClose }: CodeTabsProps)
         return (
           <div
             key={tab.path}
-            className={`group flex h-full shrink-0 items-center gap-1.5 border-r border-border/30 px-3 text-[11px] ${
+            className={`group flex h-full shrink-0 items-center gap-1 border-r border-white/[.04] px-2.5 text-[10px] ${
               isActive
-                ? "bg-background text-foreground"
-                : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
+                ? "bg-[#1a1d28] text-white/80"
+                : "text-white/30 hover:bg-white/[0.02] hover:text-white/50"
             }`}
           >
             <button
               type="button"
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1"
               onClick={() => onSelect(tab.path)}
             >
-              <span className={`font-mono text-[9px] ${extensionColor(ext)}`}>●</span>
-              <span className="max-w-[120px] truncate">{fileName}</span>
+              <span className={`font-mono text-[7px] ${extensionColor(ext)}`}>●</span>
+              <span className="max-w-[100px] truncate">{fileName}</span>
             </button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="ml-0.5 rounded-sm p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
+                  className="ml-0.5 rounded-sm p-0.5 opacity-0 hover:bg-white/[0.05] group-hover:opacity-100 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
                     onClose(tab.path);
                   }}
                   aria-label={`Close ${fileName}`}
                 >
-                  <XIcon className="size-2.5 text-muted-foreground" />
+                  <XIcon className="size-2 text-white/25" />
                 </button>
               </TooltipTrigger>
               <TooltipContent>Close tab</TooltipContent>
