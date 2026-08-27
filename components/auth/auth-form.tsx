@@ -81,14 +81,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
 
   return (
     <main className="min-h-screen bg-background p-0 sm:p-4 lg:p-6">
-      <section className="mx-auto flex min-h-screen max-w-7xl overflow-hidden border border-border bg-[var(--auth-panel)] shadow-2xl sm:min-h-[calc(100vh-2rem)] sm:rounded-3xl lg:min-h-[calc(100vh-3rem)]">
-        <div className="relative hidden min-h-full flex-1 overflow-hidden bg-synth-surface-elevated md:block">
+      <section className="mx-auto flex min-h-screen max-w-7xl flex-col overflow-hidden border border-border bg-[var(--auth-panel)] shadow-2xl sm:min-h-[calc(100vh-2rem)] sm:rounded-3xl md:flex-row lg:min-h-[calc(100vh-3rem)]">
+        <div className="relative h-[clamp(13rem,72vw,24rem)] w-full shrink-0 overflow-hidden bg-synth-surface-elevated md:min-h-full md:flex-1">
           <img src={sourceImage} alt="A creative mind exploring a luminous virtual world" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
-          <Link href="/" aria-label="Back to SYNTH home" className="focus-ring absolute left-7 top-7 z-10 flex size-11 items-center justify-center rounded-full border border-white/20 bg-background/35 text-white backdrop-blur-md transition hover:bg-background/60">
+          <Link href="/" aria-label="Back to SYNTH home" className="focus-ring absolute left-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/20 bg-background/35 text-white backdrop-blur-md transition hover:bg-background/60 sm:left-7 sm:top-7 sm:size-11">
             <ArrowLeft aria-hidden="true" />
           </Link>
-          <div className="absolute bottom-8 left-8 right-8 z-10 text-white">
+          <div className="absolute bottom-6 left-6 right-6 z-10 hidden text-white sm:bottom-8 sm:left-8 sm:right-8 sm:block">
             <div className="mb-5 flex items-center gap-2 text-sm font-semibold tracking-[0.2em]"><Sparkles aria-hidden="true" className="text-[var(--auth-accent)]" /> SYNTH</div>
             <p aria-live="polite" className="relative min-h-[7.5rem] max-w-md font-heading text-3xl font-semibold leading-tight tracking-tight text-pretty [text-shadow:0_0_18px_rgb(167_139_250_/_0.28)] sm:min-h-[9rem] sm:text-4xl">
               {headlineLines.map((line, index) => (
