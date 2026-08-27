@@ -78,6 +78,11 @@
   --synth-success: #0b9460;
   --synth-surface: #ffffff;
   --synth-surface-elevated: #e8edf5;
+  --auth-panel: #ffffff;
+  --auth-foreground: #132044;
+  --auth-muted: #6d7891;
+  --auth-border: #d7dce5;
+  --auth-accent: #1455ff;
   --radius: 0.75rem;
 }
 
@@ -119,6 +124,28 @@
 @keyframes breathe {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.auth-headline-line {
+  position: absolute;
+  inset: 0 auto auto 0;
+  opacity: 0;
+  transform: translateY(0.6rem);
+  animation: auth-headline-cycle 8.4s ease-in-out infinite;
+}
+
+.auth-headline-line-2 { animation-delay: 2.8s; }
+.auth-headline-line-3 { animation-delay: 5.6s; }
+
+@keyframes auth-headline-cycle {
+  0%, 5% { opacity: 0; transform: translateY(0.6rem); }
+  10%, 28% { opacity: 1; transform: translateY(0); }
+  33%, 100% { opacity: 0; transform: translateY(-0.6rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-headline-line { animation: none; }
+  .auth-headline-line:first-child { opacity: 1; transform: none; }
 }
 
 @keyframes scrollLeft {
