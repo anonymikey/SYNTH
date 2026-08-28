@@ -115,7 +115,7 @@ function WorkspaceShellInner() {
   }, []);
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen className="min-h-0 h-svh">
       <WorkspaceSidebar
         activeModule={activeDestination}
         onDashboard={() => setActiveDestination("dashboard")}
