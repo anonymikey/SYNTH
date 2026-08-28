@@ -688,14 +688,31 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
                     adapterType={proj.project?.adapterType ?? "demo"}
                   />
                 ) : (
-                  <div className="h-full grid place-items-center">
-                    <div className="text-center">
-                      <div className="text-3xl text-white/20 mb-3">
-                        &lt;/&gt;
+                  <div className="flex h-full flex-col items-center justify-start pt-24">
+                    <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+                      <div className="flex size-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                        <span className="text-3xl text-white/15">&lt;/&gt;</span>
                       </div>
-                      <p className="text-sm text-white/40">
-                        Select a file to inspect
-                      </p>
+                      <div>
+                        <p className="text-sm font-medium text-white/50">
+                          No file selected
+                        </p>
+                        <p className="mt-1 text-[11px] text-white/25">
+                          Choose a file from the explorer or use the search
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                        {[
+                          { key: "⌘K", label: "Search" },
+                          { key: "⌘B", label: "Sidebar" },
+                          { key: "⌘N", label: "New Chat" },
+                        ].map((s) => (
+                          <span key={s.key} className="flex items-center gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1 text-[9px] text-white/30">
+                            <kbd className="font-mono text-[8px] text-white/40">{s.key}</kbd>
+                            {s.label}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
