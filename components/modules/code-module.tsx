@@ -688,7 +688,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
                     adapterType={proj.project?.adapterType ?? "demo"}
                   />
                 ) : (
-                  <div className="flex h-full flex-col items-center justify-start pt-24">
+                  <div className="flex h-full flex-col items-center justify-center">
                     <div className="flex flex-col items-center gap-4 text-center max-w-sm">
                       <div className="flex size-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.02]">
                         <span className="text-3xl text-white/15">&lt;/&gt;</span>
