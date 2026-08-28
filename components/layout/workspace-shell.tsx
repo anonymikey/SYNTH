@@ -115,7 +115,7 @@ function WorkspaceShellInner() {
   }, []);
 
   return (
-    <SidebarProvider defaultOpen className="min-h-0 h-svh">
+    <SidebarProvider defaultOpen className="min-h-0" style={{ height: "100dvh" }}>
       <WorkspaceSidebar
         activeModule={activeDestination}
         onDashboard={() => setActiveDestination("dashboard")}
@@ -130,7 +130,7 @@ function WorkspaceShellInner() {
         onDeleteConversation={handleDeleteConversation}
         onPinConversation={handlePinConversation}
       />
-      <SidebarInset className="min-w-0 overflow-hidden bg-background h-full min-h-0">
+      <SidebarInset className="min-w-0 overflow-hidden bg-background h-full min-h-0 flex-none">
         <WorkspaceHeader
           destination={activeDestination}
           onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
