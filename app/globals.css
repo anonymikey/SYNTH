@@ -289,6 +289,33 @@
   }
 }
 
+/* Viewport lock — prevents body-level scrolling in the workspace */
+html, body, #__next {
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (min-height: 0.01px) {
+  html, body, #__next {
+    height: 100dvh;
+  }
+}
+
+/* Custom scrollbar for Forge and panels */
+.forge-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.forge-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.forge-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+.forge-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
