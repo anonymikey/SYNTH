@@ -9,7 +9,7 @@
  * Caches the adapter instance for the process lifetime.
  */
 
-import type { RepositoryAdapter } from "@/lib/project/types";
+import type { ProjectAdapterType, RepositoryAdapter } from "@/lib/project/types";
 
 let cachedAdapter: RepositoryAdapter | null = null;
 
@@ -44,7 +44,8 @@ export async function getRepositoryAdapter(): Promise<RepositoryAdapter> {
       await adapter.getProject();
       cachedAdapter = adapter;
       return adapter;
-    } catch {
+    } catch (err) {
+      console.warn("[adapter-factory] Local adapter failed:", err);
       // Local access failed, fall through
     }
   }
@@ -63,13 +64,42 @@ export async function getRepositoryAdapter(): Promise<RepositoryAdapter> {
       await adapter.getProject();
       cachedAdapter = adapter;
       return adapter;
-    } catch {
+    } catch (err) {
+      console.warn("[adapter-factory] GitHub adapter failed:", err);
       // GitHub access failed, fall through to demo
     }
   }
 
-  // 3. Fallback: demo adapter
-  const { createDemoAdapter } = await import("@/lib/project/demo-adapter");
-  cachedAdapter = createDemoAdapter();
-  return cachedAdapter;
+  // 3. Fallback: demo adapter (never fails)
+  try {
+    const { createDemoAdapter } = await import("@/lib/project/demo-adapter");
+    cachedAdapter = createDemoAdapter();
+    return cachedAdapter;
+  } catch (err) {
+    console.error("[adapter-factory] Demo adapter import failed:", err);
+    // Last resort: create a minimal inline demo adapter
+    const fallbackAdapter: RepositoryAdapter = {
+      type: "demo" as ProjectAdapterType,
+      async getProject() {
+        return {
+          id: "synth-demo",
+          name: "SYNTH Platform",
+          adapterType: "demo",
+          language: "TypeScript",
+          framework: "Next.js",
+          fileCount: 0,
+          version: "v0.1.0",
+          readOnly: true,
+        };
+      },
+      async listFiles() { return []; },
+      async readFile(path) {
+        return { path, content: "// Demo mode", language: "text", lineCount: 1, byteSize: 12 };
+      },
+      async searchFiles() { return []; },
+      async getAllFilePaths() { return []; },
+    };
+    cachedAdapter = fallbackAdapter;
+    return fallbackAdapter;
+  }
 }

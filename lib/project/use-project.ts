@@ -74,49 +74,37 @@ export function useProject() {
   /* --- Fetch project metadata with timeout --- */
   useEffect(() => {
     let cancelled = false;
-    const timeoutId = setTimeout(() => {
-      if (!cancelled) {
-        setLoadingProject(false);
-        setError("Project load timed out. Using demo mode.");
-      }
-    }, 8000); // 8 second timeout
 
     (async () => {
       try {
         setLoadingProject(true);
+        setError(null);
         const res = await fetch("/api/project", {
-          signal: AbortSignal.timeout(6000), // 6 second fetch timeout
+          signal: AbortSignal.timeout(10000), // 10 second fetch timeout
         });
-        if (!res.ok) throw new Error("Failed to load project");
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error ?? `HTTP ${res.status}`);
+        }
         const data = await res.json();
         if (!cancelled) {
           setProject(data);
           setError(null);
         }
       } catch (err) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : "Project load failed";
-          // If it's a timeout, use demo adapter as fallback
-          if (msg.includes("timeout") || msg.includes("Timeout")) {
-            try {
-              const fallbackRes = await fetch("/api/project");
-              if (fallbackRes.ok) {
-                const fallbackData = await fallbackRes.json();
-                if (!cancelled) setProject(fallbackData);
-              }
-            } catch {
-              // Silently fail, demo mode will be used
-            }
-          } else {
-            setError(msg);
-          }
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : "Project load failed";
+        // Timeout or abort: set error but project will still render welcome state
+        if (msg.includes("timeout") || msg.includes("Timeout") || msg.includes("abort")) {
+          setError("Project load timed out.");
+        } else {
+          setError(msg);
         }
       } finally {
-        clearTimeout(timeoutId);
         if (!cancelled) setLoadingProject(false);
       }
     })();
-    return () => { cancelled = true; clearTimeout(timeoutId); };
+    return () => { cancelled = true; };
   }, []);
 
   /* --- Fetch file tree --- */

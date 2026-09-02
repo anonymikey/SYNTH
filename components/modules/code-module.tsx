@@ -315,18 +315,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
     setForgeVisible(true);
   }, []);
 
-  // --- Loading/Error states ---
-  const [loadTimedOut, setLoadTimedOut] = useState(false);
-  
-  useEffect(() => {
-    if (proj.loadingProject) {
-      const timer = setTimeout(() => setLoadTimedOut(true), 10000);
-      return () => clearTimeout(timer);
-    }
-    setLoadTimedOut(false);
-  }, [proj.loadingProject]);
-
-  if (proj.loadingProject && !loadTimedOut) {
+  if (proj.loadingProject) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#080a12]">
         <ThinkingOrb state="connecting" size={64} theme="dark" />
@@ -335,39 +324,9 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
     );
   }
 
-  if (proj.loadingProject && loadTimedOut) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#080a12]">
-        <ThinkingOrb state="solving" size={64} theme="dark" />
-        <div className="text-center">
-          <p className="text-[12px] text-white/50 mb-1">Project is taking longer than expected</p>
-          <p className="text-[10px] text-white/25 mb-3">Using demo mode as fallback</p>
-        </div>
-        <button
-          onClick={() => proj.refreshFiles()}
-          className="px-4 py-1.5 rounded-lg bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 text-[11px] text-[#2dd4bf] hover:bg-[#2dd4bf]/20 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (proj.error && !proj.project) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 bg-[#080a12]">
-        <p className="text-xs font-medium text-red-400">
-          Failed to load project.
-        </p>
-        <button
-          className="text-xs text-[#2dd4bf] underline"
-          onClick={() => proj.refreshFiles()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  // If project failed to load but we have an error, show a non-blocking error bar
+  // and still render the welcome state so the user can interact
+  const showLoadError = proj.error && !proj.project;
 
   // --- Forge props ---
   const forgeProps = {
@@ -550,8 +509,14 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
 
         {/* Error bar */}
         {proj.error && (
-          <div className="shrink-0 border-b border-red-500/20 bg-red-500/5 px-3 py-1 text-[10px] text-red-400">
-            {proj.error}
+          <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
+            <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>
+            <button
+              onClick={() => proj.refreshFiles()}
+              className="text-[10px] text-amber-400/60 hover:text-amber-400 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -613,32 +578,45 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE (desktop) ──────────────────────────────────── */
   if (workspaceState === "ready" && !proj.selectedPath) {
     return (
-      <div className="flex h-full items-center justify-center overflow-hidden bg-[#080a12]">
-        <CodeWelcome
-          project={proj.project}
-          recentFiles={proj.recentFiles}
-          onSendMessage={handleQuickAction}
-          onQuickAction={(action: string) => {
-            if (action === "browse") {
-              handleOpenFiles();
-              return;
-            }
-            if (action.startsWith("open:")) {
-              const path = action.slice(5);
-              handleOpenFiles();
-              proj.loadFile(path);
-              return;
-            }
-            handleQuickAction(
-              action === "Explain"
-                ? "Explain this project"
-                : action === "Review"
-                  ? "Review this project"
-                  : `Do: ${action}`,
-            );
-          }}
-          onOpenFiles={handleOpenFiles}
-        />
+      <div className="flex h-full flex-col overflow-hidden bg-[#080a12]">
+        {showLoadError && (
+          <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
+            <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>
+            <button
+              onClick={() => proj.refreshFiles()}
+              className="text-[10px] text-amber-400/60 hover:text-amber-400 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        <div className="flex-1 flex items-center justify-center min-h-0">
+          <CodeWelcome
+            project={proj.project}
+            recentFiles={proj.recentFiles}
+            onSendMessage={handleQuickAction}
+            onQuickAction={(action: string) => {
+              if (action === "browse") {
+                handleOpenFiles();
+                return;
+              }
+              if (action.startsWith("open:")) {
+                const path = action.slice(5);
+                handleOpenFiles();
+                proj.loadFile(path);
+                return;
+              }
+              handleQuickAction(
+                action === "Explain"
+                  ? "Explain this project"
+                  : action === "Review"
+                    ? "Review this project"
+                    : `Do: ${action}`,
+              );
+            }}
+            onOpenFiles={handleOpenFiles}
+          />
+        </div>
       </div>
     );
   }
@@ -661,8 +639,14 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
       />
 
       {proj.error && (
-        <div className="shrink-0 border-b border-red-500/20 bg-red-500/5 px-3 py-1 text-[10px] text-red-400">
-          {proj.error}
+        <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
+          <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>
+          <button
+            onClick={() => proj.refreshFiles()}
+            className="text-[10px] text-amber-400/60 hover:text-amber-400 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
