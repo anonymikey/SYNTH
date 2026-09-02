@@ -153,12 +153,12 @@ export function AssistantWorkspace({ project, conversationId, composerRef }: Ass
       <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[70%] -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--synth-cyan)_8%,transparent),transparent_70%)]" />
 
       {/* Header bar */}
-      <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-6 py-3">
+      <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-4 py-2.5 sm:px-6 sm:py-3">
         <div>
-          <h1 className="font-heading text-lg font-semibold text-foreground">
+          <h1 className="font-heading text-base font-semibold text-foreground sm:text-lg">
             AI Chatbot
           </h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground sm:text-xs">
             Ask anything about your code, research, planning, and creativity
           </p>
         </div>
