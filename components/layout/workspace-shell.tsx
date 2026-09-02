@@ -130,7 +130,7 @@ function WorkspaceShellInner() {
         onDeleteConversation={handleDeleteConversation}
         onPinConversation={handlePinConversation}
       />
-      <SidebarInset className="min-w-0 overflow-hidden bg-background h-full min-h-0 flex-none">
+      <SidebarInset className="min-w-0 w-0 flex-1 overflow-hidden bg-background h-full min-h-0">
         <WorkspaceHeader
           destination={activeDestination}
           onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
