@@ -25,25 +25,25 @@ export function StatusBar({ project }: { project: ProjectSummary }) {
   const displayModel = getSynthModelLabel(primaryProvider?.model ?? "auto");
 
   return (
-    <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-background/90 px-3 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-xl" aria-label="Workspace status">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <span className={`flex items-center gap-1.5 ${connected ? "text-synth-success" : "text-muted-foreground"}`}>
-          <CheckCircle2 className="size-3" /> SYNTH
+    <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-background/90 px-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-xl sm:px-3" aria-label="Workspace status">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
+        <span className={`flex items-center gap-1 sm:gap-1.5 ${connected ? "text-synth-success" : "text-muted-foreground"}`}>
+          <CheckCircle2 className="size-3" /> <span className="hidden xs:inline">SYNTH</span>
         </span>
-        <Separator orientation="vertical" className="h-3" />
-        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{displayModel}</b></span>
         <Separator orientation="vertical" className="hidden h-3 sm:block" />
+        <span className="hidden sm:inline">Model <b className="font-semibold text-foreground/70">{displayModel}</b></span>
+        <Separator orientation="vertical" className="hidden h-3 md:block" />
         <span className="hidden md:inline">Memory <b className="font-semibold text-foreground/70">—</b></span>
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         <SynthFooterCredit className="hidden lg:block" />
         <Separator orientation="vertical" className="hidden h-3 lg:block" />
         <span className="hidden sm:inline">Workspace <b className="font-semibold text-foreground/70">{project.syncState === "synced" ? "ready" : project.syncState}</b></span>
-        <Separator orientation="vertical" className="h-3" />
-        <span>{project.version}</span>
-        <Separator orientation="vertical" className="h-3" />
-        <span className={connected ? "flex items-center gap-1.5 text-synth-cyan" : "flex items-center gap-1.5 text-destructive"}>
-          <Circle className="size-1.5 fill-current" /> {connected ? "Online" : "Offline"}
+        <Separator orientation="vertical" className="hidden h-3 sm:block" />
+        <span className="hidden sm:inline">{project.version}</span>
+        <Separator orientation="vertical" className="hidden h-3 sm:block" />
+        <span className={connected ? "flex items-center gap-1 sm:gap-1.5 text-synth-cyan" : "flex items-center gap-1 sm:gap-1.5 text-destructive"}>
+          <Circle className="size-1.5 fill-current" /> <span className="hidden xs:inline">{connected ? "Online" : "Offline"}</span>
         </span>
       </div>
     </footer>

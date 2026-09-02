@@ -95,8 +95,8 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
   const destLabel = DEST_LABELS[destination] ?? "SYNTH";
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur-xl sm:px-5" aria-label="SYNTH workspace toolbar">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-background/80 px-2 backdrop-blur-xl sm:h-12 sm:px-3 md:px-5" aria-label="SYNTH workspace toolbar">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
         <SidebarTrigger className="text-muted-foreground hover:text-synth-cyan md:hidden" />
 
         {/* Workspace selector — hidden on mobile for dashboard */}

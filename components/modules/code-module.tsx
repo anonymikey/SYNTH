@@ -445,8 +445,8 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
               </div>
               {/* Explorer drawer */}
               {mobileExplorerOpen && (
-                <div className="absolute inset-0 z-50 bg-[#080a12] animate-fade-in">
-                  <div className="flex items-center h-10 px-3 border-b border-white/[.06]">
+                <div className="absolute inset-0 z-50 flex flex-col bg-[#080a12] animate-fade-in">
+                  <div className="flex items-center h-10 px-3 border-b border-white/[.06] shrink-0">
                     <span className="text-[11px] font-medium text-white/70">
                       Files
                     </span>
@@ -459,19 +459,21 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
                       Close
                     </button>
                   </div>
-                  <CodeExplorer
-                    files={proj.files}
-                    selectedPath={proj.selectedPath}
-                    recentFiles={proj.recentFiles}
-                    searchResults={proj.searchResults}
-                    searching={proj.searching}
-                    onSelect={(p) => {
-                      proj.loadFile(p);
-                      setMobileExplorerOpen(false);
-                      setMobileTab("code");
-                    }}
-                    onSearch={proj.search}
-                  />
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <CodeExplorer
+                      files={proj.files}
+                      selectedPath={proj.selectedPath}
+                      recentFiles={proj.recentFiles}
+                      searchResults={proj.searchResults}
+                      searching={proj.searching}
+                      onSelect={(p) => {
+                        proj.loadFile(p);
+                        setMobileExplorerOpen(false);
+                        setMobileTab("code");
+                      }}
+                      onSearch={proj.search}
+                    />
+                  </div>
                 </div>
               )}
               <CodeTabs
