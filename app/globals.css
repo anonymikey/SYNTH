@@ -292,7 +292,6 @@
 /* Viewport lock — prevents body-level scrolling in the workspace */
 html, body, #__next {
   height: 100%;
-  overflow: hidden;
 }
 
 @media (min-height: 0.01px) {

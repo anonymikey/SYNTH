@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jakarta.variable} ${jetbrains.variable} antialiased h-full overflow-hidden`}>
+      <body className={`${inter.variable} ${jakarta.variable} ${jetbrains.variable} antialiased h-full`}>
         <Providers>{children}</Providers>
       </body>
     </html>
