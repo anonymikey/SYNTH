@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useRef, useState, useImperativeHandle } from "react";
+import { forwardRef, useRef, useImperativeHandle } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -82,7 +82,12 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === "Enter" && event.shiftKey) return;
-      if (event.key === "Enter" && !event.shiftKey) {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.nativeEvent.isComposing &&
+        event.keyCode !== 229
+      ) {
         event.preventDefault();
         onSubmit();
       }

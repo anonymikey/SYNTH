@@ -116,7 +116,7 @@ function WorkspaceShellInner() {
   }, []);
 
   return (
-    <SidebarProvider defaultOpen className="min-h-0" style={{ height: "100dvh" }}>
+    <SidebarProvider defaultOpen className={assistantFullscreen ? "fixed inset-0 z-50 min-h-0 bg-background" : "min-h-0"} style={{ height: "100dvh" }}>
       {!assistantFullscreen && <WorkspaceSidebar
         activeModule={activeDestination}
         onDashboard={() => setActiveDestination("dashboard")}
@@ -132,14 +132,14 @@ function WorkspaceShellInner() {
         onPinConversation={handlePinConversation}
       />}
       <SidebarInset className="min-w-0 w-0 flex-1 overflow-hidden bg-background h-full min-h-0">
-        <WorkspaceHeader
+        {!assistantFullscreen && <WorkspaceHeader
           destination={activeDestination}
           onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
           onOpenCommand={() => setCommandOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           onOpenSettings={() => setActiveDestination("settings")}
           onOpenAbout={() => setAboutOpen(true)}
-        />
+        />}
         <div className="min-h-0 flex-1 overflow-hidden">
           {activeDestination === "dashboard" ? (
             <SynthDashboard
@@ -172,7 +172,7 @@ function WorkspaceShellInner() {
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
           )}
         </div>
-        <StatusBar project={DEFAULT_PROJECT} />
+        {!assistantFullscreen && <StatusBar project={DEFAULT_PROJECT} />}
       </SidebarInset>
 
       {activeDestination === "assistant" && (
