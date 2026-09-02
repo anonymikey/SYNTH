@@ -361,7 +361,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── MOBILE ────────────────────────────────────────────────────── */
   if (isMobile) {
     return (
-      <div className="flex h-full flex-col bg-[#080a12] overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 flex-col bg-[#080a12] overflow-hidden">
         {/* Mobile top bar */}
         <div className="flex items-center h-10 px-3 border-b border-white/[.06] shrink-0 gap-2">
           <button
@@ -506,7 +506,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── TABLET ────────────────────────────────────────────────────── */
   if (isTablet) {
     return (
-      <div className="flex h-full flex-col bg-[#080a12] overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 flex-col bg-[#080a12] overflow-hidden">
         {/* Toolbar */}
         <CodeToolbar
           project={proj.project}
@@ -530,7 +530,8 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           {/* Explorer — collapsible overlay on tablet */}
           {showExplorer && (
-            <div className="absolute inset-y-0 left-0 z-40 w-[240px] shrink-0 border-r border-white/[.06] overflow-hidden animate-slide-in-left md:hidden">
+            <div className="absolute inset-0 z-40 flex w-full overflow-hidden pointer-events-none md:hidden">
+              <div className="h-full w-[min(82vw,280px)] shrink-0 border-r border-white/[.06] overflow-hidden bg-[#0c0e16] shadow-2xl pointer-events-auto animate-slide-in-left">
               <CodeExplorer
                 files={proj.files}
                 selectedPath={proj.selectedPath}
@@ -543,6 +544,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
                 }}
                 onSearch={proj.search}
               />
+              </div>
             </div>
           )}
 
