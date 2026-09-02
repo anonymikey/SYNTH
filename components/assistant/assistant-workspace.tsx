@@ -22,9 +22,11 @@ interface AssistantWorkspaceProps {
   project: ProjectSummary;
   conversationId?: string;
   composerRef?: React.RefObject<PromptComposerHandle | null>;
+  fullscreen?: boolean;
+  onFullscreenChange?: (fullscreen: boolean) => void;
 }
 
-export function AssistantWorkspace({ project, conversationId, composerRef }: AssistantWorkspaceProps) {
+export function AssistantWorkspace({ project, conversationId, composerRef, fullscreen = false, onFullscreenChange }: AssistantWorkspaceProps) {
   const conversations = useConversations();
   const { models, routing } = useModelCatalog();
   const [prompt, setPrompt] = useState("");
@@ -143,17 +145,19 @@ export function AssistantWorkspace({ project, conversationId, composerRef }: Ass
     },
   ]);
 
-  const FullscreenIcon = iconFor("maximize");
+  const FullscreenIcon = iconFor(fullscreen ? "minimize" : "maximize");
   const SettingsIcon = iconFor("settings");
+  const MenuIcon = iconFor("menu");
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
       {/* Background effects */}
       <div className="synth-grid pointer-events-none absolute inset-0 opacity-30" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[70%] -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,color-mix(in_srgb,var(--synth-cyan)_8%,transparent),transparent_70%)]" />
 
       {/* Header bar */}
-      <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-4 py-2.5 sm:px-6 sm:py-3">
+      <div className="relative z-10 flex min-h-14 items-center justify-between gap-3 border-b border-border/40 px-3 py-2.5 sm:min-h-16 sm:px-6 sm:py-3">
+        {fullscreen && <Button variant="ghost" size="icon-sm" aria-label="Show workspace navigation" onClick={() => onFullscreenChange?.(false)}><MenuIcon /></Button>}
         <div>
           <h1 className="font-heading text-base font-semibold text-foreground sm:text-lg">
             AI Chatbot
@@ -162,10 +166,10 @@ export function AssistantWorkspace({ project, conversationId, composerRef }: Ass
             Ask anything about your code, research, planning, and creativity
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon-sm" aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"} onClick={() => onFullscreenChange?.(!fullscreen)} className="text-muted-foreground hover:text-foreground">
                 <FullscreenIcon className="size-4" />
               </Button>
             </TooltipTrigger>

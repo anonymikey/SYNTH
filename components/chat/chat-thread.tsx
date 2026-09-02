@@ -19,7 +19,7 @@ export function ChatThread({ messages, onAction }: { messages: ChatMessage[]; on
 
   return (
     <ScrollArea className="min-h-0 flex-1" aria-live="polite" aria-label="SYNTH Assistant conversation">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pb-6 pt-4 sm:gap-4 sm:px-6" aria-label="Conversation messages">
+      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 px-3 pb-6 pt-4 sm:gap-4 sm:px-6" aria-label="Conversation messages">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} onAction={onAction} />
         ))}

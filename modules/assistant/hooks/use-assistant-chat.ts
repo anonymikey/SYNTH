@@ -33,14 +33,19 @@ export function useAssistantChat({
   const stateRef = useRef(state);
   stateRef.current = state;
   const conversationIdRef = useRef(conversationId);
+  const previousConversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
 
-  // Hydrate from conversation store when conversationId changes
+  // Hydrate from conversation store when conversationId changes.
+  // Preserve optimistic messages when a new conversation is created by the first send.
   useEffect(() => {
+    const pendingLocalConversation = previousConversationIdRef.current == null && conversationId != null && stateRef.current.messages.length > 0;
+    previousConversationIdRef.current = conversationId;
     if (!conversationId) {
-      dispatch({ type: "reset" });
+      if (!pendingLocalConversation) dispatch({ type: "reset" });
       return;
     }
+    if (pendingLocalConversation) return;
     const stored = ConversationStore.get(conversationId);
     if (stored && stored.messages.length > 0) {
       dispatch({ type: "hydrate", messages: stored.messages });

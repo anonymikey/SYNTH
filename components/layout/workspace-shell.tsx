@@ -36,6 +36,7 @@ function WorkspaceShellInner() {
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("dashboard");
   const [contextOpen, setContextOpen] = useState(true);
   const [mobileContextOpen, setMobileContextOpen] = useState(false);
+  const [assistantFullscreen, setAssistantFullscreen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -116,7 +117,7 @@ function WorkspaceShellInner() {
 
   return (
     <SidebarProvider defaultOpen className="min-h-0" style={{ height: "100dvh" }}>
-      <WorkspaceSidebar
+      {!assistantFullscreen && <WorkspaceSidebar
         activeModule={activeDestination}
         onDashboard={() => setActiveDestination("dashboard")}
         onSelectModule={handleModuleSelect}
@@ -129,7 +130,7 @@ function WorkspaceShellInner() {
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
         onPinConversation={handlePinConversation}
-      />
+      />}
       <SidebarInset className="min-w-0 w-0 flex-1 overflow-hidden bg-background h-full min-h-0">
         <WorkspaceHeader
           destination={activeDestination}
@@ -154,9 +155,11 @@ function WorkspaceShellInner() {
                   project={DEFAULT_PROJECT}
                   conversationId={conversations.active?.id}
                   composerRef={composerRef}
+                  fullscreen={assistantFullscreen}
+                  onFullscreenChange={setAssistantFullscreen}
                 />
               </ResizablePanel>
-              {contextOpen && (
+              {contextOpen && !assistantFullscreen && (
                 <>
                   <ResizableHandle withHandle className="bg-border/60" />
                   <ResizablePanel defaultSize={26} minSize={22} maxSize={38} className="hidden min-w-0 md:block">
