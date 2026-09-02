@@ -82,7 +82,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
   return (
     <main className="min-h-screen bg-background p-0 sm:p-4 lg:p-6">
       <section className="mx-auto flex min-h-screen max-w-7xl flex-col overflow-hidden border border-border bg-[var(--auth-panel)] shadow-2xl sm:min-h-[calc(100vh-2rem)] sm:rounded-3xl md:flex-row lg:min-h-[calc(100vh-3rem)]">
-        <div className="relative h-[clamp(13rem,72vw,24rem)] w-full shrink-0 overflow-hidden bg-synth-surface-elevated md:min-h-full md:flex-1">
+        <div className="relative h-[clamp(13rem,72vw,24rem)] w-full shrink-0 overflow-hidden bg-synth-surface-elevated md:h-auto md:min-h-full md:flex-1">
           <img src={sourceImage} alt="A creative mind exploring a luminous virtual world" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
           <Link href="/" aria-label="Back to SYNTH home" className="focus-ring absolute left-4 top-4 z-10 flex size-10 items-center justify-center rounded-full border border-white/20 bg-background/35 text-white backdrop-blur-md transition hover:bg-background/60 sm:left-7 sm:top-7 sm:size-11">
