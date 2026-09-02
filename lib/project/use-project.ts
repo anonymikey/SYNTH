@@ -71,23 +71,52 @@ export function useProject() {
   const abortRef = useRef<AbortController | null>(null);
   const recentFilesRef = useRef<string[]>([]);
 
-  /* --- Fetch project metadata --- */
+  /* --- Fetch project metadata with timeout --- */
   useEffect(() => {
     let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setLoadingProject(false);
+        setError("Project load timed out. Using demo mode.");
+      }
+    }, 8000); // 8 second timeout
+
     (async () => {
       try {
         setLoadingProject(true);
-        const res = await fetch("/api/project");
+        const res = await fetch("/api/project", {
+          signal: AbortSignal.timeout(6000), // 6 second fetch timeout
+        });
         if (!res.ok) throw new Error("Failed to load project");
         const data = await res.json();
-        if (!cancelled) setProject(data);
+        if (!cancelled) {
+          setProject(data);
+          setError(null);
+        }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Project load failed");
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : "Project load failed";
+          // If it's a timeout, use demo adapter as fallback
+          if (msg.includes("timeout") || msg.includes("Timeout")) {
+            try {
+              const fallbackRes = await fetch("/api/project");
+              if (fallbackRes.ok) {
+                const fallbackData = await fallbackRes.json();
+                if (!cancelled) setProject(fallbackData);
+              }
+            } catch {
+              // Silently fail, demo mode will be used
+            }
+          } else {
+            setError(msg);
+          }
+        }
       } finally {
+        clearTimeout(timeoutId);
         if (!cancelled) setLoadingProject(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeoutId); };
   }, []);
 
   /* --- Fetch file tree --- */
@@ -95,7 +124,7 @@ export function useProject() {
     setLoadingFiles(true);
     try {
       const url = relativePath ? `/api/project/files?path=${encodeURIComponent(relativePath)}` : "/api/project/files";
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error("Failed to list files");
       const data = await res.json();
       setFiles(data.files ?? []);
@@ -155,7 +184,9 @@ export function useProject() {
 
     setSearching(true);
     try {
-      const res = await fetch(`/api/project/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/project/search?q=${encodeURIComponent(query)}`, {
+        signal: AbortSignal.timeout(5000),
+      });
       if (!res.ok) throw new Error("Search failed");
       const data = await res.json();
       setSearchResults(data.results ?? []);

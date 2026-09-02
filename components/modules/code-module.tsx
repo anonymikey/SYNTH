@@ -316,11 +316,39 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   }, []);
 
   // --- Loading/Error states ---
-  if (proj.loadingProject) {
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  
+  useEffect(() => {
+    if (proj.loadingProject) {
+      const timer = setTimeout(() => setLoadTimedOut(true), 10000);
+      return () => clearTimeout(timer);
+    }
+    setLoadTimedOut(false);
+  }, [proj.loadingProject]);
+
+  if (proj.loadingProject && !loadTimedOut) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#080a12]">
         <ThinkingOrb state="connecting" size={64} theme="dark" />
         <p className="text-[11px] text-white/30">Loading project...</p>
+      </div>
+    );
+  }
+
+  if (proj.loadingProject && loadTimedOut) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#080a12]">
+        <ThinkingOrb state="solving" size={64} theme="dark" />
+        <div className="text-center">
+          <p className="text-[12px] text-white/50 mb-1">Project is taking longer than expected</p>
+          <p className="text-[10px] text-white/25 mb-3">Using demo mode as fallback</p>
+        </div>
+        <button
+          onClick={() => proj.refreshFiles()}
+          className="px-4 py-1.5 rounded-lg bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 text-[11px] text-[#2dd4bf] hover:bg-[#2dd4bf]/20 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }

@@ -78,7 +78,7 @@ export function CodeWelcome({
   const SparkleIcon = iconFor("sparkles");
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-[#080a12] overflow-hidden relative">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-[#080a12] overflow-hidden relative">
       {/* Ambient background glow — breathing animation */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div

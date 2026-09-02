@@ -326,25 +326,25 @@ export function Forge({
 
             {/* Messages */}
             {hasMessages && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {messages.map((msg, i) => (
                   <div key={`${msg.requestId}-${i}`}>
                     {msg.role === "user" && (
-                      <div className="rounded-lg border border-white/[.06] bg-white/[.03] p-2.5">
-                        <span className="text-[8px] font-semibold text-white/35 block mb-0.5 uppercase tracking-wider">
+                      <div className="rounded-lg border border-white/[.06] bg-white/[.03] p-3">
+                        <span className="text-[9px] font-semibold text-white/40 block mb-1 uppercase tracking-wider">
                           You
                         </span>
-                        <p className="text-[11px] leading-relaxed text-white/70 whitespace-pre-wrap">
+                        <p className="text-[12px] leading-relaxed text-white/75 whitespace-pre-wrap">
                           {msg.content}
                         </p>
                       </div>
                     )}
                     {msg.role === "assistant" && (
-                      <div className="rounded-lg border border-[#9670ff]/10 bg-[#9670ff]/[0.03] p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="rounded-lg border border-[#9670ff]/10 bg-[#9670ff]/[0.03] p-3">
+                        <div className="flex items-center gap-1.5 mb-2">
                           <svg
-                            width="10"
-                            height="10"
+                            width="12"
+                            height="12"
                             viewBox="0 0 24 24"
                             className="text-[#9670ff]"
                             fill="none"
@@ -357,7 +357,7 @@ export function Forge({
                               opacity=".4"
                             />
                           </svg>
-                          <span className="text-[8px] font-semibold text-[#9670ff]/60">
+                          <span className="text-[9px] font-semibold text-[#9670ff]/70">
                             SYNTH Forge
                           </span>
                         </div>
@@ -396,8 +396,8 @@ export function Forge({
                 {(isBusy ||
                   (currentOutput && currentOutput.length > 0) ||
                   error) && (
-                  <div className="rounded-lg border border-[#9670ff]/10 bg-[#9670ff]/[0.03] p-2.5">
-                    <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="rounded-lg border border-[#9670ff]/10 bg-[#9670ff]/[0.03] p-3">
+                    <div className="flex items-center gap-1.5 mb-2">
                       {isBusy && (
                         <ThinkingOrb
                           state={currentOutput ? "weaving" : "working"}
@@ -405,12 +405,12 @@ export function Forge({
                           theme="dark"
                         />
                       )}
-                      <span className="text-[8px] font-semibold text-[#9670ff]/60">
-                        {isBusy ? "Forge — analyzing" : "Forge"}
+                      <span className="text-[9px] font-semibold text-[#9670ff]/70">
+                        {isBusy ? "Forge \u2014 analyzing" : "Forge"}
                       </span>
                     </div>
                     {error && !currentOutput && (
-                      <p className="text-[10px] text-red-400 py-1.5">
+                      <p className="text-[11px] text-red-400/80 py-2">
                         {error}
                       </p>
                     )}
@@ -716,16 +716,16 @@ function FormattedOutput({ text }: { text: string }) {
       .trim();
 
     return (
-      <div>
-        {before && <MarkdownRenderer content={before} variant="forge" className="text-[11px]" />}
+      <div className="space-y-2">
+        {before && <MarkdownRenderer content={before} variant="forge" className="text-[12px] leading-relaxed" />}
         <CollapsibleSection title="Reasoning">
-          <MarkdownRenderer content={reasoningBody} variant="forge" className="text-[10px]" />
+          <MarkdownRenderer content={reasoningBody} variant="forge" className="text-[11px] leading-relaxed" />
         </CollapsibleSection>
       </div>
     );
   }
 
-  return <MarkdownRenderer content={text} variant="forge" className="text-[11px]" />;
+  return <MarkdownRenderer content={text} variant="forge" className="text-[12px] leading-relaxed" />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -744,22 +744,22 @@ function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-md border border-white/[.04] bg-white/[0.015] overflow-hidden">
+    <div className="rounded-md border border-white/[.05] bg-white/[0.02] overflow-hidden">
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left hover:bg-white/[0.02] transition-colors"
+        className="flex w-full items-center gap-1.5 px-3 py-2 text-left hover:bg-white/[0.03] transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
         {open ? (
-          <ChevronUp className="size-2.5 text-white/25" />
+          <ChevronUp className="size-3 text-white/30" />
         ) : (
-          <ChevronDown className="size-2.5 text-white/25" />
+          <ChevronDown className="size-3 text-white/30" />
         )}
-        <span className="text-[8px] font-bold uppercase tracking-wider text-white/35">
+        <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">
           {title}
         </span>
       </button>
-      {open && <div className="px-2 pb-2 pt-0">{children}</div>}
+      {open && <div className="px-3 pb-3 pt-0">{children}</div>}
     </div>
   );
 }
