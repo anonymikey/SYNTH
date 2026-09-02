@@ -527,7 +527,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
           </div>
         )}
 
-        <div className="flex-1 flex min-h-0 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           {/* Explorer — collapsible overlay on tablet */}
           {showExplorer && (
             <div className="absolute inset-y-0 left-0 z-40 w-[240px] shrink-0 border-r border-white/[.06] overflow-hidden animate-slide-in-left md:hidden">
@@ -547,7 +547,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
           )}
 
           {/* Center — Editor or Preview */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {centerView === "editor" ? (
               <>
                 <CodeTabs
@@ -571,7 +571,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
 
           {/* Forge — 300px on tablet, narrower to save space */}
           {forgeVisible && (
-            <div className="w-[300px] shrink-0 border-l border-white/[.06] overflow-hidden animate-slide-in-right">
+            <div className="w-[clamp(260px,32vw,320px)] max-w-[42vw] shrink-0 border-l border-white/[.06] overflow-hidden animate-slide-in-right">
               <Forge {...forgeProps} />
             </div>
           )}
@@ -617,7 +617,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   const isTransitioning = workspaceState === "building";
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[#080a12]">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-[#080a12]">
       <CodeToolbar
         project={proj.project}
         showExplorer={showExplorer}
@@ -653,7 +653,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         </div>
       )}
 
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* Explorer — 240px fixed */}
         {showExplorer && (
           <div className="w-[240px] shrink-0 border-r border-white/[.06] overflow-hidden max-xl:hidden animate-slide-in-left">
@@ -673,7 +673,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         )}
 
         {/* Center — Editor or Preview */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {centerView === "editor" ? (
             <>
               <CodeTabs
@@ -727,7 +727,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
 
         {/* Forge — 380px fixed, never shrinks */}
         {forgeVisible && (
-          <div className="w-[380px] shrink-0 border-l border-white/[.06] overflow-hidden animate-slide-in-right">
+          <div className="w-[clamp(280px,28vw,380px)] max-w-[38vw] shrink-0 border-l border-white/[.06] overflow-hidden animate-slide-in-right">
             <Forge {...forgeProps} />
           </div>
         )}

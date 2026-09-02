@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { PromptComposer, type ComposerAttachment, type PromptComposerHandle } from "@/components/assistant/prompt-composer";
@@ -35,8 +35,6 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const localComposerRef = useRef<PromptComposerHandle>(null);
   const activeComposerRef = composerRef ?? localComposerRef;
-
-  const selectedModel = useMemo(() => models.find((m) => m.id === modelId), [models, modelId]);
 
   const activeIdRef = useRef<string | null>(conversationId ?? null);
   useEffect(() => {

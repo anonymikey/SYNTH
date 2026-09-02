@@ -42,7 +42,9 @@ export function useAssistantChat({
     const pendingLocalConversation = previousConversationIdRef.current == null && conversationId != null && stateRef.current.messages.length > 0;
     previousConversationIdRef.current = conversationId;
     if (!conversationId) {
-      if (!pendingLocalConversation) dispatch({ type: "reset" });
+      // A new conversation is created immediately before the first request.
+      // Keep the optimistic user message while the provider updates its id.
+      if (stateRef.current.messages.length === 0) dispatch({ type: "reset" });
       return;
     }
     if (pendingLocalConversation) return;
