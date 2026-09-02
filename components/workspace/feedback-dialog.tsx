@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Loader2, Send } from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,7 +137,7 @@ export function FeedbackDialog() {
               id="feedback-message"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Tell us what you think, what's broken, or what you'd like to see..."
+              placeholder="Tell us what you think, what&apos;s broken, or what you&apos;d like to see..."
               rows={4}
               className="resize-none"
               aria-describedby="feedback-message-help"
@@ -160,7 +160,7 @@ export function FeedbackDialog() {
               placeholder="your@email.com"
             />
             <p className="text-xs text-muted-foreground">
-              Only if you'd like us to follow up with you.
+              Only if you&apos;d like us to follow up with you.
             </p>
           </div>
         </div>

@@ -344,7 +344,6 @@ function BlockRenderer({
   };
 
   const bodyText = variant === "forge" ? "text-white/65" : "text-foreground/85";
-  const mutedText = variant === "forge" ? "text-white/40" : "text-muted-foreground";
 
   return (
     <>
