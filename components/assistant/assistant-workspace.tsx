@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { PromptComposer, type ComposerAttachment, type PromptComposerHandle } from "@/components/assistant/prompt-composer";
@@ -54,15 +54,21 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     [conversations, agentMode, modelId]
   );
 
-  const chat = useAssistantChat({
-    project,
-    context: DEFAULT_CONTEXT,
-    modelId,
-    providerId: "synth",
-    agentMode,
-    conversationId,
-    onMessagesChange: handleMessagesChange,
-  });
+  // Memoize chat hook dependencies
+  const chatDependencies = useMemo(
+    () => ({
+      project,
+      context: DEFAULT_CONTEXT,
+      modelId,
+      providerId: "synth" as const,
+      agentMode,
+      conversationId,
+      onMessagesChange: handleMessagesChange,
+    }),
+    [project, modelId, agentMode, conversationId, handleMessagesChange]
+  );
+
+  const chat = useAssistantChat(chatDependencies);
 
   const showWelcome = chat.messages.length === 0;
 
@@ -73,7 +79,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     return id;
   }, [conversations, agentMode, modelId]);
 
-  const send = async () => {
+  const send = useCallback(async () => {
     const nextPrompt = prompt.trim();
     if (!nextPrompt || chat.isStreaming) return;
 
@@ -85,9 +91,9 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     setPrompt("");
     setAttachments([]);
     await chat.sendPrompt(`${nextPrompt}${attachmentContext}`);
-  };
+  }, [prompt, chat.isStreaming, chat.sendPrompt, ensureConversation, attachments]);
 
-  const addAttachments = (files: File[]) => {
+  const addAttachments = useCallback((files: File[]) => {
     const next = files.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
@@ -96,9 +102,9 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     }));
     setAttachments((current) => [...current, ...next]);
     toast.success(`${next.length} attachment${next.length === 1 ? "" : "s"} added to the SYNTH prompt`);
-  };
+  }, []);
 
-  const handleAction = async (message: { content: string }, action: MessageAction) => {
+  const handleAction = useCallback(async (message: { content: string }, action: MessageAction) => {
     if (action === "copy") {
       await navigator.clipboard?.writeText(message.content);
       toast.success("Response copied");
@@ -118,16 +124,20 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
       return;
     }
     toast.success(action === "like" ? "Thanks — response marked helpful" : "Feedback recorded");
-  };
+  }, [chat.sendPrompt]);
 
   // Message action shortcuts (only when not typing in input)
+  const lastCompleteAssistant = useMemo(
+    () => [...chat.messages].reverse().find((m) => m.role === "assistant" && m.status === "complete"),
+    [chat.messages]
+  );
+
   useShortcuts([
     {
       key: "c",
       handler: async () => {
-        const lastAssistant = [...chat.messages].reverse().find((m) => m.role === "assistant" && m.status === "complete");
-        if (lastAssistant?.content) {
-          await navigator.clipboard?.writeText(lastAssistant.content);
+        if (lastCompleteAssistant?.content) {
+          await navigator.clipboard?.writeText(lastCompleteAssistant.content);
           toast.success("Response copied");
         }
       },
@@ -135,9 +145,8 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     {
       key: "r",
       handler: async () => {
-        const lastAssistant = [...chat.messages].reverse().find((m) => m.role === "assistant" && m.status === "complete");
-        if (lastAssistant?.content && !chat.isStreaming) {
-          await chat.sendPrompt(lastAssistant.content);
+        if (lastCompleteAssistant?.content && !chat.isStreaming) {
+          await chat.sendPrompt(lastCompleteAssistant.content);
         }
       },
     },
