@@ -585,7 +585,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE (desktop) ──────────────────────────────────── */
   if (workspaceState === "ready" && !proj.selectedPath) {
     return (
-      <div className="h-full overflow-hidden bg-[#080a12]">
+      <div className="flex h-full items-center justify-center overflow-hidden bg-[#080a12]">
         <CodeWelcome
           project={proj.project}
           recentFiles={proj.recentFiles}

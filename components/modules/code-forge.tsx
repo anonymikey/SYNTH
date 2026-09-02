@@ -21,6 +21,7 @@ import type {
   AffectedFile,
   ForgeTaskState,
 } from "@/components/modules/forge-types";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -704,106 +705,27 @@ function BuildResultCard({ result }: { result: { status: string; duration?: numb
 /* ------------------------------------------------------------------ */
 
 function FormattedOutput({ text }: { text: string }) {
-  const sections = text.split(/\n{2,}/);
+  // Check if text contains REASONING section — if so, extract and render collapsibly
+  const reasoningMatch = text.match(/^(REASONING|REASONING\s*:?\s*)/im);
 
-  return (
-    <div className="space-y-1.5">
-      {sections.map((section, i) => {
-        const trimmed = section.trim();
-        if (!trimmed) return null;
+  if (reasoningMatch) {
+    const idx = text.indexOf(reasoningMatch[0]);
+    const before = text.slice(0, idx).trim();
+    const reasoningBody = text
+      .slice(idx + reasoningMatch[0].length)
+      .trim();
 
-        // Code block
-        if (trimmed.startsWith("```")) {
-          const langMatch = trimmed.match(/^```(\w*)/);
-          const lang = langMatch?.[1] || "code";
-          const code = trimmed
-            .replace(/^```\w*\n?/, "")
-            .replace(/\n?```$/, "");
-          return (
-            <div
-              key={i}
-              className="rounded-md border border-white/[.04] bg-[#0a0c14] overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-2.5 py-1 border-b border-white/[.04]">
-                <span className="text-[7px] font-mono text-white/25">
-                  {lang}
-                </span>
-                <button
-                  type="button"
-                  className="text-[7px] text-white/25 hover:text-[#9670ff] transition-colors"
-                  onClick={() => navigator.clipboard.writeText(code)}
-                >
-                  copy
-                </button>
-              </div>
-              <pre className="p-2.5 text-[10px] font-mono text-white/60 overflow-x-auto whitespace-pre leading-relaxed max-h-[300px]">
-                {code}
-              </pre>
-            </div>
-          );
-        }
+    return (
+      <div>
+        {before && <MarkdownRenderer content={before} variant="forge" className="text-[11px]" />}
+        <CollapsibleSection title="Reasoning">
+          <MarkdownRenderer content={reasoningBody} variant="forge" className="text-[10px]" />
+        </CollapsibleSection>
+      </div>
+    );
+  }
 
-        // REASONING section — collapsible
-        const reasoningMatch = trimmed.match(
-          /^(REASONING|REASONING\s*:?\s*)/i,
-        );
-        if (reasoningMatch) {
-          const body = trimmed.slice(reasoningMatch[0].length).trim();
-          return (
-            <CollapsibleSection key={i} title="Reasoning">
-              <p className="text-[10px] leading-relaxed text-white/50 whitespace-pre-wrap">
-                {body}
-              </p>
-            </CollapsibleSection>
-          );
-        }
-
-        // Structured sections
-        const headerMatch = trimmed.match(
-          /^(PLAN|AFFECTED FILES|PROPOSED CHANGES|SUMMARY|CHANGES|FILES MODIFIED|IMPLEMENTATION|RESULT):?\s*/i,
-        );
-        if (headerMatch) {
-          const header = headerMatch[1].toUpperCase();
-          const body = trimmed.slice(headerMatch[0].length);
-          return (
-            <div
-              key={i}
-              className="rounded-md border border-white/[.04] bg-white/[0.015] p-2"
-            >
-              <p className="text-[8px] font-bold uppercase tracking-wider text-[#9670ff]/60 mb-1">
-                {header}
-              </p>
-              <div className="text-[10px] leading-relaxed text-white/55 whitespace-pre-wrap">
-                {body}
-              </div>
-            </div>
-          );
-        }
-
-        // Numbered list items
-        if (/^\d+\.\s/.test(trimmed)) {
-          return (
-            <div
-              key={i}
-              className="text-[10px] leading-relaxed text-white/55 whitespace-pre-wrap pl-1"
-            >
-              {trimmed}
-            </div>
-          );
-        }
-
-        // Regular paragraph
-        return (
-          <p
-            key={i}
-            className="text-[11px] leading-relaxed text-white/60 whitespace-pre-wrap"
-          >
-            {trimmed}
-          </p>
-        );
-      })}
-    </div>
-  );
+  return <MarkdownRenderer content={text} variant="forge" className="text-[11px]" />;
 }
 
 /* ------------------------------------------------------------------ */

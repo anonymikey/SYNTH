@@ -1,54 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { Badge } from "@/components/ui/badge";
 import { iconFor } from "@/lib/icons";
 import type { ChatMessage, MessageAction } from "@/modules/chat/types";
 import { MessageActions } from "@/components/chat/message-actions";
-
-/** Simple code-fence renderer: splits content into text and code blocks */
-function renderContent(content: string) {
-  const parts: Array<{ type: "text" | "code"; value: string; lang?: string }> = [];
-  const fenceRegex = /```(\w*)\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = fenceRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: "text", value: content.slice(lastIndex, match.index) });
-    }
-    parts.push({ type: "code", value: match[2].trimEnd(), lang: match[1] || undefined });
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < content.length) {
-    parts.push({ type: "text", value: content.slice(lastIndex) });
-  }
-  return parts;
-}
-
-function MessageContent({ content }: { content: string }) {
-  const parts = useMemo(() => renderContent(content), [content]);
-
-  return (
-    <div className="text-sm leading-6 text-foreground/85">
-      {parts.map((part, i) =>
-        part.type === "code" ? (
-          <div key={i} className="my-2 overflow-hidden rounded-xl border border-border bg-muted/30">
-            {part.lang && (
-              <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-3 py-1">
-                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{part.lang}</span>
-              </div>
-            )}
-            <pre className="overflow-x-auto p-3 font-mono text-xs leading-5 text-foreground/80"><code>{part.value}</code></pre>
-          </div>
-        ) : (
-          <p key={i} className="whitespace-pre-wrap">{part.value}</p>
-        )
-      )}
-    </div>
-  );
-}
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 export function MessageBubble({ message, onAction }: { message: ChatMessage; onAction: (message: ChatMessage, action: MessageAction) => void }) {
   const isUser = message.role === "user";
@@ -83,7 +40,7 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
 
         {/* Content */}
         {message.content ? (
-          <MessageContent content={message.content} />
+          <MarkdownRenderer content={message.content} variant="assistant" />
         ) : message.status === "pending" ? (
           <div className="flex items-center gap-3 py-1">
             <ThinkingOrb state="working" size={20} theme="dark" />
