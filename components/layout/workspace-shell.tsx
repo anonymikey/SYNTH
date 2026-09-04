@@ -140,7 +140,7 @@ function WorkspaceShellInner() {
           onOpenSettings={() => setActiveDestination("settings")}
           onOpenAbout={() => setAboutOpen(true)}
         />}
-        <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 w-full flex-1 overflow-hidden">
           {activeDestination === "dashboard" ? (
             <SynthDashboard
               conversations={conversations.summaries}
