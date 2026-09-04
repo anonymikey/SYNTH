@@ -315,15 +315,6 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
     setForgeVisible(true);
   }, []);
 
-  if (proj.loadingProject) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#080a12]">
-        <ThinkingOrb state="connecting" size={64} theme="dark" />
-        <p className="text-[11px] text-white/30">Loading project...</p>
-      </div>
-    );
-  }
-
   // If project failed to load but we have an error, show a non-blocking error bar
   // and still render the welcome state so the user can interact
   const showLoadError = proj.error && !proj.project;
