@@ -206,9 +206,9 @@ export function Forge({
   })();
 
   return (
-    <div className="flex h-full flex-col bg-[#0c0e16] min-h-0">
+    <div className="flex h-full min-h-0 flex-col bg-[#0b0d14]">
       {/* ── Header (fixed) ─────────────────────────────────────── */}
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-white/[.06] px-3">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/[.07] bg-[#0f121b] px-3">
         <div className="flex items-center gap-2">
           <svg
             width="12"
@@ -254,7 +254,7 @@ export function Forge({
           <div className="p-3">
             {/* File context card */}
             {fileName && (
-              <div className="mb-3 rounded-lg border border-white/[.06] bg-white/[0.02] p-2">
+              <div className="mb-3 rounded-xl border border-white/[.08] bg-[#11141d] p-2.5 shadow-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded bg-[#9670ff]/10 flex items-center justify-center">
                     <span className="text-[8px] font-bold text-[#9670ff]">
@@ -313,7 +313,7 @@ export function Forge({
                         type="button"
                         disabled={!fileName}
                         onClick={() => onAction(a.prompt)}
-                        className="flex items-center gap-1.5 rounded-md border border-white/[.05] bg-white/[.02] px-2 py-1.5 text-left text-[9px] text-white/50 hover:border-[#9670ff]/20 hover:bg-[#9670ff]/[0.04] hover:text-white/70 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 rounded-lg border border-white/[.08] bg-[#11141d] px-2.5 py-2 text-left text-[9px] text-white/55 transition-colors hover:border-[#9670ff]/30 hover:bg-[#9670ff]/[0.07] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-25"
                       >
                         <AIcon className="size-2.5 shrink-0" />
                         <span>{a.label}</span>
@@ -439,8 +439,8 @@ export function Forge({
       </div>
 
       {/* ── Composer (fixed bottom) ─────────────────────────────── */}
-      <div className="shrink-0 border-t border-white/[.06] bg-[#0a0c14]">
-        <div className="m-2 rounded-xl border border-white/[.06] bg-white/[0.03] overflow-hidden">
+      <div className="shrink-0 border-t border-white/[.07] bg-[#0b0d14] px-1 pb-1">
+        <div className="m-2 overflow-hidden rounded-xl border border-white/[.1] bg-[#11141d] shadow-lg shadow-black/20">
           {/* Gradient top edge */}
           <div className="h-px bg-gradient-to-r from-transparent via-[#9670ff]/20 to-transparent" />
 

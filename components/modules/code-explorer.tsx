@@ -97,9 +97,9 @@ export function CodeExplorer({
   const ClockIcon = iconFor("clock");
 
   return (
-    <div className="flex h-full min-w-0 flex-col bg-[#0c0e16]/80">
+    <div className="flex h-full min-w-0 flex-col bg-[#0d1018]">
       {/* Tab bar */}
-      <div className="flex h-7 shrink-0 items-center gap-0 border-b border-white/[.06] px-1">
+      <div className="flex h-8 shrink-0 items-center gap-0.5 border-b border-white/[.07] px-2">
         {([
           { id: "files" as const, label: "Files", icon: iconFor("files") },
           { id: "search" as const, label: "Search", icon: SearchIcon },
@@ -137,7 +137,7 @@ export function CodeExplorer({
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Filter files..."
             aria-label="Filter files"
-            className="h-5 text-[9px] bg-white/[0.03] border-white/[0.06]"
+            className="h-7 rounded-md border-white/[0.08] bg-[#11141d] px-2.5 text-[10px] text-white/70 placeholder:text-white/25 shadow-none focus-visible:ring-1 focus-visible:ring-[#2dd4bf]/30"
           />
         </div>
       )}
@@ -158,7 +158,7 @@ export function CodeExplorer({
                   <div key={`dir-${dirPath}`}>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-1 rounded-sm px-1 py-[2px] text-left text-white/40 hover:bg-[#2dd4bf]/[0.04] hover:text-white/60 transition-colors"
+                      className="group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-white/45 transition-colors hover:bg-white/[0.045] hover:text-white/80"
                       style={{ paddingLeft: `${depth * 10 + 4}px` }}
                       onClick={() => toggleDir(dirPath)}
                       aria-expanded={isExpanded}
@@ -190,7 +190,7 @@ export function CodeExplorer({
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search files and content..."
                   aria-label="Search files"
-                  className="h-5 text-[9px] bg-white/[0.03] border-white/[0.06]"
+                  className="h-7 rounded-md border-white/[0.08] bg-[#11141d] px-2.5 text-[10px] text-white/70 placeholder:text-white/25 shadow-none focus-visible:ring-1 focus-visible:ring-[#2dd4bf]/30"
                 />
               </div>
               {searching && (
@@ -294,7 +294,7 @@ function FileRow({
   return (
     <button
       type="button"
-      className={`flex w-full items-center gap-1 rounded-sm px-1 py-[2px] text-left transition-colors ${
+      className={`group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors ${
         isSelected
           ? "bg-[#2dd4bf]/[0.08] text-white/80"
           : "text-white/35 hover:bg-[#2dd4bf]/[0.04] hover:text-white/60"

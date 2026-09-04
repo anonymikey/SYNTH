@@ -661,7 +661,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* Explorer — 240px fixed */}
         {showExplorer && (
-          <div className="w-[240px] shrink-0 border-r border-white/[.06] overflow-hidden max-xl:hidden animate-slide-in-left">
+          <div className="w-[248px] shrink-0 overflow-hidden border-r border-white/[.08] bg-[#0d1018] max-xl:hidden animate-slide-in-left">
             <CodeExplorer
               files={proj.files}
               selectedPath={proj.selectedPath}
@@ -732,7 +732,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
 
         {/* Forge — 380px fixed, never shrinks */}
         {forgeVisible && (
-          <div className="w-[clamp(280px,28vw,380px)] max-w-[38vw] shrink-0 border-l border-white/[.06] overflow-hidden animate-slide-in-right">
+          <div className="w-[clamp(320px,30vw,400px)] max-w-[40vw] shrink-0 overflow-hidden border-l border-white/[.08] bg-[#0b0d14] animate-slide-in-right">
             <Forge {...forgeProps} />
           </div>
         )}
