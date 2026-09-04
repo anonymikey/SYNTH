@@ -131,7 +131,7 @@ function WorkspaceShellInner() {
         onDeleteConversation={handleDeleteConversation}
         onPinConversation={handlePinConversation}
       />}
-      <SidebarInset className="flex h-full min-h-0 min-w-0 w-0 flex-1 overflow-hidden bg-background">
+      <SidebarInset className="flex h-full min-h-0 min-w-0 w-0 max-w-full flex-1 overflow-hidden bg-background">
         {!assistantFullscreen && <WorkspaceHeader
           destination={activeDestination}
           onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
@@ -140,7 +140,7 @@ function WorkspaceShellInner() {
           onOpenSettings={() => setActiveDestination("settings")}
           onOpenAbout={() => setAboutOpen(true)}
         />}
-        <div className="flex min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 overflow-hidden">
           {activeDestination === "dashboard" ? (
             <SynthDashboard
               conversations={conversations.summaries}
