@@ -339,7 +339,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── MOBILE ────────────────────────────────────────────────────── */
   if (isMobile) {
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-col bg-[#080a12] overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-col overflow-hidden bg-[#080a12]">
         {/* Mobile top bar */}
         <div className="flex items-center h-10 px-3 border-b border-white/[.06] shrink-0 gap-2">
           <button
@@ -484,7 +484,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── TABLET ────────────────────────────────────────────────────── */
   if (isTablet) {
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-col bg-[#080a12] overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-col overflow-hidden bg-[#080a12]">
         {/* Toolbar */}
         <CodeToolbar
           project={proj.project}
@@ -511,7 +511,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
           </div>
         )}
 
-<div className="flex min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+<div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 overflow-hidden">
           {/* Explorer — collapsible overlay on tablet */}
           {showExplorer && (
             <div className="absolute inset-0 z-40 flex w-full overflow-hidden pointer-events-none">
@@ -569,7 +569,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE (desktop) ──────────────────────────────────── */
   if (workspaceState === "ready" && !proj.selectedPath) {
     return (
-      <div className="relative flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#080a12]">
+      <div className="relative flex h-full min-h-0 min-w-0 w-full max-w-full flex-col overflow-hidden bg-[#080a12]">
         {showLoadError && (
           <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
             <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>
