@@ -578,7 +578,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE (desktop) ──────────────────────────────────── */
   if (workspaceState === "ready" && !proj.selectedPath) {
     return (
-      <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#080a12]">
+      <div className="relative flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#080a12]">
         {showLoadError && (
           <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
             <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>

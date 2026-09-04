@@ -23,7 +23,7 @@ export function ModuleRouter({ destination, onBackToAssistant, ...moduleProps }:
   /* Code gets its own full-bleed IDE layout — no ModuleFrame wrapper */
   if (destination === "code") {
     return (
-      <section className="relative flex h-full min-h-0 min-w-0 flex-1 overflow-hidden">
+      <section className="relative flex h-full min-h-0 min-w-0 w-full flex-1 overflow-hidden">
         <CodeModule {...moduleProps} />
       </section>
     );
