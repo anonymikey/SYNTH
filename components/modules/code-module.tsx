@@ -511,7 +511,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
           </div>
         )}
 
-        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+<div className="flex min-h-0 min-w-0 w-full flex-1 overflow-hidden">
           {/* Explorer — collapsible overlay on tablet */}
           {showExplorer && (
             <div className="absolute inset-0 z-40 flex w-full overflow-hidden pointer-events-none">
@@ -732,7 +732,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
 
         {/* Forge — 380px fixed, never shrinks */}
         {forgeVisible && (
-          <div className="w-[clamp(320px,30vw,400px)] max-w-[40vw] shrink-0 overflow-hidden border-l border-white/[.08] bg-[#0b0d14] animate-slide-in-right">
+          <div className="w-[clamp(320px,30vw,400px)] max-w-[40vw] shrink-0 overflow-hidden border-l border-white/[.08] bg-[#0b0d14] animate-slide-in-right max-lg:hidden">
             <Forge {...forgeProps} />
           </div>
         )}
