@@ -523,7 +523,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           {/* Explorer — collapsible overlay on tablet */}
           {showExplorer && (
-            <div className="absolute inset-0 z-40 flex w-full overflow-hidden pointer-events-none md:hidden">
+            <div className="absolute inset-0 z-40 flex w-full overflow-hidden pointer-events-none">
               <div className="h-full w-[min(82vw,280px)] shrink-0 border-r border-white/[.06] overflow-hidden bg-[#0c0e16] shadow-2xl pointer-events-auto animate-slide-in-left">
               <CodeExplorer
                 files={proj.files}
@@ -578,7 +578,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   /* ─── WELCOME STATE (desktop) ──────────────────────────────────── */
   if (workspaceState === "ready" && !proj.selectedPath) {
     return (
-      <div className="flex h-full flex-col overflow-hidden bg-[#080a12]">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#080a12]">
         {showLoadError && (
           <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-3 py-1.5 flex items-center gap-2">
             <p className="text-[10px] text-amber-400/80 flex-1">{proj.error}</p>

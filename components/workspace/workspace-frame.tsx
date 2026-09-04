@@ -21,7 +21,7 @@ export function WorkspaceFrame({
   children,
 }: WorkspaceFrameProps) {
   return (
-    <section className="relative min-h-0 flex-1 overflow-y-auto">
+    <section className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">
       <div className="synth-grid pointer-events-none absolute inset-0 opacity-30" />
       <div className="relative mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-8 sm:px-6 sm:py-12">
         <div className="flex items-start gap-3">
