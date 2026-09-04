@@ -41,7 +41,7 @@ export function CodeToolbar({
   const ChevronIcon = iconFor("chevronDown");
 
   return (
-    <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[.06] bg-[#0c0e16]/95 px-2 backdrop-blur-sm">
+    <div className="flex h-9 shrink-0 items-center gap-1.5 border-b border-white/[.07] bg-[#0b0d14]/95 px-3 backdrop-blur-sm">
       {/* Sidebar toggle */}
       {onToggleSidebar && (
         <Tooltip>
@@ -95,7 +95,7 @@ export function CodeToolbar({
       <div className="flex-1" />
 
       {/* Center view tabs — Code | Preview | Diff */}
-      <div className="flex items-center gap-0.5 rounded-md bg-white/[0.03] border border-white/[0.05] p-0.5">
+      <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.07] bg-[#11141d] p-0.5 shadow-sm">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
