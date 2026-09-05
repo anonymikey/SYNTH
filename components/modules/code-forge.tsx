@@ -10,7 +10,6 @@ import {
   Shuffle,
   ChevronDown,
   ChevronUp,
-  Wrench,
   Check,
   X,
   FileCode,
@@ -22,6 +21,7 @@ import type {
   ForgeTaskState,
 } from "@/components/modules/forge-types";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { ResourceHubTrigger } from "@/components/workspace/resource-hub-trigger";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -473,30 +473,21 @@ export function Forge({
           />
           <div className="flex items-center justify-between px-2.5 pb-1.5">
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="rounded-md p-1 text-white/20 hover:text-white/40 hover:bg-white/[0.05] transition-colors"
-              >
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5 text-[8px] text-white/30 hover:text-white/50 hover:bg-white/[0.05] transition-colors"
-              >
-                <Wrench className="size-2" />
-                <span>Builder</span>
-              </button>
+              <ResourceHubTrigger
+                variant="icon"
+                label="Add context"
+                onFilesSelected={(files) => setLocalInput((current) => `${current}${current ? "\n\n" : ""}Attached files: ${files.map((file) => file.name).join(", ")}`)}
+                onCodePasted={(code) => setLocalInput((current) => `${current}${current ? "\n\n" : ""}${code}`)}
+              />
+              {QUICK_ACTIONS.slice(0, 2).map((action) => {
+                const ActionIcon = ICON_MAP[action.icon];
+                return (
+                  <button key={action.label} type="button" onClick={() => onAction(action.prompt)} className="flex items-center gap-1 rounded-md border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5 text-[8px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/60">
+                    <ActionIcon className="size-2.5" />
+                    <span>{action.label}</span>
+                  </button>
+                );
+              })}
             </div>
             <button
               type="button"
