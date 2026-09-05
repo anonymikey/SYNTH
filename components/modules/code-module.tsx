@@ -616,7 +616,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
   const isTransitioning = workspaceState === "building";
 
   return (
-    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-[#080a12]">
+    <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-col overflow-hidden bg-[#080a12]">
       <CodeToolbar
         project={proj.project}
         showExplorer={showExplorer}
@@ -678,7 +678,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         )}
 
         {/* Center — Editor or Preview */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 w-0 max-w-full flex-1 flex-col overflow-hidden">
           {centerView === "editor" ? (
             <>
               <CodeTabs
