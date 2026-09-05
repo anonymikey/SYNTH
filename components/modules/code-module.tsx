@@ -658,7 +658,7 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
         </div>
       )}
 
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+      <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 overflow-hidden">
         {/* Explorer — 240px fixed */}
         {showExplorer && (
           <div className="w-[248px] shrink-0 overflow-hidden border-r border-white/[.08] bg-[#0d1018] max-xl:hidden animate-slide-in-left">
