@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { iconFor } from "@/lib/icons";
 import type { ProjectInfo } from "@/lib/project/use-project";
+import { ResourceHubTrigger } from "@/components/workspace/resource-hub-trigger";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -74,7 +75,6 @@ export function CodeWelcome({
   );
 
   const SendIcon = iconFor("arrowUp");
-  const PlusIcon = iconFor("plus");
   const SparkleIcon = iconFor("sparkles");
 
   return (
@@ -153,14 +153,12 @@ export function CodeWelcome({
             {/* Bottom action row */}
             <div className="flex items-center justify-between px-3.5 pb-2.5">
               <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.05]"
-                >
-                  <PlusIcon className="size-3.5" />
-                </Button>
+                <ResourceHubTrigger
+                  variant="icon"
+                  label="Add context"
+                  onFilesSelected={(files) => setInput((current) => `${current}${current ? "\n\n" : ""}Attached: ${files.map((file) => file.name).join(", ")}`)}
+                  onCodePasted={(code) => setInput((current) => `${current}${current ? "\n\n" : ""}${code}`)}
+                />
                 <Button
                   type="button"
                   variant="ghost"
