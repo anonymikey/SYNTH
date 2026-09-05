@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { iconFor } from "@/lib/icons";
 import type { ProjectInfo } from "@/lib/project/use-project";
 import { ResourceHubTrigger } from "@/components/workspace/resource-hub-trigger";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -159,14 +160,21 @@ export function CodeWelcome({
                   onFilesSelected={(files) => setInput((current) => `${current}${current ? "\n\n" : ""}Attached: ${files.map((file) => file.name).join(", ")}`)}
                   onCodePasted={(code) => setInput((current) => `${current}${current ? "\n\n" : ""}${code}`)}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 rounded-lg text-white/25 hover:text-white/50 hover:bg-white/[0.05]"
-                >
-                  <SparkleIcon className="size-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Improve prompt"
+                      className="size-7 rounded-lg text-white/25 hover:bg-white/[0.05] hover:text-white/50"
+                      onClick={() => setInput((current) => current ? `Improve this request while preserving the intent:\n\n${current}` : "Improve my next request")}
+                    >
+                      <SparkleIcon className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Improve prompt</TooltipContent>
+                </Tooltip>
               </div>
               <Button
                 type="button"

@@ -66,7 +66,6 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     const SendIcon = iconFor("send");
     const StopIcon = iconFor("x");
     const XIcon = iconFor("x");
-    const PlusIcon = iconFor("plus");
     const GlobeIcon = iconFor("globe");
     const SparklesIcon = iconFor("sparkles");
     const CodeIcon = iconFor("code-2");
@@ -95,10 +94,9 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     };
 
     const ACTION_BUTTONS = [
-      { id: "attach", icon: PlusIcon, label: "Attach file", onClick: () => fileInputRef.current?.click() },
-      { id: "globe", icon: GlobeIcon, label: "Search web", onClick: () => {} },
-      { id: "magic", icon: SparklesIcon, label: "AI enhance", onClick: () => {} },
-      { id: "code", icon: CodeIcon, label: "Code mode", onClick: () => {} },
+      { id: "globe", icon: GlobeIcon, label: "Search web", onClick: () => onChange(`${value}${value ? " " : ""}Search the web for `) },
+      { id: "magic", icon: SparklesIcon, label: "Improve prompt", onClick: () => onChange(value ? `Improve this request while preserving the intent:\n\n${value}` : "Improve my next request") },
+      { id: "code", icon: CodeIcon, label: "Code mode", onClick: () => onAgentModeChange("architect") },
     ] as const;
 
     return (
@@ -174,7 +172,7 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
                 onFilesSelected={onAddAttachments}
                 onCodePasted={(code) => onChange(`${value}${value ? "\n\n" : ""}${code}`)}
               />
-              {ACTION_BUTTONS.filter((btn) => btn.id !== "attach").map((btn) => (
+              {ACTION_BUTTONS.map((btn) => (
                 <Tooltip key={btn.id}>
                   <TooltipTrigger asChild>
                     <Button
