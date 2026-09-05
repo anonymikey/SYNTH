@@ -23,4 +23,8 @@ export const WORKSPACE_AREAS = [
   { id: "knowledge", label: "Knowledge", icon: "brain" },
   { id: "skills", label: "Skills", icon: "sparkles" },
   { id: "plugins", label: "Plugins", icon: "plug-zap" },
+  { id: "imports", label: "Import Project", icon: "download" },
+  { id: "mcp", label: "MCP Connections", icon: "network" },
+  { id: "agents", label: "Agents", icon: "bot" },
+  { id: "capabilities", label: "AI Capabilities", icon: "sparkles" },
 ] as const;
