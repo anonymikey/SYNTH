@@ -33,7 +33,7 @@ export function CodePreview({ project }: CodePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
 
   return (
-    <div className="flex h-full min-w-0 flex-col bg-[#0c0e16]">
+    <div className="flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0c0e16]">
       {/* Preview toolbar */}
       <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[.06] px-2">
         <span className="text-[10px] font-medium text-white/60">Preview</span>
@@ -72,10 +72,10 @@ export function CodePreview({ project }: CodePreviewProps) {
       </div>
 
       {/* Preview content */}
-      <div className="flex flex-1 items-start justify-center overflow-auto bg-[#080a12]/50 p-4">
+      <div className="flex min-h-0 min-w-0 flex-1 items-start justify-center overflow-auto bg-[#080a12]/50 p-3">
         <div
-          className="flex h-full w-full flex-col items-center rounded-lg border border-white/[.06] bg-[#11151d] transition-all duration-300"
-          style={{ maxWidth: DEVICE_WIDTHS[device] }}
+          className="flex min-h-full w-full min-w-0 flex-col items-center rounded-lg border border-white/[.06] bg-[#11151d] transition-all duration-300"
+          style={{ maxWidth: DEVICE_WIDTHS[device], width: device === "desktop" ? "100%" : DEVICE_WIDTHS[device] }}
         >
           {/* Browser chrome */}
           <div className="flex h-7 w-full shrink-0 items-center gap-1.5 border-b border-white/[.06] px-2.5 bg-[#0c0e16]">
