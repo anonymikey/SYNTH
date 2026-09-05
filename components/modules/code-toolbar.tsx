@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { iconFor } from "@/lib/icons";
 import type { ProjectInfo } from "@/lib/project/use-project";
 
@@ -177,16 +178,28 @@ export function CodeToolbar({
 
       <Separator orientation="vertical" className="mx-0.5 h-3 bg-white/[0.06]" />
 
-      {/* New chat */}
+      {/* Code context menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="ghost" size="sm" className="h-5 gap-1 px-1.5 text-[9px] text-white/35 hover:text-white/60">
+            <PlusIcon className="size-2.5" />
+            <span className="hidden sm:inline">Add context</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Project context</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "github" }))}>Import from GitHub</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "figma" }))}>Import from Figma</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "upload" }))}>Upload from computer</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:paste-code"))}>Paste code</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-mcp"))}>Connect MCP</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-plugins"))}>Add plugin</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-5 gap-1 px-1.5 text-[9px] text-white/35 hover:text-white/60"
-            onClick={onNewChat}
-          >
+          <Button type="button" variant="ghost" size="sm" className="h-5 gap-1 px-1.5 text-[9px] text-white/35 hover:text-white/60" onClick={onNewChat}>
             <PlusIcon className="size-2.5" />
             <span className="hidden sm:inline">New Chat</span>
           </Button>

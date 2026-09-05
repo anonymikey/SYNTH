@@ -11,9 +11,8 @@ import { iconFor } from "@/lib/icons";
 import { SYNTH_MODULES, WORKSPACE_AREAS, type ModuleDefinition } from "@/lib/config/modules";
 import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { WorkspaceFrame } from "@/components/workspace/workspace-frame";
-import { WorkspaceSettings } from "@/components/workspace/workspace-settings";
-import { FeedbackDialog } from "@/components/workspace/feedback-dialog";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
+import { PlatformSurface, type Surface } from "@/components/workspace/platform-surfaces";
 
 export type WorkspaceDestination = "dashboard" | "assistant" | "settings" | ModuleDefinition["id"] | WorkspaceArea;
 
@@ -23,6 +22,10 @@ const AREA_LABELS: Record<WorkspaceArea, string> = {
   knowledge: "Knowledge",
   skills: "Skills",
   plugins: "Plugins",
+  imports: "Import Project",
+  mcp: "MCP Connections",
+  agents: "SYNTH Agents",
+  capabilities: "AI Capabilities",
 };
 
 const AREA_DESCRIPTIONS: Record<WorkspaceArea, string> = {
@@ -31,6 +34,10 @@ const AREA_DESCRIPTIONS: Record<WorkspaceArea, string> = {
   knowledge: "Browse pinned context and add sources for future retrieval workflows.",
   skills: "Enable reusable AI behaviors without coupling them to a provider.",
   plugins: "Manage application extensions separately from prompt-level skills.",
+  imports: "Bring GitHub repositories, files, and Figma designs into project context.",
+  mcp: "Connect safe, approved tools without bypassing ToolPolicy.",
+  agents: "Choose a public SYNTH agent by role and capability.",
+  capabilities: "Browse AI capabilities by the work you need to accomplish.",
 };
 
 const areaActions: Record<WorkspaceArea, string[]> = {
@@ -39,6 +46,10 @@ const areaActions: Record<WorkspaceArea, string[]> = {
   knowledge: ["Browse sources", "Search knowledge", "Add source"],
   skills: ["Browse skills", "Enable skill", "Disable skill"],
   plugins: ["Browse plugins", "Install plugin", "Configure plugin"],
+  imports: ["Import from GitHub", "Upload files", "Attach Figma"],
+  mcp: ["Connect MCP", "Review permissions", "Manage tools"],
+  agents: ["Browse agents", "Review permissions", "Open agent"],
+  capabilities: ["Browse coding", "Explore design", "View planning"],
 };
 
 export function WorkspaceView({ destination, onBackToAssistant }: { destination: WorkspaceDestination; onBackToAssistant: () => void }) {
@@ -82,31 +93,25 @@ export function WorkspaceView({ destination, onBackToAssistant }: { destination:
   }
 
   if (area) {
+    const surfaceMap: Partial<Record<WorkspaceArea, Surface>> = {
+      projects: "projects",
+      plugins: "plugins",
+      knowledge: "capabilities",
+      imports: "imports",
+      mcp: "mcp",
+      agents: "agents",
+      capabilities: "capabilities",
+    };
+    const platformSurface = surfaceMap[area.id];
+    if (platformSurface) return <PlatformSurface surface={platformSurface} />;
     return (
       <WorkspaceFrame icon={Icon} eyebrow="Workspace area" title={AREA_LABELS[area.id]} description={AREA_DESCRIPTIONS[area.id]} onBackToAssistant={onBackToAssistant}>
-        <AreaWorkspace
-          area={area.id}
-          query={query}
-          onQueryChange={setQuery}
-          history={filteredHistory}
-          setHistory={setHistory}
-          skills={skills}
-          setSkills={setSkills}
-          onAction={(action) => toast.success(`${action} is ready in this local workspace`)}
-        />
+        <AreaWorkspace area={area.id} query={query} onQueryChange={setQuery} history={filteredHistory} setHistory={setHistory} skills={skills} setSkills={setSkills} onAction={(action) => toast.success(`${action} is ready in this local workspace`)} />
       </WorkspaceFrame>
     );
   }
 
-  return (
-    <WorkspaceFrame icon={Icon} eyebrow="Workspace preferences" title="Settings" description="Tune the SYNTH workspace without changing its provider-neutral engine boundary." onBackToAssistant={onBackToAssistant}>
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="font-heading text-lg font-semibold">Preferences</h2>
-        <FeedbackDialog />
-      </div>
-      <WorkspaceSettings />
-    </WorkspaceFrame>
-  );
+  return <PlatformSurface surface="settings" />;
 }
 
 function AreaWorkspace({ area, query, onQueryChange, history, setHistory, skills, setSkills, onAction }: { area: WorkspaceArea; query: string; onQueryChange: (value: string) => void; history: string[]; setHistory: (items: string[]) => void; skills: string[]; setSkills: (items: string[]) => void; onAction: (action: string) => void }) {

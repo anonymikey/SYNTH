@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AgentModeSelect } from "@/components/assistant/agent-mode-select";
 import { TextType } from "@/components/ui/text-type";
 import { iconFor } from "@/lib/icons";
+import { ResourceHubTrigger } from "@/components/workspace/resource-hub-trigger";
 import type { SynthModelView, SynthRoutingPreset } from "@/modules/models/hooks/use-model-catalog";
 import type { AgentMode } from "@/types/workspace";
 
@@ -167,7 +168,13 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
           <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
             {/* Left action buttons */}
             <div className="flex items-center gap-1">
-              {ACTION_BUTTONS.map((btn) => (
+              <ResourceHubTrigger
+                variant="icon"
+                label="Add context"
+                onFilesSelected={onAddAttachments}
+                onCodePasted={(code) => onChange(`${value}${value ? "\n\n" : ""}${code}`)}
+              />
+              {ACTION_BUTTONS.filter((btn) => btn.id !== "attach").map((btn) => (
                 <Tooltip key={btn.id}>
                   <TooltipTrigger asChild>
                     <Button

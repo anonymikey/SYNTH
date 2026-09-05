@@ -253,6 +253,14 @@ export function Forge({
         >
           <div className="p-3">
             {/* File context card */}
+            <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-white/[.08] bg-[#11141d] p-2.5">
+              {[['PROJECT', 'SYNTH'], ['REPOSITORY', 'anonymikey/SYNTH'], ['BRANCH', 'main'], ['FILES', '4'], ['DESIGN', 'Not attached'], ['MCP', 'Local Demo']].map(([label, value]) => (
+                <div key={label} className="min-w-0 rounded-lg bg-white/[.025] px-2 py-1.5">
+                  <p className="text-[7px] font-semibold uppercase tracking-wider text-white/25">{label}</p>
+                  <p className="mt-0.5 truncate text-[9px] text-white/65">{value}</p>
+                </div>
+              ))}
+            </div>
             {fileName && (
               <div className="mb-3 rounded-xl border border-white/[.08] bg-[#11141d] p-2.5 shadow-sm">
                 <div className="flex items-center gap-2">
