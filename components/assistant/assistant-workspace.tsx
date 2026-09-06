@@ -7,6 +7,7 @@ import { PromptComposer, type ComposerAttachment, type PromptComposerHandle } fr
 import { SuggestionGrid } from "@/components/assistant/suggestion-grid";
 import { WelcomeState } from "@/components/assistant/welcome-state";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DEFAULT_CONTEXT } from "@/lib/config/workspace";
 import { useModelCatalog } from "@/modules/models/hooks/use-model-catalog";
@@ -33,6 +34,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
   const [agentMode, setAgentMode] = useState<AgentMode>("assistant");
   const [modelId, setModelId] = useState("auto");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [codingHandoffOpen, setCodingHandoffOpen] = useState(false);
   const localComposerRef = useRef<PromptComposerHandle>(null);
   const activeComposerRef = composerRef ?? localComposerRef;
 
@@ -92,6 +94,11 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     setAttachments([]);
     await chat.sendPrompt(`${nextPrompt}${attachmentContext}`);
   }, [prompt, chat.isStreaming, chat.sendPrompt, ensureConversation, attachments]);
+
+  const openCodingWorkspace = useCallback(() => {
+    setCodingHandoffOpen(false);
+    window.dispatchEvent(new CustomEvent("synth:navigate", { detail: { destination: "code" } }));
+  }, []);
 
   const addAttachments = useCallback((files: File[]) => {
     const next = files.map((file) => ({
@@ -228,6 +235,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
               models={models}
               routing={routing}
               onModelChange={setModelId}
+              onCodingModelSelected={() => setCodingHandoffOpen(true)}
               attachments={attachments}
               onAddAttachments={addAttachments}
               onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
@@ -253,6 +261,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
               models={models}
               routing={routing}
               onModelChange={setModelId}
+              onCodingModelSelected={() => setCodingHandoffOpen(true)}
               attachments={attachments}
               onAddAttachments={addAttachments}
               onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
@@ -260,6 +269,20 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
           </div>
         </>
       )}
+      <Dialog open={codingHandoffOpen} onOpenChange={setCodingHandoffOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Open SYNTH Code for coding work?</DialogTitle>
+            <DialogDescription>
+              SYNTH Assistant is best for research, planning, and general questions. Open SYNTH Code for code generation, file edits, project context, and review workflows.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Stay here</Button></DialogClose>
+            <Button onClick={openCodingWorkspace}>Open SYNTH Code</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

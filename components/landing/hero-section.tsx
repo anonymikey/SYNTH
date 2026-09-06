@@ -37,9 +37,9 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-          SYNTH is a modular, local-first AI workspace. Code, search, document,
-          and create — all from one intelligent interface that adapts to your
-          workflow.
+          SYNTH is a focused AI workspace for thinking, building, and creating.
+          Move from ideas to useful outcomes in one intelligent interface that
+          adapts to your workflow.
         </p>
 
         {/* CTA buttons */}
@@ -61,11 +61,11 @@ export function HeroSection() {
 
         {/* Proof points */}
         <div className="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/60">
-          <span>Local-First</span>
+          <span>Focused workflows</span>
           <span className="hidden text-muted-foreground/30 sm:inline">·</span>
-          <span>Modular Architecture</span>
+          <span>Context-aware tools</span>
           <span className="hidden text-muted-foreground/30 sm:inline">·</span>
-          <span>OpenAI · Ollama · OpenRouter</span>
+          <span>Built for momentum</span>
         </div>
       </div>
 

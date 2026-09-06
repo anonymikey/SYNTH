@@ -36,6 +36,7 @@ interface PromptComposerProps {
   models: SynthModelView[];
   routing?: SynthRoutingPreset[];
   onModelChange: (modelId: string) => void;
+  onCodingModelSelected?: () => void;
   attachments: ComposerAttachment[];
   onAddAttachments: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
@@ -55,6 +56,7 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
       models,
       routing,
       onModelChange,
+      onCodingModelSelected,
       attachments,
       onAddAttachments,
       onRemoveAttachment,
@@ -260,7 +262,11 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
         {/* Top-right controls (agent mode + model) */}
         <div className="absolute right-3 top-2 flex items-center gap-2">
           <AgentModeSelect value={agentMode} onChange={onAgentModeChange} />
-          <ModelSelectInline modelId={modelId} models={models} routing={routing} onChange={onModelChange} />
+            <ModelSelectInline modelId={modelId} models={models} routing={routing} onChange={(nextId) => {
+              onModelChange(nextId);
+              const selected = models.find((model) => model.id === nextId);
+              if (selected?.category === "coding" || nextId === "coding") onCodingModelSelected?.();
+            }} />
         </div>
       </div>
     );
