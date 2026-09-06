@@ -12,6 +12,7 @@ import { iconFor } from "@/lib/icons";
 
 const GITHUB_AUTH_EVENT = "synth:github-authorized";
 type Repo = { id: number; fullName: string; private: boolean; defaultBranch: string; description: string | null; updatedAt: string };
+type GithubConnection = { id: string; provider_login: string; provider_avatar_url: string | null };
 
 type IntegrationCardProps = { icon: string; name: string; description: string; status: "Connected" | "Available" | "Configuration required"; children?: React.ReactNode; action?: React.ReactNode };
 
@@ -30,6 +31,7 @@ function IntegrationCard({ icon, name, description, status, children, action }: 
 
 export function IntegrationsSurface() {
   const [githubConnected, setGithubConnected] = useState(false);
+  const [connections, setConnections] = useState<GithubConnection[]>([]);
   const [repos, setRepos] = useState<Repo[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,17 +57,36 @@ export function IntegrationsSurface() {
     setGithubConnected(true);
   }, [authorize, query]);
 
+  const refreshConnections = useCallback(async () => {
+    const response = await fetch("/api/github/connections", { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json() as { connections?: GithubConnection[] };
+    setConnections(data.connections ?? []);
+    setGithubConnected((data.connections ?? []).length > 0);
+  }, []);
+
   useEffect(() => {
-    const onAuthorized = () => { setGithubConnected(true); void loadRepos(); };
+    void refreshConnections();
+    const onAuthorized = () => { setGithubConnected(true); void refreshConnections(); void loadRepos(); };
     window.addEventListener(GITHUB_AUTH_EVENT, onAuthorized);
     return () => window.removeEventListener(GITHUB_AUTH_EVENT, onAuthorized);
-  }, [loadRepos]);
+  }, [loadRepos, refreshConnections]);
+
+  const disconnectGithub = async () => {
+    await Promise.all(connections.map((connection) => fetch(`/api/github/connections?id=${encodeURIComponent(connection.id)}`, { method: "DELETE" })));
+    setConnections([]);
+    setGithubConnected(false);
+    setRepos([]);
+    setDisconnectOpen(false);
+    toast.success("GitHub disconnected");
+  };
 
   return <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
     <div className="space-y-2"><p className="font-mono text-[10px] uppercase tracking-[0.24em] text-synth-cyan">Workspace settings</p><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Integrations</h1><p className="max-w-2xl text-sm leading-6 text-muted-foreground">Connect the services SYNTH can use to import context and extend your workspace. Tokens stay managed by the connection layer.</p></div>
     <Separator />
     <section className="space-y-3"><div><h2 className="text-sm font-semibold">Connected</h2><p className="mt-1 text-xs text-muted-foreground">Active connections available to your workspace.</p></div>
       <IntegrationCard icon="github" name="GitHub" description="Import repositories and inspect project context from your account." status={githubConnected ? "Connected" : "Available"}>
+        {connections.length > 0 && <div className="flex flex-wrap gap-2">{connections.map((connection) => <div key={connection.id} className="flex items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-2 py-1.5 text-xs"><span className="size-2 rounded-full bg-synth-cyan" />@{connection.provider_login}</div>)}</div>}
         <div className="flex flex-col gap-2 sm:flex-row"><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search repositories" aria-label="Search GitHub repositories" /><Button onClick={loadRepos} disabled={loading}>{loading ? "Searching…" : githubConnected ? "Refresh repositories" : "Connect GitHub"}</Button></div>
         {repos.length > 0 && <div className="max-h-56 overflow-y-auto rounded-lg border border-border/70">{repos.map((repo) => <button key={repo.id} type="button" onClick={() => setSelectedRepo(repo)} className="flex w-full items-center justify-between gap-3 border-b border-border/60 px-3 py-2.5 text-left last:border-0 hover:bg-muted/30"><span className="min-w-0"><span className="block truncate text-xs font-medium">{repo.fullName}</span><span className="block truncate text-[11px] text-muted-foreground">{repo.description || `Default branch: ${repo.defaultBranch}`}</span></span><Badge variant="outline" className="shrink-0 text-[9px]">{repo.private ? "Private" : "Public"}</Badge></button>)}</div>}
         <Button variant="ghost" size="sm" className="px-0 text-xs text-muted-foreground hover:text-destructive" onClick={() => setDisconnectOpen(true)}>Disconnect GitHub</Button>
@@ -76,7 +97,7 @@ export function IntegrationsSurface() {
       <IntegrationCard icon="network" name="MCP" description="Connect approved context servers with explicit tool permissions." status="Configuration required" action={<Button variant="outline" size="sm" onClick={() => toast.info("MCP configuration is required before connecting")}>Configure MCP</Button>} />
       <IntegrationCard icon="plug-zap" name="Plugins" description="Extend the workspace with reviewed capabilities." status="Available" action={<Button variant="outline" size="sm" onClick={() => toast.info("Plugin installation is coming next")}>Browse plugins</Button>} />
     </div></section>
-    <Dialog open={disconnectOpen} onOpenChange={setDisconnectOpen}><DialogContent><DialogHeader><DialogTitle>Disconnect GitHub?</DialogTitle><DialogDescription>This removes SYNTH&apos;s access to your GitHub account. Your imported project context remains unchanged.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button variant="destructive" onClick={() => { setGithubConnected(false); setRepos([]); setDisconnectOpen(false); toast.success("GitHub disconnected"); }}>Disconnect</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={disconnectOpen} onOpenChange={setDisconnectOpen}><DialogContent><DialogHeader><DialogTitle>Disconnect GitHub?</DialogTitle><DialogDescription>This removes SYNTH&apos;s access to your GitHub account. Your imported project context remains unchanged.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button variant="destructive" onClick={() => { void disconnectGithub(); }}>Disconnect</Button></DialogFooter></DialogContent></Dialog>
     <Dialog open={Boolean(selectedRepo)} onOpenChange={(open) => !open && setSelectedRepo(null)}><DialogContent><DialogHeader><DialogTitle>Import repository</DialogTitle><DialogDescription>Review the repository before adding it as a SYNTH project.</DialogDescription></DialogHeader>{selectedRepo && <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm"><p className="font-medium">{selectedRepo.fullName}</p><p className="mt-1 text-xs text-muted-foreground">Branch: {selectedRepo.defaultBranch} · {selectedRepo.private ? "Private" : "Public"}</p></div>}<DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button onClick={() => { toast.success(`${selectedRepo?.fullName} is ready to import`); setSelectedRepo(null); }}>Import as SYNTH project</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
