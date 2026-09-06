@@ -13,6 +13,7 @@ import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { WorkspaceFrame } from "@/components/workspace/workspace-frame";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 import { PlatformSurface, type Surface } from "@/components/workspace/platform-surfaces";
+import { IntegrationsSurface } from "@/components/workspace/integrations-surface";
 
 export type WorkspaceDestination = "dashboard" | "assistant" | "settings" | ModuleDefinition["id"] | WorkspaceArea;
 
@@ -26,6 +27,7 @@ const AREA_LABELS: Record<WorkspaceArea, string> = {
   mcp: "MCP Connections",
   agents: "SYNTH Agents",
   capabilities: "AI Capabilities",
+  integrations: "Integrations",
 };
 
 const AREA_DESCRIPTIONS: Record<WorkspaceArea, string> = {
@@ -38,6 +40,7 @@ const AREA_DESCRIPTIONS: Record<WorkspaceArea, string> = {
   mcp: "Connect safe, approved tools without bypassing ToolPolicy.",
   agents: "Choose a public SYNTH agent by role and capability.",
   capabilities: "Browse AI capabilities by the work you need to accomplish.",
+  integrations: "Connect GitHub, Figma, MCP, and workspace plugins with clear permission boundaries.",
 };
 
 const areaActions: Record<WorkspaceArea, string[]> = {
@@ -50,6 +53,7 @@ const areaActions: Record<WorkspaceArea, string[]> = {
   mcp: ["Connect MCP", "Review permissions", "Manage tools"],
   agents: ["Browse agents", "Review permissions", "Open agent"],
   capabilities: ["Browse coding", "Explore design", "View planning"],
+  integrations: ["Connect GitHub", "Connect Figma", "Configure MCP"],
 };
 
 export function WorkspaceView({ destination, onBackToAssistant }: { destination: WorkspaceDestination; onBackToAssistant: () => void }) {
@@ -91,6 +95,8 @@ export function WorkspaceView({ destination, onBackToAssistant }: { destination:
       </WorkspaceFrame>
     );
   }
+
+  if (area?.id === "integrations") return <IntegrationsSurface />;
 
   if (area) {
     const surfaceMap: Partial<Record<WorkspaceArea, Surface>> = {

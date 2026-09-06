@@ -27,4 +27,5 @@ export const WORKSPACE_AREAS = [
   { id: "mcp", label: "MCP Connections", icon: "network" },
   { id: "agents", label: "Agents", icon: "bot" },
   { id: "capabilities", label: "AI Capabilities", icon: "sparkles" },
+  { id: "integrations", label: "Integrations", icon: "plug-zap" },
 ] as const;
