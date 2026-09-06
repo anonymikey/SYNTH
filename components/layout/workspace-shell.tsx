@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -41,6 +41,15 @@ function WorkspaceShellInner() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const composerRef = useRef<PromptComposerHandle>(null);
+
+  useEffect(() => {
+    const handleSynthNavigation = (event: Event) => {
+      const destination = (event as CustomEvent<{ destination?: WorkspaceDestination }>).detail?.destination;
+      if (destination) setActiveDestination(destination);
+    };
+    window.addEventListener("synth:navigate", handleSynthNavigation);
+    return () => window.removeEventListener("synth:navigate", handleSynthNavigation);
+  }, []);
 
   const openNewChat = useCallback(() => {
     conversations.create();

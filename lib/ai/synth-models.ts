@@ -71,22 +71,6 @@ export const SYNTH_MODEL_CATALOG: SynthModelProfile[] = [
     free: false,
     internal: { providerId: "openrouter", model: "openai/gpt-4o-mini", allowFallback: true },
   },
-  {
-    id: "synth-local",
-    label: "SYNTH Local",
-    category: "local",
-    available: true,
-    free: true,
-    internal: { providerId: "ollama", model: "llama3.1:8b", allowFallback: false },
-  },
-  {
-    id: "synth-demo",
-    label: "SYNTH Demo",
-    category: "demo",
-    available: true,
-    free: true,
-    internal: { providerId: "mock", model: "synth-demo", allowFallback: false },
-  },
 ];
 
 /** Routing presets that users see in the model selector */
