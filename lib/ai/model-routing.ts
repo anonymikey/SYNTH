@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SYNTH_MODEL_CATALOG } from "@/lib/ai/synth-models";
 import type { ProviderId, ProviderSelection } from "@/lib/ai/types";
+import { hasAdminSession } from "@/lib/admin-auth";
 
 const allowedIds = new Set(SYNTH_MODEL_CATALOG.map((model) => model.id));
 const modelPattern = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i;
@@ -15,7 +16,8 @@ export function validateRoute(synthModelId: string, provider: string, model: str
 export async function isAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return { supabase, user, allowed: user?.app_metadata?.is_admin === true || user?.app_metadata?.role === "admin" };
+  const secretSession = await hasAdminSession();
+  return { supabase, user, allowed: secretSession || user?.app_metadata?.is_admin === true || user?.app_metadata?.role === "admin" };
 }
 
 export async function getAdminRoutes() {
