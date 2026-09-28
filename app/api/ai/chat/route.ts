@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { parseEngineRequest } from "@/lib/ai/request-schema";
 import { getSynthEngine } from "@/lib/ai/server";
 import { toSseResponse } from "@/lib/transport/stream-response";
-import { resolveSynthModel } from "@/lib/ai/synth-models";
+import { resolveSynthModelAsync } from "@/lib/ai/model-routing";
 import type { EngineEvent } from "@/engine/types";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     // Legacy raw model IDs are also normalized server-side for backward compatibility.
     if (input.model) {
       try {
-        const selection = resolveSynthModel(input.model);
+        const selection = await resolveSynthModelAsync(input.model);
         input.provider = selection;
       } catch {
         // Unknown model — let the engine handle the error with a clear message
