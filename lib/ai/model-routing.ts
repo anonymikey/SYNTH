@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { SYNTH_MODEL_CATALOG } from "@/lib/ai/synth-models";
 import type { ProviderId, ProviderSelection } from "@/lib/ai/types";
 import { hasAdminSession } from "@/lib/admin-auth";
@@ -17,14 +18,34 @@ export async function isAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const secretSession = await hasAdminSession();
-  return { supabase, user, allowed: secretSession || user?.app_metadata?.is_admin === true || user?.app_metadata?.role === "admin" };
+  const allowed = secretSession || user?.app_metadata?.is_admin === true || user?.app_metadata?.role === "admin";
+
+  if (secretSession) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
+    if (!serviceRoleKey || !process.env.SUPABASE_URL) {
+      throw new Error("Admin database configuration is unavailable");
+    }
+
+    return {
+      supabase: createSupabaseClient(process.env.SUPABASE_URL, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      }),
+      user,
+      allowed,
+    };
+  }
+
+  return { supabase, user, allowed };
 }
 
 export async function getAdminRoutes() {
   const { supabase, allowed } = await isAdmin();
   if (!allowed) throw new Error("Unauthorized");
   const { data, error } = await supabase.from("ai_model_routes").select("id,synth_model_id,provider,internal_model_id,enabled,updated_at").order("synth_model_id");
-  if (error) throw error;
+  if (error) {
+    console.error("[v0] Admin model route query failed", { code: error.code, message: error.message });
+    throw new Error("Unable to load administrator model routes");
+  }
 
   const overrides = new Map((data ?? []).map((route) => [route.synth_model_id, route]));
   return SYNTH_MODEL_CATALOG.map((profile) => {
