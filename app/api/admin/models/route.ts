@@ -5,8 +5,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try { return NextResponse.json({ routes: await getAdminRoutes() }); }
-  catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to load routes." }, { status: 403 }); }
+  try {
+    return NextResponse.json({ routes: await getAdminRoutes() });
+  } catch (error) {
+    const unauthorized = error instanceof Error && error.message === "Unauthorized";
+    return NextResponse.json(
+      { error: unauthorized ? "Unauthorized" : "Unable to load routes." },
+      { status: unauthorized ? 401 : 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {
