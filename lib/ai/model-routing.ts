@@ -25,7 +25,22 @@ export async function getAdminRoutes() {
   if (!allowed) throw new Error("Unauthorized");
   const { data, error } = await supabase.from("ai_model_routes").select("id,synth_model_id,provider,internal_model_id,enabled,updated_at").order("synth_model_id");
   if (error) throw error;
-  return data ?? [];
+
+  const overrides = new Map((data ?? []).map((route) => [route.synth_model_id, route]));
+  return SYNTH_MODEL_CATALOG.map((profile) => {
+    const override = overrides.get(profile.id);
+    return override
+      ? { ...override, source: "override" as const }
+      : {
+          id: null,
+          synth_model_id: profile.id,
+          provider: profile.internal.providerId,
+          internal_model_id: profile.internal.model,
+          enabled: profile.available,
+          updated_at: null,
+          source: "catalog" as const,
+        };
+  });
 }
 
 export async function resolveSynthModelAsync(modelId: string): Promise<ProviderSelection> {
