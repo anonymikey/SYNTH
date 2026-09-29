@@ -9,8 +9,9 @@ const modelPattern = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i;
 
 export function validateRoute(synthModelId: string, provider: string, model: string) {
   if (!allowedIds.has(synthModelId)) throw new Error("Unknown SYNTH model.");
-  if (provider !== "openrouter") throw new Error("Provider is not allowed.");
-  if (!model.trim() || !modelPattern.test(model.trim())) throw new Error("Invalid model configuration.");
+  if (!["openrouter", "openai", "ollama"].includes(provider)) throw new Error("Provider is not allowed.");
+  if (provider === "ollama" && !model.trim()) throw new Error("Invalid model configuration.");
+  if (provider !== "ollama" && (!model.trim() || (provider === "openrouter" && !modelPattern.test(model.trim())))) throw new Error("Invalid model configuration.");
   return model.trim();
 }
 

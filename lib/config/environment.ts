@@ -7,6 +7,9 @@ export const serverEnvironment = {
   ollamaModel: readOptional("OLLAMA_MODEL", "llama3.1:8b"),
   openRouterApiKey: process.env.OPENROUTER_API_KEY?.trim(),
   openRouterBaseUrl: readOptional("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+  // Server-side only. Never expose OPENAI_API_KEY through NEXT_PUBLIC_* variables.
+  openAIApiKey: process.env.OPENAI_API_KEY?.trim(),
+  openAIBaseUrl: readOptional("OPENAI_BASE_URL", "https://api.openai.com/v1"),
   appUrl: readOptional("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
 
   // GitHub repository configuration (server-side only, never exposed to browser)
