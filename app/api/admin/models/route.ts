@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { audit, getAdminRoutes, isAdmin, testOpenRouter, validateRoute } from "@/lib/ai/model-routing";
+import { testOpenAI } from "@/lib/ai/providers/openai-provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     if (!allowed) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     const body = await request.json();
     const model = validateRoute(body.synthModelId, body.provider, body.internalModelId);
-    const result = await testOpenRouter(model);
+    const result = body.provider === "openai" ? await testOpenAI(model) : await testOpenRouter(model);
     await audit(result === "SUCCESS" ? "model_route_tested" : "model_route_test_failed", body.synthModelId, user?.id);
     if (body.testOnly) return NextResponse.json({ result });
     if (result !== "SUCCESS") return NextResponse.json({ error: "Unable to activate this model.", result }, { status: 422 });

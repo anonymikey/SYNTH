@@ -17,8 +17,10 @@ export class ProviderRouter implements ProviderPort {
     }
 
     if (selection.allowFallback) {
-      const fallback = this.registry.get("mock");
-      if (fallback) return fallback;
+      const fallback = this.registry.get(selection.providerId === "openai" ? "openrouter" : "openai");
+      if (fallback && (await fallback.healthCheck()).status === "connected") return fallback;
+      const demo = this.registry.get("mock");
+      if (demo) return demo;
     }
 
     throw new Error(`Provider ${selection.providerId} is not configured.`);
