@@ -11,7 +11,8 @@ export function validateRoute(synthModelId: string, provider: string, model: str
   if (!allowedIds.has(synthModelId)) throw new Error("Unknown SYNTH model.");
   if (!["openrouter", "openai", "ollama"].includes(provider)) throw new Error("Provider is not allowed.");
   if (provider === "ollama" && !model.trim()) throw new Error("Invalid model configuration.");
-  if (provider !== "ollama" && (!model.trim() || (provider === "openrouter" && !modelPattern.test(model.trim())))) throw new Error("Invalid model configuration.");
+  if (provider === "openrouter" && (!model.trim() || !modelPattern.test(model.trim()))) throw new Error("Invalid model configuration.");
+  if (provider === "openai" && !model.trim()) throw new Error("Invalid model configuration.");
   return model.trim();
 }
 
