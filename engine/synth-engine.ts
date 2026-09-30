@@ -93,11 +93,12 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
             return;
           }
 
-          const selection = request.provider ?? { ...dependencies.defaultSelection, model: request.model ?? dependencies.defaultSelection.model };
-          const provider = await dependencies.provider.resolve(selection);
+    const publicModel = request.model?.startsWith("synth-") ? request.model : "SYNTH";
+    const selection = request.provider ?? { ...dependencies.defaultSelection, model: request.model ?? dependencies.defaultSelection.model };
+    const provider = await dependencies.provider.resolve(selection);
           const messages = buildPrompt(request.messages, intent, context);
           for await (const providerEvent of provider.streamChat({ messages, model: selection.model, stream: true, signal: request.signal, context: { projectId: request.context?.projectId, selectedFile: request.context?.selectedFile, recentFiles: context.files, explicitText: request.context?.explicitText } })) {
-            const event = processProviderEvent(providerEvent, request.requestId);
+            const event = processProviderEvent(providerEvent, request.requestId, publicModel);
             if (event) yield event;
           }
       } catch (error) {
