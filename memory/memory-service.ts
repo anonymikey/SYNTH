@@ -4,7 +4,11 @@ export function createMemoryService(): MemoryService {
   const records: MemoryRecord[] = [];
   return {
     async retrieve(query: MemoryQuery): Promise<MemoryResult[]> {
-      return records.filter((record) => record.scope === query.scope).slice(0, query.limit ?? 8);
+      return records
+        .filter((record) => record.scope === query.scope)
+        .filter((record) => !query.projectId || record.metadata.projectId === query.projectId)
+        .filter((record) => !query.query || record.content.toLowerCase().includes(query.query.toLowerCase()))
+        .slice(0, query.limit ?? 8);
     },
     async record(record: MemoryRecord) {
       records.push(record);

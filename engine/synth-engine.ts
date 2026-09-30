@@ -8,6 +8,9 @@ import { normalizeEngineRequest } from "@/engine/request-orchestrator";
 import { processProviderEvent } from "@/engine/response-processor";
 import type { EngineEvent, EngineRequest, SynthEngine } from "@/engine/types";
 import type { AgentMode } from "@/types/workspace";
+import { resolveSynthModelAsync } from "@/lib/ai/model-routing";
+import { createExecutionPlan, recordStructuredOutcome, retrieveApprovedContext } from "@/agents/orchestrator";
+import { AgentRegistry } from "@/agents/registry";
 
 export interface SynthEngineDependencies {
   provider: ProviderPort;
@@ -29,15 +32,19 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
       const query = getLatestUserText(request.messages);
 
       try {
-          const context = await assembleContext(request.context, query, { memory: dependencies.memory, knowledge: dependencies.knowledge });
-        yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
-
-          // Resolve the explicit agent (if provided) so we can validate tool permissions later
+          // Resolve the explicit agent before context assembly so its memory and policy govern execution.
           let resolvedAgent: import("@/agents/types").AgentDefinition | undefined = undefined;
           if (request.agentId) {
             resolvedAgent = await dependencies.agents?.resolve(intent, request.mode, request.agentId);
             if (!resolvedAgent || resolvedAgent.id !== request.agentId) throw createEngineError("routing", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
           }
+
+          const context = await assembleContext(request.context, query, { memory: dependencies.memory, knowledge: dependencies.knowledge });
+          if (resolvedAgent) {
+            const approved = await retrieveApprovedContext(dependencies.memory, resolvedAgent, query);
+            context.memory.push(...approved.map((item) => ({ content: item.content, scope: item.scope })));
+          }
+        yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
 
           // If the request includes an explicit tool call, route it through the Engine tool port (MCP-ready)
           if (request.toolRequest) {
@@ -93,13 +100,38 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
             return;
           }
 
-    const publicModel = request.model?.startsWith("synth-") ? request.model : "SYNTH";
-    const selection = request.provider ?? { ...dependencies.defaultSelection, model: request.model ?? dependencies.defaultSelection.model };
+    const publicModel = request.model?.startsWith("synth-") ? request.model : (resolvedAgent?.modelPolicy ?? "SYNTH");
+    const routedModel = request.model ?? resolvedAgent?.modelPolicy;
+    const selection = request.provider ?? (routedModel ? await resolveSynthModelAsync(routedModel) : dependencies.defaultSelection);
     const provider = await dependencies.provider.resolve(selection);
-          const messages = buildPrompt(request.messages, intent, context);
+          let messages = buildPrompt(request.messages, intent, context, resolvedAgent);
+          if (resolvedAgent?.id === "orchestrator") {
+            const executionPlan = createExecutionPlan(query);
+            const handoffs: string[] = [];
+            for (const step of executionPlan.steps.slice(0, 4)) {
+              const specialist = AgentRegistry.resolve(step.agentId);
+              if (!specialist) continue;
+              const specialistPrompt = buildPrompt([{ role: "user", content: `${step.objective}\n\nReturn only concise findings, risks, and next action for the orchestrator.` }], intent, context, specialist);
+              const specialistSelection = specialist.modelPolicy ? await resolveSynthModelAsync(specialist.modelPolicy) : selection;
+              const specialistProvider = specialistSelection.providerId === selection.providerId ? provider : await dependencies.provider.resolve(specialistSelection);
+              let specialistOutput = "";
+              for await (const event of specialistProvider.streamChat({ messages: specialistPrompt, model: specialistSelection.model, stream: true, signal: request.signal, context: { projectId: request.context?.projectId, selectedFile: request.context?.selectedFile, recentFiles: context.files, explicitText: request.context?.explicitText } })) {
+                if (event.type === "text-delta") specialistOutput += event.delta;
+              }
+              handoffs.push(`${specialist.id}: ${specialistOutput.slice(0, specialist.handoffRules?.maxContextChars ?? 5000)}`);
+            }
+            messages = [{ role: "system", content: `You are the SYNTH Orchestrator. Synthesize these bounded specialist handoffs into an actionable result. Do not expose hidden reasoning or provider details.\n\n${handoffs.join("\n\n")}` }, ...request.messages];
+          }
+          let responseText = "";
           for await (const providerEvent of provider.streamChat({ messages, model: selection.model, stream: true, signal: request.signal, context: { projectId: request.context?.projectId, selectedFile: request.context?.selectedFile, recentFiles: context.files, explicitText: request.context?.explicitText } })) {
+            if (providerEvent.type === "text-delta") responseText += providerEvent.delta;
             const event = processProviderEvent(providerEvent, request.requestId, publicModel);
-            if (event) yield event;
+            if (event) {
+              yield event;
+              if (event.type === "completed" && resolvedAgent) {
+                await recordStructuredOutcome(dependencies.memory, resolvedAgent, request.context?.projectId ?? "unscoped", { plan: resolvedAgent.workflow ?? [], affectedFiles: context.files.map((file) => file.path), findings: [responseText.slice(0, 4000)], proposedChanges: [], risks: [], tests: resolvedAgent.successCriteria ?? [], result: responseText.slice(0, 2000), nextAction: resolvedAgent.deliverables?.[0] ?? "Review the result." });
+              }
+            }
           }
       } catch (error) {
         const engineError = isEngineError(error) ? error : createEngineError(request.signal?.aborted ? "aborted" : "provider", error instanceof Error ? error.message : "The SYNTH Engine could not complete this request.", { retryable: !request.signal?.aborted, cause: error });

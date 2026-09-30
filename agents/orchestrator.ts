@@ -45,7 +45,7 @@ export async function retrieveApprovedContext(memory: MemoryPort | undefined, ag
 
 export async function recordStructuredOutcome(memory: MemoryPort | undefined, agent: AgentDefinition, projectId: string, output: StructuredAgentOutput) {
   if (!memory?.record || !agent.memoryPolicy?.writeOutcomes) return;
-  const record: MemoryRecord = { id: crypto.randomUUID(), scope: agent.memoryPolicy.scopes[0] ?? "project", content: JSON.stringify({ projectId, agentId: agent.id, result: output.result, findings: output.findings, nextAction: output.nextAction }), metadata: { type: "agent-outcome", agentId: agent.id }, createdAt: new Date().toISOString() };
+  const record: MemoryRecord = { id: crypto.randomUUID(), scope: agent.memoryPolicy.scopes[0] ?? "project", content: JSON.stringify({ projectId, agentId: agent.id, result: output.result, findings: output.findings, nextAction: output.nextAction }), metadata: { type: "agent-outcome", agentId: agent.id, projectId }, createdAt: new Date().toISOString() };
   await memory.record(record);
 }
 
@@ -57,8 +57,8 @@ export function createHandoff(from: AgentDefinition, to: AgentDefinition, output
 
 function inferAgents(objective: string): string[] {
   const text = objective.toLowerCase();
-  if (text.includes("security") || text.includes("auth") || text.includes("credential")) return ["codebase-onboarding", "security-architect", "code-reviewer", "testing-reality-checker"];
-  if (text.includes("ui") || text.includes("frontend") || text.includes("component")) return ["codebase-onboarding", "frontend-developer", "code-reviewer", "testing-reality-checker"];
-  if (text.includes("api") || text.includes("database") || text.includes("backend")) return ["codebase-onboarding", "backend-architect", "code-reviewer", "testing-reality-checker"];
-  return ["codebase-onboarding", "software-architect", "code-reviewer", "testing-reality-checker"];
+  if (text.includes("security") || text.includes("auth") || text.includes("credential")) return ["codebase-onboarding", "security", "reviewer", "testing"];
+  if (text.includes("ui") || text.includes("frontend") || text.includes("component")) return ["codebase-onboarding", "frontend", "reviewer", "testing"];
+  if (text.includes("api") || text.includes("database") || text.includes("backend")) return ["codebase-onboarding", "backend", "reviewer", "testing"];
+  return ["codebase-onboarding", "architect", "reviewer", "testing"];
 }

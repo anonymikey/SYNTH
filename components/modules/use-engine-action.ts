@@ -70,7 +70,7 @@ export function buildModuleEngineRequest(
     messages: [{ role: "user", content: explicitText }],
     mode: modeForIntent(action.intent),
     intent: action.intent,
-    agentId: action.payload?.agentId ?? (action.intent === "coding" ? "coder" : undefined),
+    agentId: action.payload?.agentId ?? selectForgeAgent(action),
     model: modelId,
     runtime: "web",
     context: {
@@ -88,6 +88,17 @@ export function buildModuleEngineRequest(
       filePath: action.payload?.path ?? "",
     },
   };
+}
+
+function selectForgeAgent(action: ModuleAction): string | undefined {
+  const text = `${action.id} ${action.label}`.toLowerCase();
+  if (text.includes("security") || text.includes("auth")) return "security";
+  if (text.includes("review")) return "reviewer";
+  if (text.includes("test")) return "testing";
+  if (action.intent === "coding") return text.includes("frontend") || text.includes("ui") ? "frontend" : "backend";
+  if (action.intent === "research") return "codebase-onboarding";
+  if (action.intent === "planning") return "architect";
+  return undefined;
 }
 
 function modeForIntent(intent: ModuleAction["intent"]): AgentMode {
