@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { audit, getAdminRoutes, isAdmin, validateRoute } from "@/lib/ai/model-routing";
 import { testOpenAI } from "@/lib/ai/providers/openai-provider";
 import { testOpenRouter } from "@/lib/ai/model-routing";
+import { SYNTH_MODEL_CATALOG } from "@/lib/ai/synth-models";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,13 @@ export async function POST(request: Request) {
     const { supabase, user, allowed } = await isAdmin();
     if (!allowed) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     const body = await request.json();
+    if (body.reset === true) {
+      if (!SYNTH_MODEL_CATALOG.some((profile) => profile.id === body.synthModelId)) throw new Error("Unknown SYNTH model.");
+      const { error } = await supabase.from("ai_model_routes").delete().eq("synth_model_id", body.synthModelId);
+      if (error) throw error;
+      await audit("model_route_reset_to_catalog", body.synthModelId, user?.id);
+      return NextResponse.json({ success: true, reset: true });
+    }
     const model = validateRoute(body.synthModelId, body.provider, body.internalModelId);
     const result = await runTest(body.provider, model);
     const { data: previous } = await supabase.from("ai_model_health_checks").select("result,consecutive_failures").eq("synth_model_id", body.synthModelId).order("created_at", { ascending: false }).limit(1).maybeSingle();
