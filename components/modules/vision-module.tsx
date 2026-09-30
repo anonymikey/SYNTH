@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { VisionAnalysisPlaceholder } from "@/components/modules/vision-analysis-placeholder";
 import { VisionUpload } from "@/components/modules/vision-upload";
 import { ModuleActionFeedback } from "@/components/modules/module-action-feedback";
@@ -13,6 +15,10 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 export function VisionModule({ project, context, onAction }: WorkspaceModuleProps) {
   const [asset, setAsset] = useState<VisionAsset>();
   const [error, setError] = useState("");
+  const [prompt, setPrompt] = useState("A futuristic cyan and violet SYNTH logo concept, polished product mark, dark background");
+  const [generatedImage, setGeneratedImage] = useState<string>();
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
   const engine = useEngineAction({ project, context });
 
   useEffect(() => () => { if (asset) URL.revokeObjectURL(asset.previewUrl); }, [asset]);
@@ -34,6 +40,23 @@ export function VisionModule({ project, context, onAction }: WorkspaceModuleProp
     onAction?.({ id: "remove-vision-image", label: "Removed staged image", intent: "vision" });
   };
 
+  const generate = async () => {
+    if (!prompt.trim() || generating) return;
+    setGenerating(true);
+    setGenerationError("");
+    setGeneratedImage(undefined);
+    try {
+      const response = await fetch("/api/ai/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+      const data = await response.json() as { image?: string; error?: string };
+      if (!response.ok || !data.image) throw new Error(data.error ?? "SYNTH Vision could not generate an image.");
+      setGeneratedImage(data.image);
+    } catch (generationFailure) {
+      setGenerationError(generationFailure instanceof Error ? generationFailure.message : "SYNTH Vision is temporarily unavailable.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const analyze = async () => {
     if (!asset || engine.state === "loading") return;
     const action: ModuleAction = { id: "request-vision-analysis", label: `Analyze ${asset.name}`, intent: "vision", payload: { assetId: asset.id, name: asset.name } };
@@ -43,7 +66,7 @@ export function VisionModule({ project, context, onAction }: WorkspaceModuleProp
 
   return (
     <div className="space-y-4">
-      <Card className="border-synth-violet/20 bg-synth-violet/5"><CardContent className="p-4 text-xs leading-5 text-muted-foreground">SYNTH Vision is a prepared capability seam. The upload, preview, validation, and placeholder states are functional while backend analysis remains Coming Soon.</CardContent></Card>
+      <Card className="border-synth-violet/20 bg-synth-violet/5"><CardHeader><CardTitle className="text-sm">Generate an image</CardTitle></CardHeader><CardContent className="flex flex-col gap-3"><label htmlFor="vision-prompt" className="text-xs font-medium">Prompt</label><Input id="vision-prompt" value={prompt} maxLength={2000} onChange={(event) => setPrompt(event.target.value)} /><Button type="button" onClick={() => void generate()} disabled={generating || !prompt.trim()}>{generating ? "Generating…" : "Generate with SYNTH Vision"}</Button>{generationError && <p className="text-xs text-destructive" role="alert">{generationError}</p>}{generatedImage && <img src={generatedImage} alt="Generated SYNTH Vision result" className="w-full rounded-lg border object-cover" />}</CardContent></Card>
       <VisionUpload asset={asset} error={error} onFile={stageFile} onRemove={removeFile} />
       <VisionAnalysisPlaceholder hasAsset={Boolean(asset)} state={engine.state} onAnalyze={() => void analyze()} />
       <ModuleActionFeedback state={engine.state} output={engine.output} error={engine.error} model={engine.model} />
