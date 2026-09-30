@@ -1,8 +1,8 @@
 import type { AIStreamEvent } from "@/lib/ai/types";
 import type { EngineEvent } from "@/engine/types";
 
-export function processProviderEvent(event: AIStreamEvent, requestId: string): EngineEvent | undefined {
-  if (event.type === "message-start") return { type: "assistant-start", requestId, messageId: event.messageId, model: event.model };
+export function processProviderEvent(event: AIStreamEvent, requestId: string, publicModel = "SYNTH"): EngineEvent | undefined {
+  if (event.type === "message-start") return { type: "assistant-start", requestId, messageId: event.messageId, model: publicModel };
   if (event.type === "text-delta") return { type: "assistant-delta", requestId, messageId: event.messageId, delta: event.delta };
   if (event.type === "tool-call") return { type: "tool-request", requestId, call: { id: `${requestId}-${event.messageId}`, toolId: event.name, input: event.arguments } };
   if (event.type === "usage") return { type: "usage", requestId, usage: event.usage };

@@ -1,4 +1,5 @@
 import type { AgentDefinition } from "@/agents/types";
+import { curatedAgents } from "@/agents/curated-catalog";
 import { assistantAgent } from "@/agents/definitions/assistant";
 import { coderAgent } from "@/agents/definitions/coder";
 import { designerAgent } from "@/agents/definitions/designer";
@@ -20,10 +21,8 @@ const defaultDefinitions: AgentDefinition[] = [
 ];
 
 export function ensureDefaultAgentsRegistered() {
-  for (const definition of defaultDefinitions) {
-    if (!definitions.some((item) => item.id === definition.id)) {
-      definitions.push(definition);
-    }
+  for (const definition of [...defaultDefinitions, ...curatedAgents]) {
+    if (!definitions.some((item) => item.id === definition.id)) definitions.push(definition);
   }
 }
 
