@@ -29,11 +29,23 @@ export async function GET() {
     const { supabase, allowed } = await isAdmin();
     if (!allowed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const routes = await getAdminRoutes();
-    const { data: checks, error } = await supabase.from("ai_model_health_checks").select("synth_model_id,result,created_at,latency_ms,http_status,normalized_error,consecutive_failures,fallback_active").order("created_at", { ascending: false }).limit(100);
+    const { data: checks, error } = await supabase.from("ai_model_health_checks").select("synth_model_id,provider,result,created_at,latency_ms,http_status,normalized_error,consecutive_failures,fallback_active").order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
-    const latest = new Map<string, unknown>();
+    const latest = new Map<string, typeof checks[number]>();
     for (const check of checks ?? []) if (!latest.has(check.synth_model_id)) latest.set(check.synth_model_id, check);
-    return NextResponse.json({ routes: routes.map((route) => ({ ...route, health: latest.get(route.synth_model_id) ?? null })) });
+    const providerDiagnostics = ["openrouter", "openai"].map((provider) => {
+      const providerChecks = (checks ?? []).filter((check) => check.provider === provider);
+      const latestCheck = providerChecks[0];
+      return {
+        provider,
+        configured: provider === "openrouter" ? Boolean(process.env.OPENROUTER_API_KEY) : Boolean(process.env.OPENAI_API_KEY),
+        credentialAccepted: latestCheck?.result === "SUCCESS" ? true : latestCheck?.result === "AUTH ERROR" ? false : null,
+        lastAuthenticationTest: latestCheck?.created_at ?? null,
+        normalizedError: latestCheck?.normalized_error ?? null,
+        lastFailureAt: latestCheck && latestCheck.result !== "SUCCESS" ? latestCheck.created_at : null,
+      };
+    });
+    return NextResponse.json({ routes: routes.map((route) => ({ ...route, health: latest.get(route.synth_model_id) ?? null })), providerDiagnostics });
   } catch (error) {
     const unauthorized = error instanceof Error && error.message === "Unauthorized";
     return NextResponse.json({ error: unauthorized ? "Unauthorized" : "Unable to load routes." }, { status: unauthorized ? 401 : 500 });

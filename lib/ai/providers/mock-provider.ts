@@ -94,7 +94,7 @@ function buildAgentResponse(agentId: string | undefined, task: string) {
       break;
   }
 
-  return `PLAN for "${task}"\n\n${planLines.join("\n")}`;
+  return `SYNTH is offline. This is a local demo planning response, not a provider-generated answer. An administrator must configure and authenticate an AI provider before SYNTH can analyze workspace context.\n\nPLAN for "${task}"\n\n${planLines.join("\n")}`;
 }
 
 export class MockProvider implements AIProvider {
