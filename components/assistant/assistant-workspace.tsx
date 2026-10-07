@@ -81,19 +81,22 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     return id;
   }, [conversations, agentMode, modelId]);
 
-  const send = useCallback(async () => {
-    const nextPrompt = prompt.trim();
-    if (!nextPrompt || chat.isStreaming) return;
+  const send = useCallback(
+    async (overridePrompt?: string) => {
+      const nextPrompt = (overridePrompt ?? prompt).trim();
+      if (!nextPrompt || chat.isStreaming) return;
 
-    ensureConversation();
+      ensureConversation();
 
-    const attachmentContext = attachments.length
-      ? `\n\nAttached context: ${attachments.map((attachment) => attachment.name).join(", ")}`
-      : "";
-    setPrompt("");
-    setAttachments([]);
-    await chat.sendPrompt(`${nextPrompt}${attachmentContext}`);
-  }, [prompt, chat.isStreaming, chat.sendPrompt, ensureConversation, attachments]);
+      const attachmentContext = attachments.length
+        ? `\n\nAttached context: ${attachments.map((attachment) => attachment.name).join(", ")}`
+        : "";
+      setPrompt("");
+      setAttachments([]);
+      await chat.sendPrompt(`${nextPrompt}${attachmentContext}`);
+    },
+    [prompt, chat.isStreaming, chat.sendPrompt, ensureConversation, attachments]
+  );
 
   const openCodingWorkspace = useCallback(() => {
     setCodingHandoffOpen(false);
