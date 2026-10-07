@@ -8,6 +8,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { WorkspaceSidebar } from "@/components/layout/workspace-sidebar";
 import { WorkspaceHeader } from "@/components/layout/workspace-header";
 import { ContextPanel } from "@/components/layout/context-panel";
+import { FloatingContextButton } from "@/components/layout/floating-context-button";
 import { StatusBar } from "@/components/layout/status-bar";
 import { AssistantWorkspace } from "@/components/assistant/assistant-workspace";
 import type { PromptComposerHandle } from "@/components/assistant/prompt-composer";
@@ -134,6 +135,7 @@ function WorkspaceShellInner() {
         onNewChat={openNewChat}
         onSettings={() => setActiveDestination("settings")}
         onOpenCommand={() => setCommandOpen(true)}
+        onOpenContext={() => { setContextOpen(true); setMobileContextOpen(true); }}
         conversations={conversations.summaries}
         activeConversationId={conversations.active?.id ?? null}
         onSelectConversation={handleSelectConversation}
@@ -143,7 +145,7 @@ function WorkspaceShellInner() {
       <SidebarInset className="flex h-full min-h-0 min-w-0 w-0 max-w-full flex-1 overflow-hidden bg-background">
         {!assistantFullscreen && <WorkspaceHeader
           destination={activeDestination}
-          onContextToggle={() => { setContextOpen(true); setMobileContextOpen(true); }}
+          onContextToggle={() => { setContextOpen((o) => !o); setMobileContextOpen((o) => !o); }}
           onOpenCommand={() => setCommandOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           onOpenSettings={() => setActiveDestination("settings")}
@@ -184,12 +186,21 @@ function WorkspaceShellInner() {
         {!assistantFullscreen && <StatusBar project={DEFAULT_PROJECT} />}
       </SidebarInset>
 
-      {activeDestination === "assistant" && (
-        <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
-          <SheetContent side="right" className="w-[min(92vw,26rem)] p-0 md:hidden">
-            <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
-          </SheetContent>
-        </Sheet>
+      {/* Universal mobile context drawer */}
+      <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
+        <SheetContent side="right" className="w-[min(94vw,26rem)] p-0 md:hidden" showCloseButton={false}>
+          <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
+      {/* Floating quick-access context button on mobile */}
+      {!assistantFullscreen && (
+        <FloatingContextButton
+          onClick={() => setMobileContextOpen(true)}
+          fileCount={DEFAULT_CONTEXT.recentFiles.length}
+          knowledgeCount={DEFAULT_CONTEXT.knowledge.length}
+          isOpen={mobileContextOpen}
+        />
       )}
       <CommandPalette
         open={commandOpen}

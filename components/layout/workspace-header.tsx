@@ -158,7 +158,23 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
           <SunIcon className="size-4" aria-hidden="true" />
         </Button>
 
-        {/* Context panel toggle — hidden on mobile */}
+        {/* Mobile SYNTH Context button in navbar */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex h-7.5 items-center gap-1.5 rounded-lg border-synth-cyan/40 bg-synth-cyan/10 px-2 font-mono text-[10px] font-semibold text-synth-cyan hover:border-synth-cyan/70 hover:bg-synth-cyan/20 active:scale-95 md:hidden"
+          aria-label="Open SYNTH Context"
+          onClick={onContextToggle}
+        >
+          <PanelIcon className="size-3.5 text-synth-cyan" aria-hidden="true" />
+          <span>Context</span>
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-synth-cyan opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-synth-cyan" />
+          </span>
+        </Button>
+
+        {/* Context panel toggle — desktop */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="outline" size="icon-sm" className="hidden border-border bg-card/60 text-muted-foreground hover:text-synth-cyan md:inline-flex" aria-label="Toggle context panel" onClick={onContextToggle}>

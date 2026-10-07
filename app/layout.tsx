@@ -21,6 +21,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "SYNTH — AI Workspace",
   description: "SYNTH is a modular local-first AI workspace. Built by ANONYMIKETECH.",
+  openGraph: {
+    title: "SYNTH — AI Workspace",
+    description: "SYNTH is a modular local-first AI workspace. Built by ANONYMIKETECH.",
+  },
   icons: {
     icon: [{ url: "/icon.png", type: "image/png" }],
     apple: [{ url: "/icon.png", type: "image/png" }],

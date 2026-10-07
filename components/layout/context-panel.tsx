@@ -11,29 +11,32 @@ import type { ChatContextView, ProjectSummary } from "@/types/workspace";
 
 export function ContextPanel({ project, context, onClose }: { project: ProjectSummary; context: ChatContextView; onClose?: () => void }) {
   const [activeTab, setActiveTab] = useState("context");
-  const PanelIcon = iconFor("panelRight");
+  const CloseIcon = iconFor("x");
   const FileIcon = iconFor("fileCode");
   const PinIcon = iconFor("mapIcon");
   const ShieldIcon = iconFor("shield");
   const ActivityIcon = iconFor("activity");
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-l border-border bg-background/70" aria-label="SYNTH project context panel">
+    <aside className="flex h-full min-h-0 w-full flex-col border-l border-border bg-background" aria-label="SYNTH project context panel">
       {/* Header */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
         <div>
-          <p className="font-heading text-sm font-bold tracking-[-0.03em]">SYNTH Context</p>
+          <div className="flex items-center gap-2">
+            <p className="font-heading text-sm font-bold tracking-[-0.03em]">SYNTH Context</p>
+            <span className="flex size-1.5 rounded-full bg-synth-cyan animate-pulse" />
+          </div>
           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
             {context.recentFiles.length} files · {context.knowledge.length} knowledge
           </p>
         </div>
-        <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-synth-cyan" onClick={onClose} aria-label="Hide context panel">
-          <PanelIcon className="size-4" />
+        <Button variant="ghost" size="icon-sm" className="size-8 rounded-md text-muted-foreground hover:bg-muted hover:text-synth-cyan" onClick={onClose} aria-label="Close context panel">
+          <CloseIcon className="size-4" />
         </Button>
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="min-h-0 flex-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
         <div className="border-b border-border px-3 pt-2">
           <TabsList variant="line" className="grid w-full grid-cols-4">
             <TabsTrigger value="context" className="text-[10px]">Context</TabsTrigger>
@@ -43,7 +46,7 @@ export function ContextPanel({ project, context, onClose }: { project: ProjectSu
           </TabsList>
         </div>
 
-        <ScrollArea className="h-[calc(100%-3rem)] min-h-0">
+        <ScrollArea className="flex-1 min-h-0">
           {/* Context Tab */}
           <TabsContent value="context" className="m-0 space-y-5 p-4">
             <ProjectSection project={project} />

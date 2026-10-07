@@ -1,0 +1,8 @@
+{
+  "name": "SYNTH — AI Workspace",
+  "description": "SYNTH is a modular local-first AI workspace. Built by ANONYMIKETECH.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

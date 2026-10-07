@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { iconFor } from "@/lib/icons";
 import { relativeTime } from "@/lib/dates";
 import { SYNTH_MODULES, WORKSPACE_AREAS, type ModuleDefinition } from "@/lib/config/modules";
@@ -22,6 +22,7 @@ interface WorkspaceSidebarProps {
   onNewChat: () => void;
   onSettings: () => void;
   onOpenCommand: () => void;
+  onOpenContext?: () => void;
   conversations: ConversationSummary[];
   activeConversationId: string | null;
   onSelectConversation: (id: string) => void;
@@ -37,15 +38,22 @@ export function WorkspaceSidebar({
   onNewChat,
   onSettings,
   onOpenCommand,
+  onOpenContext,
   conversations,
   activeConversationId,
   onSelectConversation,
   onDeleteConversation,
   onPinConversation,
 }: WorkspaceSidebarProps) {
+  const { setOpenMobile, isMobile } = useSidebar();
   const [historyOpen, setHistoryOpen] = useState(true);
   const [historySearchOpen, setHistorySearchOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
+
+  const handleOpenContext = () => {
+    if (isMobile) setOpenMobile(false);
+    onOpenContext?.();
+  };
 
   const visibleHistory = useMemo(() => {
     if (!historyQuery.trim()) return conversations;
@@ -71,6 +79,7 @@ export function WorkspaceSidebar({
   const PinIcon = iconFor("mapIcon");
   const MessageIcon = iconFor("messageCircle");
   const DashboardIcon = iconFor("dashboard");
+  const PanelIcon = iconFor("panelRight");
 
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
@@ -105,6 +114,12 @@ export function WorkspaceSidebar({
                   <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
                   <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">⌘N</Kbd>
                 </Button>
+                {onOpenContext && (
+                  <Button onClick={handleOpenContext} variant="outline" size="sm" className="h-8 gap-1.5 border-synth-cyan/30 bg-synth-cyan/5 px-2 text-synth-cyan hover:border-synth-cyan/60 hover:bg-synth-cyan/15 group-data-[collapsible=icon]:hidden" title="SYNTH Context">
+                    <PanelIcon className="size-3.5 text-synth-cyan" />
+                    <span className="text-[10px] font-medium">Context</span>
+                  </Button>
+                )}
                 <Button onClick={onOpenCommand} variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden">
                   <SearchIcon className="size-3.5" />
                   <span className="text-[10px]">⌘K</span>
@@ -147,6 +162,19 @@ export function WorkspaceSidebar({
           <SidebarGroupLabel className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {onOpenContext && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="SYNTH Context"
+                    onClick={handleOpenContext}
+                    className="group/ctx hover:bg-synth-cyan/10"
+                  >
+                    <PanelIcon className="size-4 text-synth-cyan" strokeWidth={1.8} />
+                    <span className="font-medium text-foreground">SYNTH Context</span>
+                    <SidebarMenuBadge className="bg-synth-cyan/15 font-mono text-[8px] text-synth-cyan">panel</SidebarMenuBadge>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {WORKSPACE_AREAS.map((area) => {
                 const Icon = iconFor(area.icon);
                 return (
