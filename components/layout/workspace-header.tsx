@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useTheme } from "@/components/theme/theme-provider";
 import { iconFor } from "@/lib/icons";
 import { useProviderHealth } from "@/lib/hooks/use-provider-health";
+import { cn } from "@/lib/utils";
 
 function useProviderStatus() {
   const { health, connected } = useProviderHealth();
@@ -35,6 +36,7 @@ function useProviderStatus() {
 interface WorkspaceHeaderProps {
   /** Current destination for breadcrumb display */
   destination?: string;
+  contextOpen?: boolean;
   onContextToggle: () => void;
   onOpenCommand: () => void;
   onOpenNotifications: () => void;
@@ -58,7 +60,7 @@ const DEST_LABELS: Record<string, string> = {
   plugins: "Plugins",
 };
 
-export function WorkspaceHeader({ destination = "assistant", onContextToggle, onOpenCommand, onOpenNotifications, onOpenSettings, onOpenAbout }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ destination = "assistant", contextOpen, onContextToggle, onOpenCommand, onOpenNotifications, onOpenSettings, onOpenAbout }: WorkspaceHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { connected, providerLabel } = useProviderStatus();
   const [workspace, setWorkspace] = useState("SYNTH Workspace");
@@ -177,8 +179,17 @@ export function WorkspaceHeader({ destination = "assistant", onContextToggle, on
         {/* Context panel toggle — desktop */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon-sm" className="hidden border-border bg-card/60 text-muted-foreground hover:text-synth-cyan md:inline-flex" aria-label="Toggle context panel" onClick={onContextToggle}>
-              <PanelIcon className="size-4" aria-hidden="true" />
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className={cn(
+                "hidden border-border bg-card/60 text-muted-foreground hover:text-synth-cyan md:inline-flex",
+                contextOpen && "border-synth-cyan/50 bg-synth-cyan/10 text-synth-cyan"
+              )}
+              aria-label="Toggle context panel"
+              onClick={onContextToggle}
+            >
+              <PanelIcon className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Context panel</TooltipContent>

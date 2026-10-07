@@ -34,7 +34,7 @@ export function FloatingContextButton({
         <button
           type="button"
           onClick={() => setMinimized(false)}
-          className="flex size-9 items-center justify-center rounded-full border border-synth-cyan/50 bg-card/95 text-synth-cyan shadow-lg shadow-synth-cyan/20 backdrop-blur-md transition-transform active:scale-95"
+          className="flex size-9 items-center justify-center rounded-full border border-synth-cyan/50 bg-card text-synth-cyan shadow-xl shadow-black/50 transition-transform active:scale-95"
           aria-label="Expand SYNTH Context button"
         >
           <PanelIcon className="size-4" />
@@ -44,7 +44,7 @@ export function FloatingContextButton({
           </span>
         </button>
       ) : (
-        <div className="flex items-center gap-1 rounded-full border border-synth-cyan/40 bg-card/95 p-1 shadow-lg shadow-synth-cyan/15 backdrop-blur-md">
+        <div className="flex items-center gap-1 rounded-full border border-synth-cyan/50 bg-card p-1 shadow-xl shadow-black/50">
           <button
             type="button"
             onClick={onClick}

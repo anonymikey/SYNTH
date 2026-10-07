@@ -22,6 +22,7 @@ import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { SYNTH_MODULES, type ModuleDefinition } from "@/lib/config/modules";
 import { useSynthShortcuts } from "@/lib/shortcuts/use-synth-shortcuts";
 import { useTheme } from "@/components/theme/theme-provider";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 
 export function WorkspaceShell() {
@@ -33,6 +34,7 @@ export function WorkspaceShell() {
 }
 
 function WorkspaceShellInner() {
+  const isMobile = useIsMobile();
   const conversations = useConversations();
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("dashboard");
   const [contextOpen, setContextOpen] = useState(true);
@@ -42,6 +44,14 @@ function WorkspaceShellInner() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const composerRef = useRef<PromptComposerHandle>(null);
+
+  const handleToggleContext = useCallback(() => {
+    if (isMobile) {
+      setMobileContextOpen((prev) => !prev);
+    } else {
+      setContextOpen((prev) => !prev);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const handleSynthNavigation = (event: Event) => {
@@ -106,7 +116,7 @@ function WorkspaceShellInner() {
       const trigger = document.querySelector("[data-sidebar='trigger']") as HTMLButtonElement;
       trigger?.click();
     },
-    toggleContext: () => setContextOpen((o) => !o),
+    toggleContext: handleToggleContext,
     focusComposer: () => composerRef.current?.focus(),
     prevConversation: () => navigateConversation("prev"),
     nextConversation: () => navigateConversation("next"),
@@ -135,7 +145,7 @@ function WorkspaceShellInner() {
         onNewChat={openNewChat}
         onSettings={() => setActiveDestination("settings")}
         onOpenCommand={() => setCommandOpen(true)}
-        onOpenContext={() => { setContextOpen(true); setMobileContextOpen(true); }}
+        onOpenContext={handleToggleContext}
         conversations={conversations.summaries}
         activeConversationId={conversations.active?.id ?? null}
         onSelectConversation={handleSelectConversation}
@@ -145,7 +155,8 @@ function WorkspaceShellInner() {
       <SidebarInset className="flex h-full min-h-0 min-w-0 w-0 max-w-full flex-1 overflow-hidden bg-background">
         {!assistantFullscreen && <WorkspaceHeader
           destination={activeDestination}
-          onContextToggle={() => { setContextOpen((o) => !o); setMobileContextOpen((o) => !o); }}
+          contextOpen={isMobile ? mobileContextOpen : contextOpen}
+          onContextToggle={handleToggleContext}
           onOpenCommand={() => setCommandOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
           onOpenSettings={() => setActiveDestination("settings")}
@@ -160,8 +171,8 @@ function WorkspaceShellInner() {
               onNavigateToModule={handleModuleSelect}
             />
           ) : activeDestination === "assistant" ? (
-            <ResizablePanelGroup orientation="horizontal" className="h-full">
-              <ResizablePanel defaultSize={contextOpen ? 74 : 100} minSize={55} className="min-w-0">
+            isMobile ? (
+              <div className="h-full w-full min-w-0 flex-1 overflow-hidden">
                 <AssistantWorkspace
                   project={DEFAULT_PROJECT}
                   conversationId={conversations.active?.id}
@@ -169,16 +180,28 @@ function WorkspaceShellInner() {
                   fullscreen={assistantFullscreen}
                   onFullscreenChange={setAssistantFullscreen}
                 />
-              </ResizablePanel>
-              {contextOpen && !assistantFullscreen && (
-                <>
-                  <ResizableHandle withHandle className="bg-border/60" />
-                  <ResizablePanel defaultSize={26} minSize={22} maxSize={38} className="hidden min-w-0 md:block">
-                    <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} />
-                  </ResizablePanel>
-                </>
-              )}
-            </ResizablePanelGroup>
+              </div>
+            ) : (
+              <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
+                <ResizablePanel defaultSize={contextOpen ? 74 : 100} minSize={55} className="min-w-0">
+                  <AssistantWorkspace
+                    project={DEFAULT_PROJECT}
+                    conversationId={conversations.active?.id}
+                    composerRef={composerRef}
+                    fullscreen={assistantFullscreen}
+                    onFullscreenChange={setAssistantFullscreen}
+                  />
+                </ResizablePanel>
+                {contextOpen && !assistantFullscreen && (
+                  <>
+                    <ResizableHandle withHandle className="bg-border/60" />
+                    <ResizablePanel defaultSize={26} minSize={20} maxSize={40} className="min-w-0">
+                      <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} />
+                    </ResizablePanel>
+                  </>
+                )}
+              </ResizablePanelGroup>
+            )
           ) : (
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
           )}
@@ -186,15 +209,17 @@ function WorkspaceShellInner() {
         {!assistantFullscreen && <StatusBar project={DEFAULT_PROJECT} />}
       </SidebarInset>
 
-      {/* Universal mobile context drawer */}
-      <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
-        <SheetContent side="right" className="w-[min(94vw,26rem)] p-0 md:hidden" showCloseButton={false}>
-          <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
-        </SheetContent>
-      </Sheet>
+      {/* Universal mobile context drawer (ONLY rendered on mobile) */}
+      {isMobile && (
+        <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
+          <SheetContent side="right" className="w-[min(94vw,26rem)] p-0" showCloseButton={false}>
+            <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Floating quick-access context button on mobile */}
-      {!assistantFullscreen && (
+      {isMobile && !assistantFullscreen && (
         <FloatingContextButton
           onClick={() => setMobileContextOpen(true)}
           fileCount={DEFAULT_CONTEXT.recentFiles.length}
@@ -209,7 +234,7 @@ function WorkspaceShellInner() {
         onModuleSelect={handleModuleSelect}
         onNewChat={openNewChat}
         onSettings={() => setActiveDestination("settings")}
-        onToggleContext={() => setContextOpen((o) => !o)}
+        onToggleContext={handleToggleContext}
         onToggleSidebar={toggleSidebar}
         onFocusComposer={() => composerRef.current?.focus()}
         onToggleTheme={toggleTheme}
