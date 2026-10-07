@@ -164,7 +164,10 @@ export function WorkspaceHeader({ destination = "assistant", contextOpen, onCont
         <Button
           variant="outline"
           size="sm"
-          className="flex h-7.5 items-center gap-1.5 rounded-lg border-synth-cyan/40 bg-synth-cyan/10 px-2 font-mono text-[10px] font-semibold text-synth-cyan hover:border-synth-cyan/70 hover:bg-synth-cyan/20 active:scale-95 md:hidden"
+          className={cn(
+            "flex h-7.5 items-center gap-1.5 rounded-lg border-synth-cyan/40 bg-synth-cyan/10 px-2 font-mono text-[10px] font-semibold text-synth-cyan hover:border-synth-cyan/70 hover:bg-synth-cyan/20 active:scale-95 md:hidden",
+            contextOpen && "border-synth-cyan bg-synth-cyan/25 text-synth-cyan shadow-[0_0_10px_rgba(7,150,160,0.2)]"
+          )}
           aria-label="Open SYNTH Context"
           onClick={onContextToggle}
         >

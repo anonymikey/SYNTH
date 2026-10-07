@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { WorkspaceSidebar } from "@/components/layout/workspace-sidebar";
 import { WorkspaceHeader } from "@/components/layout/workspace-header";
 import { ContextPanel } from "@/components/layout/context-panel";
-import { FloatingContextButton } from "@/components/layout/floating-context-button";
 import { StatusBar } from "@/components/layout/status-bar";
 import { AssistantWorkspace } from "@/components/assistant/assistant-workspace";
 import type { PromptComposerHandle } from "@/components/assistant/prompt-composer";
@@ -22,7 +20,6 @@ import { DEFAULT_CONTEXT, DEFAULT_PROJECT } from "@/lib/config/workspace";
 import { SYNTH_MODULES, type ModuleDefinition } from "@/lib/config/modules";
 import { useSynthShortcuts } from "@/lib/shortcuts/use-synth-shortcuts";
 import { useTheme } from "@/components/theme/theme-provider";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 
 export function WorkspaceShell() {
@@ -34,11 +31,9 @@ export function WorkspaceShell() {
 }
 
 function WorkspaceShellInner() {
-  const isMobile = useIsMobile();
   const conversations = useConversations();
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("dashboard");
-  const [contextOpen, setContextOpen] = useState(true);
-  const [mobileContextOpen, setMobileContextOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
   const [assistantFullscreen, setAssistantFullscreen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -46,12 +41,8 @@ function WorkspaceShellInner() {
   const composerRef = useRef<PromptComposerHandle>(null);
 
   const handleToggleContext = useCallback(() => {
-    if (isMobile) {
-      setMobileContextOpen((prev) => !prev);
-    } else {
-      setContextOpen((prev) => !prev);
-    }
-  }, [isMobile]);
+    setContextOpen((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     const handleSynthNavigation = (event: Event) => {
@@ -124,7 +115,7 @@ function WorkspaceShellInner() {
       setCommandOpen(false);
       setAboutOpen(false);
       setNotificationsOpen(false);
-      setMobileContextOpen(false);
+      setContextOpen(false);
     },
     toggleTheme,
     openModelSelector: () => composerRef.current?.focus(),
@@ -136,7 +127,7 @@ function WorkspaceShellInner() {
   }, []);
 
   return (
-    <SidebarProvider defaultOpen className={assistantFullscreen ? "fixed inset-0 z-50 min-h-0 bg-background" : "min-h-0"} style={{ height: "100dvh" }}>
+    <SidebarProvider defaultOpen={false} className={assistantFullscreen ? "fixed inset-0 z-50 min-h-0 bg-background" : "min-h-0"} style={{ height: "100dvh" }}>
       {!assistantFullscreen && <WorkspaceSidebar
         activeModule={activeDestination}
         onDashboard={() => setActiveDestination("dashboard")}
@@ -155,7 +146,7 @@ function WorkspaceShellInner() {
       <SidebarInset className="flex h-full min-h-0 min-w-0 w-0 max-w-full flex-1 overflow-hidden bg-background">
         {!assistantFullscreen && <WorkspaceHeader
           destination={activeDestination}
-          contextOpen={isMobile ? mobileContextOpen : contextOpen}
+          contextOpen={contextOpen}
           onContextToggle={handleToggleContext}
           onOpenCommand={() => setCommandOpen(true)}
           onOpenNotifications={() => setNotificationsOpen(true)}
@@ -171,37 +162,15 @@ function WorkspaceShellInner() {
               onNavigateToModule={handleModuleSelect}
             />
           ) : activeDestination === "assistant" ? (
-            isMobile ? (
-              <div className="h-full w-full min-w-0 flex-1 overflow-hidden">
-                <AssistantWorkspace
-                  project={DEFAULT_PROJECT}
-                  conversationId={conversations.active?.id}
-                  composerRef={composerRef}
-                  fullscreen={assistantFullscreen}
-                  onFullscreenChange={setAssistantFullscreen}
-                />
-              </div>
-            ) : (
-              <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
-                <ResizablePanel defaultSize={contextOpen ? 74 : 100} minSize={55} className="min-w-0">
-                  <AssistantWorkspace
-                    project={DEFAULT_PROJECT}
-                    conversationId={conversations.active?.id}
-                    composerRef={composerRef}
-                    fullscreen={assistantFullscreen}
-                    onFullscreenChange={setAssistantFullscreen}
-                  />
-                </ResizablePanel>
-                {contextOpen && !assistantFullscreen && (
-                  <>
-                    <ResizableHandle withHandle className="bg-border/60" />
-                    <ResizablePanel defaultSize={26} minSize={20} maxSize={40} className="min-w-0">
-                      <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} />
-                    </ResizablePanel>
-                  </>
-                )}
-              </ResizablePanelGroup>
-            )
+            <div className="h-full w-full min-w-0 flex-1 overflow-hidden">
+              <AssistantWorkspace
+                project={DEFAULT_PROJECT}
+                conversationId={conversations.active?.id}
+                composerRef={composerRef}
+                fullscreen={assistantFullscreen}
+                onFullscreenChange={setAssistantFullscreen}
+              />
+            </div>
           ) : (
             <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
           )}
@@ -209,24 +178,12 @@ function WorkspaceShellInner() {
         {!assistantFullscreen && <StatusBar project={DEFAULT_PROJECT} />}
       </SidebarInset>
 
-      {/* Universal mobile context drawer (ONLY rendered on mobile) */}
-      {isMobile && (
-        <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
-          <SheetContent side="right" className="w-[min(94vw,26rem)] p-0" showCloseButton={false}>
-            <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setMobileContextOpen(false)} />
-          </SheetContent>
-        </Sheet>
-      )}
-
-      {/* Floating quick-access context button on mobile */}
-      {isMobile && !assistantFullscreen && (
-        <FloatingContextButton
-          onClick={() => setMobileContextOpen(true)}
-          fileCount={DEFAULT_CONTEXT.recentFiles.length}
-          knowledgeCount={DEFAULT_CONTEXT.knowledge.length}
-          isOpen={mobileContextOpen}
-        />
-      )}
+      {/* Universal SYNTH Context slide-over drawer (All devices) */}
+      <Sheet open={contextOpen} onOpenChange={setContextOpen}>
+        <SheetContent side="right" className="w-[min(94vw,420px)] sm:max-w-[420px] p-0 border-l border-border bg-background shadow-2xl" showCloseButton={false}>
+          <ContextPanel project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onClose={() => setContextOpen(false)} />
+        </SheetContent>
+      </Sheet>
       <CommandPalette
         open={commandOpen}
         onOpenChange={setCommandOpen}

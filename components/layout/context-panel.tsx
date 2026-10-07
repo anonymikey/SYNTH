@@ -18,7 +18,7 @@ export function ContextPanel({ project, context, onClose }: { project: ProjectSu
   const ActivityIcon = iconFor("activity");
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-l border-border bg-background" aria-label="SYNTH project context panel">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-background" aria-label="SYNTH project context panel">
       {/* Header */}
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
         <div>
@@ -39,10 +39,10 @@ export function ContextPanel({ project, context, onClose }: { project: ProjectSu
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
         <div className="border-b border-border px-3 pt-2">
           <TabsList variant="line" className="grid w-full grid-cols-4">
-            <TabsTrigger value="context" className="text-[10px]">Context</TabsTrigger>
-            <TabsTrigger value="files" className="text-[10px]">Files</TabsTrigger>
-            <TabsTrigger value="agent" className="text-[10px]">Agent</TabsTrigger>
-            <TabsTrigger value="activity" className="text-[10px]">Activity</TabsTrigger>
+            <TabsTrigger value="context" className="text-xs font-medium">Context</TabsTrigger>
+            <TabsTrigger value="files" className="text-xs font-medium">Files</TabsTrigger>
+            <TabsTrigger value="agent" className="text-xs font-medium">Agent</TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs font-medium">Activity</TabsTrigger>
           </TabsList>
         </div>
 
