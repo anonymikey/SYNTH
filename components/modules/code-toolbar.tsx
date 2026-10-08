@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,6 +9,54 @@ import { iconFor } from "@/lib/icons";
 import type { ProjectInfo } from "@/lib/project/use-project";
 
 type CenterView = "editor" | "preview";
+
+type ContextAction = "github" | "figma" | "upload" | "paste" | "mcp" | "plugin";
+
+const contextActionFailures: Record<ContextAction, { label: string; stage: string; reason: string; nextAction: string }> = {
+  github: {
+    label: "GitHub import",
+    stage: "action routing",
+    reason: "This toolbar item has no GitHub import handler, so no API request or repository import occurred.",
+    nextAction: "Sign in and connect GitHub through the existing import surface, then retry.",
+  },
+  figma: {
+    label: "Figma import",
+    stage: "action routing",
+    reason: "No Figma import handler is connected to this toolbar item.",
+    nextAction: "Use a supported source, or configure Figma access before retrying.",
+  },
+  upload: {
+    label: "File upload",
+    stage: "action routing",
+    reason: "No file-picker/import handler is connected here; no file was opened or added to Explorer.",
+    nextAction: "Retry only after the file-import path is connected.",
+  },
+  paste: {
+    label: "Code paste",
+    stage: "action routing",
+    reason: "No paste-code handler is connected to this toolbar item; no text was sent.",
+    nextAction: "Use Forge’s Add context → Paste Code action, then review and submit the text.",
+  },
+  mcp: {
+    label: "MCP connection",
+    stage: "connection setup",
+    reason: "No MCP setup handler is connected here; no server was configured.",
+    nextAction: "Connect an approved MCP server through a supported setup flow before retrying.",
+  },
+  plugin: {
+    label: "Plugin setup",
+    stage: "connection setup",
+    reason: "No plugin setup handler is connected here; no capability was enabled.",
+    nextAction: "Use an approved plugin setup flow before relying on a plugin.",
+  },
+};
+
+function reportUnavailableContextAction(action: ContextAction) {
+  const failure = contextActionFailures[action];
+  toast.error(`${failure.label} failed`, {
+    description: `Stage: ${failure.stage}. Reason: ${failure.reason} Next action: ${failure.nextAction}`,
+  });
+}
 
 interface CodeToolbarProps {
   project: ProjectInfo | null;
@@ -187,13 +236,13 @@ export function CodeToolbar({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Project context</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "github" }))}>Import from GitHub</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "figma" }))}>Import from Figma</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "upload" }))}>Upload from computer</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:paste-code"))}>Paste code</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("github")}>Import from GitHub</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("figma")}>Import from Figma</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("upload")}>Upload from computer</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("paste")}>Paste code</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-mcp"))}>Connect MCP</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent("synth:open-plugins"))}>Add plugin</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("mcp")}>Connect MCP</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => reportUnavailableContextAction("plugin")}>Add plugin</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <Tooltip>

@@ -10,6 +10,7 @@ import { testerAgent } from "@/agents/definitions/tester";
 
 const definitions: AgentDefinition[] = [];
 
+/** General-purpose defaults complement the curated SYNTH specialist catalog; keep their IDs distinct. */
 const defaultDefinitions: AgentDefinition[] = [
   { ...assistantAgent, enabled: true, intents: [...assistantAgent.intents, "planning"], description: "Handles direct assistant conversations and keeps the workspace grounded in the current project context.", capabilities: ["conversation", "context recall", "clarification"], toolIds: ["calculator"] },
   { ...coderAgent, enabled: true, intents: [...coderAgent.intents, "planning"], description: "Provides structured code guidance for implementation planning without executing shell commands or mutating files.", capabilities: ["implementation planning", "refactoring guidance", "review planning"], toolIds: ["calculator", "workspace_info"] },

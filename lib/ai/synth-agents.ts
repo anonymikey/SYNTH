@@ -19,7 +19,8 @@ export const SYNTH_AGENT_CATALOG: SynthAgentProfile[] = [
   { id: "designer", displayName: "SYNTH Vision", description: "Design and visual ideation" },
   { id: "planner", displayName: "SYNTH Architect", description: "System design and implementation plans" },
   { id: "researcher", displayName: "SYNTH Scout", description: "Research and context gathering" },
-  { id: "reviewer", displayName: "SYNTH Sentinel", description: "Code review and risk analysis" },
+  { id: "reviewer-general", displayName: "SYNTH Sentinel", description: "General review of plans and workspace outputs" },
+  { id: "reviewer", displayName: "SYNTH Reviewer", description: "Curated code review and risk analysis" },
   { id: "tester", displayName: "SYNTH Verify", description: "Testing and validation planning" },
 ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { ResourceHub, type ResourceHubItem } from "@/components/workspace/resource-hub";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,11 +41,15 @@ export function ResourceHubTrigger({
   );
 
   const handleGitHubConnect = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "github" }));
+    toast.error("GitHub import failed", {
+      description: "Stage: source routing. Reason: this dialog has no GitHub import handler, so no connection check or repository request occurred. Next action: sign in and connect GitHub through the configured import flow, then retry.",
+    });
   }, []);
 
   const handleFigmaConnect = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("synth:open-import", { detail: "figma" }));
+    toast.error("Figma import failed", {
+      description: "Stage: source routing. Reason: no Figma import handler is registered, so no design resource was fetched. Next action: connect Figma with a real authorization flow before retrying.",
+    });
   }, []);
 
   const handleUploadFiles = useCallback((files: File[]) => {
@@ -75,11 +80,15 @@ export function ResourceHubTrigger({
   }, [onResourcesUpdate, onCodePasted]);
 
   const handleMCPConnect = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("synth:open-mcp"));
+    toast.error("MCP connection failed", {
+      description: "Stage: connection setup. Reason: no MCP setup handler is registered here; no server was connected. Next action: configure an approved MCP connection before retrying.",
+    });
   }, []);
 
   const handlePluginAdd = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("synth:open-plugins"));
+    toast.error("Plugin setup failed", {
+      description: "Stage: plugin setup. Reason: no plugin handler is registered here; no capability was enabled. Next action: use an approved plugin setup flow before relying on a plugin.",
+    });
   }, []);
 
   return (
