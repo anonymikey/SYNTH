@@ -47,28 +47,30 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
         yield { type: "context-ready", requestId: request.requestId, sourceCount: context.memory.length + context.knowledge.length + context.files.length };
 
           // If the request includes an explicit tool call, route it through the Engine tool port (MCP-ready)
-          if (request.toolRequest) {
+          if (request.toolRequest || request.toolApproval) {
             // Phase 1 hardening: require explicit agentId for any tool execution
             if (!request.agentId) throw createEngineError("authorization", "Tool execution requires an explicit agentId for authorization.", { retryable: false });
 
             if (!dependencies.tools) throw createEngineError("routing", "No tool runtime is available to execute the requested tool.", { retryable: false });
 
-            // Resolve agent strictly for authorization (do not fall back to mode-based mapping)
-            const agent = await dependencies.agents?.resolve(intent, request.mode, request.agentId);
-            if (!agent || agent.id !== request.agentId) throw createEngineError("authorization", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
-
-            // Use server-side tool policy to determine whether execution is authorized
-            const { ToolPolicy } = await import("@/lib/ai/tool-policy");
-            const auth = ToolPolicy.authorizeExecution(request.agentId, intent, request.toolRequest.toolId);
-            if (!auth.ok) throw createEngineError("authorization", `Tool authorization failed: ${auth.reason}`, { retryable: false });
-
-            const available = await dependencies.tools.listAvailable({ requestId: request.requestId, projectId: request.context?.projectId, runtime: request.runtime, approved: false });
-            const toolDef = available.find((t) => t.id === request.toolRequest?.toolId);
-            if (!toolDef) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is not available.`, { retryable: false });
-            if (!toolDef.enabled) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is disabled.`, { retryable: false });
-
-            // If this request includes an approval token, attempt to consume and execute. Otherwise create an approval request.
+            // If this request does not include an approval token, create an approval request.
             if (!request.toolApproval) {
+              if (!request.toolRequest) throw createEngineError("routing", "Tool request is missing.", { retryable: false });
+
+              // Resolve agent strictly for authorization (do not fall back to mode-based mapping)
+              const agent = await dependencies.agents?.resolve(intent, request.mode, request.agentId);
+              if (!agent || agent.id !== request.agentId) throw createEngineError("authorization", `SYNTH Agent ${request.agentId} is not available for ${intent}.`, { retryable: false });
+
+              // Use server-side tool policy to determine whether execution is authorized
+              const { ToolPolicy } = await import("@/lib/ai/tool-policy");
+              const auth = ToolPolicy.authorizeExecution(request.agentId, intent, request.toolRequest.toolId);
+              if (!auth.ok) throw createEngineError("authorization", `Tool authorization failed: ${auth.reason}`, { retryable: false });
+
+              const available = await dependencies.tools.listAvailable({ requestId: request.requestId, projectId: request.context?.projectId, runtime: request.runtime, approved: false });
+              const toolDef = available.find((t) => t.id === request.toolRequest?.toolId);
+              if (!toolDef) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is not available.`, { retryable: false });
+              if (!toolDef.enabled) throw createEngineError("routing", `Tool ${request.toolRequest.toolId} is disabled.`, { retryable: false });
+
               const { ToolApproval } = await import("@/lib/ai/tool-approval");
               const approval = await ToolApproval.create(request.requestId, request.agentId!, intent, request.toolRequest);
               // Emit approval-required event with opaque token and stop
@@ -84,7 +86,7 @@ export function createSynthEngine(dependencies: SynthEngineDependencies): SynthE
 
             // Validate approval binding
             if (record.agentId !== request.agentId) throw createEngineError("authorization", `Tool approval token does not belong to agent ${request.agentId}`, { retryable: false });
-            if (record.toolId !== request.toolRequest?.toolId) throw createEngineError("authorization", `Tool approval toolId mismatch`, { retryable: false });
+            if (request.toolRequest?.toolId && record.toolId !== request.toolRequest.toolId) throw createEngineError("authorization", `Tool approval toolId mismatch`, { retryable: false });
             if (record.requestId !== request.requestId) throw createEngineError("authorization", `Tool approval requestId mismatch`, { retryable: false });
             if (intent && record.intent && intent !== record.intent) throw createEngineError("authorization", `Tool approval intent mismatch`, { retryable: false });
 

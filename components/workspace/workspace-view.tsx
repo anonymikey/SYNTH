@@ -15,6 +15,8 @@ import type { WorkspaceArea } from "@/components/workspace/workspace-view-types"
 import { PlatformSurface, type Surface } from "@/components/workspace/platform-surfaces";
 import { IntegrationsSurface } from "@/components/workspace/integrations-surface";
 
+import type { SynthHandoff } from "@/lib/handoff/types";
+
 export type WorkspaceDestination = "dashboard" | "assistant" | "settings" | ModuleDefinition["id"] | WorkspaceArea;
 
 const AREA_LABELS: Record<WorkspaceArea, string> = {
@@ -56,7 +58,15 @@ const areaActions: Record<WorkspaceArea, string[]> = {
   integrations: ["Connect GitHub", "Connect Figma", "Configure MCP"],
 };
 
-export function WorkspaceView({ destination, onBackToAssistant }: { destination: WorkspaceDestination; onBackToAssistant: () => void }) {
+export function WorkspaceView({
+  destination,
+  handoff,
+  onBackToAssistant,
+}: {
+  destination: WorkspaceDestination;
+  handoff?: SynthHandoff | null;
+  onBackToAssistant: () => void;
+}) {
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState(["Plan the provider layer", "Explain the memory model", "Debug hydration error"]);
   const [skills, setSkills] = useState(["Coding", "Research", "Debugging"]);
@@ -66,7 +76,16 @@ export function WorkspaceView({ destination, onBackToAssistant }: { destination:
   const Icon = iconFor(selectedModule?.icon ?? area?.icon ?? (destination === "settings" ? "settings" : "dashboard"));
 
   if (selectedModule && selectedModule.id !== "assistant") {
-    return <ModuleRouter destination={selectedModule.id} project={DEFAULT_PROJECT} context={DEFAULT_CONTEXT} onBackToAssistant={onBackToAssistant} onAction={(action) => toast.info(`${action.label} sent through the SYNTH ${action.intent} boundary`)} />;
+    return (
+      <ModuleRouter
+        destination={selectedModule.id}
+        project={DEFAULT_PROJECT}
+        context={DEFAULT_CONTEXT}
+        handoff={handoff}
+        onBackToAssistant={onBackToAssistant}
+        onAction={(action) => toast.info(`${action.label} sent through the SYNTH ${action.intent} boundary`)}
+      />
+    );
   }
 
   if (selectedModule) {

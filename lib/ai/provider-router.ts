@@ -1,4 +1,4 @@
-import type { AIProvider, ProviderSelection } from "@/lib/ai/types";
+import type { AIProvider, ProviderId, ProviderSelection } from "@/lib/ai/types";
 import type { ProviderPort } from "@/engine/ports";
 import type { ProviderRegistry } from "@/lib/ai/provider-registry";
 import { resolveConfiguredModel } from "@/lib/ai/models";
@@ -17,8 +17,11 @@ export class ProviderRouter implements ProviderPort {
     }
 
     if (selection.allowFallback) {
-      const fallback = this.registry.get(selection.providerId === "openai" ? "openrouter" : "openai");
-      if (fallback && (await fallback.healthCheck()).status === "connected") return fallback;
+      const candidates: ProviderId[] = (["openrouter", "openai", "gemini"] as ProviderId[]).filter((id) => id !== selection.providerId);
+      for (const id of candidates) {
+        const candidate = this.registry.get(id);
+        if (candidate && (await candidate.healthCheck()).status === "connected") return candidate;
+      }
       const demo = this.registry.get("mock");
       if (demo) return demo;
     }

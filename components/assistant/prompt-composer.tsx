@@ -12,6 +12,7 @@ import { AgentModeSelect } from "@/components/assistant/agent-mode-select";
 import { TextType } from "@/components/ui/text-type";
 import { iconFor } from "@/lib/icons";
 import { cn } from "@/lib/utils";
+import { formatFileSize } from "@/components/modules/formatters";
 import type { SynthModelView, SynthRoutingPreset } from "@/modules/models/hooks/use-model-catalog";
 import type { AgentMode } from "@/types/workspace";
 
@@ -20,6 +21,9 @@ export interface ComposerAttachment {
   name: string;
   kind: "file" | "image";
   size: number;
+  mimeType?: string;
+  previewUrl?: string;
+  dataUrl?: string;
 }
 
 export interface PromptComposerHandle {
@@ -66,6 +70,7 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     ref
   ) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [isWebSearchActive, setIsWebSearchActive] = useState(false);
     const [plusMenuOpen, setPlusMenuOpen] = useState(false);
@@ -82,6 +87,7 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
     const ImageIcon = iconFor("image");
     const PaperclipIcon = iconFor("paperclip");
     const BrainIcon = iconFor("brain");
+    const FolderIcon = iconFor("folders");
 
     useImperativeHandle(ref, () => ({
       focus: () => textareaRef.current?.focus(),
@@ -182,23 +188,42 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
               )}
 
               {/* Attachments */}
-              {attachments.map((attachment) => (
-                <Badge
-                  key={attachment.id}
-                  variant="outline"
-                  className="gap-1.5 border-synth-cyan/25 bg-synth-cyan/5 text-[10px] text-synth-cyan"
-                >
-                  <span className="max-w-40 truncate">{attachment.name}</span>
-                  <button
-                    type="button"
-                    className="rounded-full p-0.5 hover:bg-synth-cyan/15"
-                    onClick={() => onRemoveAttachment(attachment.id)}
-                    aria-label={`Remove ${attachment.name}`}
+              {attachments.map((attachment) => {
+                const isImage = attachment.kind === "image" || attachment.mimeType?.startsWith("image/");
+                const previewSrc = attachment.previewUrl || attachment.dataUrl;
+
+                return (
+                  <Badge
+                    key={attachment.id}
+                    variant="outline"
+                    className="gap-1.5 border-synth-cyan/30 bg-synth-cyan/5 text-[10px] text-synth-cyan py-0.5 px-2"
                   >
-                    <XIcon className="size-3" />
-                  </button>
-                </Badge>
-              ))}
+                    {isImage && previewSrc ? (
+                      <img
+                        src={previewSrc}
+                        alt={attachment.name}
+                        className="size-3.5 rounded object-cover border border-synth-cyan/40"
+                      />
+                    ) : (
+                      <PaperclipIcon className="size-3 text-synth-cyan/70 shrink-0" />
+                    )}
+                    <span className="max-w-36 truncate font-medium">{attachment.name}</span>
+                    {attachment.size ? (
+                      <span className="font-mono text-[9px] text-muted-foreground/70">
+                        {formatFileSize(attachment.size)}
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="rounded-full p-0.5 hover:bg-synth-cyan/20 text-synth-cyan/80 hover:text-synth-cyan"
+                      onClick={() => onRemoveAttachment(attachment.id)}
+                      aria-label={`Remove ${attachment.name}`}
+                    >
+                      <XIcon className="size-2.5" />
+                    </button>
+                  </Badge>
+                );
+              })}
             </div>
           )}
 
@@ -302,7 +327,25 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
                     </Badge>
                   </DropdownMenuItem>
 
-                  {/* Upload from computer */}
+                  {/* Upload Image */}
+                  <DropdownMenuItem
+                    className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs transition-colors hover:bg-muted/70"
+                    onSelect={() => {
+                      setPlusMenuOpen(false);
+                      imageInputRef.current?.click();
+                    }}
+                  >
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-synth-cyan/30 bg-synth-cyan/15 text-synth-cyan">
+                      <ImageIcon className="size-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block font-medium text-foreground">Upload image</span>
+                      <span className="block text-[10px] text-muted-foreground">PNG, JPG, WebP, SVG</span>
+                    </div>
+                    <ChevronRightIcon className="size-3 text-muted-foreground/40 shrink-0" />
+                  </DropdownMenuItem>
+
+                  {/* Upload Files */}
                   <DropdownMenuItem
                     className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs transition-colors hover:bg-muted/70"
                     onSelect={() => {
@@ -314,10 +357,27 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
                       <PaperclipIcon className="size-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <span className="block font-medium text-foreground">Upload from computer</span>
-                      <span className="block text-[10px] text-muted-foreground">Files, images, documents</span>
+                      <span className="block font-medium text-foreground">Upload files</span>
+                      <span className="block text-[10px] text-muted-foreground">Code, documents, datasets</span>
                     </div>
                     <ChevronRightIcon className="size-3 text-muted-foreground/40 shrink-0" />
+                  </DropdownMenuItem>
+
+                  {/* Upload folder (honest state per Section 17) */}
+                  <DropdownMenuItem
+                    disabled
+                    className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs opacity-60 cursor-not-allowed"
+                  >
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-muted-foreground">
+                      <FolderIcon className="size-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block font-medium text-foreground">Upload folder</span>
+                      <span className="block text-[10px] text-muted-foreground">Supported via Imports / GitHub</span>
+                    </div>
+                    <Badge variant="outline" className="h-4 px-1 font-mono text-[8px] text-muted-foreground">
+                      Imports
+                    </Badge>
                   </DropdownMenuItem>
 
                   {/* Generate Images */}
@@ -335,7 +395,7 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="block font-medium text-foreground">Generate images</span>
-                      <span className="block text-[10px] text-muted-foreground">Create visual mockups & assets</span>
+                      <span className="block text-[10px] text-muted-foreground">Open in SYNTH Vision</span>
                     </div>
                     <ChevronRightIcon className="size-3 text-muted-foreground/40 shrink-0" />
                   </DropdownMenuItem>
@@ -468,6 +528,31 @@ export const PromptComposer = forwardRef<PromptComposerHandle, PromptComposerPro
             </div>
           </div>
         </div>
+
+        {/* Hidden inputs for uploading images and files */}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            if (event.target.files) readFiles(event.target.files);
+            event.target.value = "";
+          }}
+          aria-label="Upload image"
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            if (event.target.files) readFiles(event.target.files);
+            event.target.value = "";
+          }}
+          aria-label="Upload files"
+        />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,32 @@ import { useEngineAction } from "@/components/modules/use-engine-action";
 import { AgentRegistry } from "@/agents/registry";
 import { synthAgentModule } from "@/modules/agent/agent-module";
 import type { ModuleAction, WorkspaceModuleProps } from "@/components/modules/types";
+import { HandoffStore } from "@/lib/handoff/handoff-store";
 
 const DEFAULT_AGENT_ID = "planner";
 
-export function AgentModule({ project, context, onAction }: WorkspaceModuleProps) {
+export function AgentModule({ project, context, handoff: initialHandoff, onAction }: WorkspaceModuleProps) {
   const [selectedAgentId, setSelectedAgentId] = useState(DEFAULT_AGENT_ID);
   const [task, setTask] = useState("");
   const agents = useMemo(() => AgentRegistry.list(), []);
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) ?? agents[0] ?? null;
   const engine = useEngineAction({ project, context });
+
+  // Consume handoff on mount or when changed
+  useEffect(() => {
+    const handoff = initialHandoff ?? HandoffStore.consume("agent");
+    if (!handoff) return;
+
+    if (handoff.suggestedTask || handoff.userRequest) {
+      setTask(handoff.suggestedTask || handoff.userRequest);
+    }
+
+    if (handoff.agentSequence && handoff.agentSequence.length > 0) {
+      const targetName = handoff.agentSequence[0].toLowerCase();
+      const match = agents.find((a) => a.id.toLowerCase() === targetName || a.label.toLowerCase() === targetName);
+      if (match) setSelectedAgentId(match.id);
+    }
+  }, [initialHandoff, agents]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { useProject } from "@/lib/project/use-project";
 import { CodeToolbar } from "@/components/modules/code-toolbar";
@@ -17,6 +17,7 @@ import type {
   ForgeProposal,
   ForgeTaskState,
 } from "@/components/modules/forge-types";
+import { HandoffStore } from "@/lib/handoff/handoff-store";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -30,7 +31,7 @@ type CenterView = "editor" | "preview";
 /*  CodeModule — IDE with state machine and responsive layout          */
 /* ------------------------------------------------------------------ */
 
-export function CodeModule({ project, context }: WorkspaceModuleProps) {
+export function CodeModule({ project, context, handoff: initialHandoff }: WorkspaceModuleProps) {
   const proj = useProject();
   const engine = useEngineAction({ project, context });
 
@@ -160,6 +161,33 @@ export function CodeModule({ project, context }: WorkspaceModuleProps) {
     },
     [engine.state, sendToForge],
   );
+
+  // --- Handoff continuation from Assistant ---
+  const handledHandoffRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handoff = initialHandoff ?? HandoffStore.consume("code");
+    if (!handoff) return;
+    if (handledHandoffRef.current === handoff.id) return;
+    handledHandoffRef.current = handoff.id;
+
+    const taskText = handoff.suggestedTask || handoff.userRequest;
+    if (!taskText) return;
+
+    setWorkspaceState("active");
+    setForgeVisible(true);
+
+    if (handoff.selectedFile) {
+      proj.loadFile(handoff.selectedFile);
+    }
+
+    const attachmentLabels = handoff.attachments?.map((a) => a.name).join(", ");
+    const fullTask = attachmentLabels
+      ? `${taskText}\n\n[Visual context attached: ${attachmentLabels}]`
+      : taskText;
+
+    sendToForge(fullTask);
+  }, [initialHandoff, sendToForge, proj]);
 
   // --- State transitions ---
   useEffect(() => {

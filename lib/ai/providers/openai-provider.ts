@@ -3,6 +3,23 @@ import type { AIProvider, AIResponse, AIStreamEvent, ChatRequest, ModelInfo, Pro
 
 type Chunk = { choices?: Array<{ delta?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } };
 
+function formatMessagesForOpenAI(messages: import("@/lib/ai/types").AIMessage[]) {
+  return messages.map((m) => {
+    if (typeof m.content === "string") return m;
+    if (Array.isArray(m.content)) {
+      return {
+        role: m.role,
+        content: m.content.map((part) => {
+          if (part.type === "text") return { type: "text", text: part.text };
+          if (part.type === "image") return { type: "image_url", image_url: { url: part.url } };
+          return part;
+        }),
+      };
+    }
+    return m;
+  });
+}
+
 export class OpenAIProvider implements AIProvider {
   readonly id = "openai" as const;
   readonly label = "OpenAI";
@@ -15,7 +32,7 @@ export class OpenAIProvider implements AIProvider {
     const messageId = crypto.randomUUID();
     if (!this.apiKey) { yield { type: "error", messageId, error: createProviderError(this.id, "configuration", "OpenAI is not configured on the server.") }; return; }
     let response: Response;
-    try { response = await fetch(`${this.baseUrl}/chat/completions`, { method: "POST", signal: request.signal, headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: request.model, messages: request.messages, stream: true, temperature: request.temperature, max_tokens: request.maxTokens }) }); }
+    try { response = await fetch(`${this.baseUrl}/chat/completions`, { method: "POST", signal: request.signal, headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: request.model, messages: formatMessagesForOpenAI(request.messages), stream: true, temperature: request.temperature, max_tokens: request.maxTokens }) }); }
     catch (cause) { yield { type: "error", messageId, error: createProviderError(this.id, request.signal?.aborted ? "aborted" : "connection", request.signal?.aborted ? "Generation was stopped." : "OpenAI is unavailable.", { retryable: !request.signal?.aborted, cause }) }; return; }
     if (!response.ok || !response.body) { const code = response.status === 401 || response.status === 403 ? "authentication" : response.status === 408 || response.status === 429 ? "rate-limit" : response.status === 400 ? "invalid-request" : "upstream"; yield { type: "error", messageId, error: createProviderError(this.id, code, code === "authentication" ? "OpenAI authentication failed." : code === "rate-limit" ? "OpenAI rate limit or quota reached." : `OpenAI returned ${response.status || "an empty response"}.`, { retryable: response.status === 408 || response.status === 429 || response.status >= 500 }) }; return; }
     yield { type: "message-start", messageId, model: request.model };

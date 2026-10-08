@@ -1,8 +1,25 @@
 import { createProviderError } from "@/lib/ai/errors";
 import { configuredModels, resolveConfiguredModel } from "@/lib/ai/models";
-import type { AIProvider, AIResponse, AIStreamEvent, ChatRequest, ModelInfo, ProviderHealth, TokenUsage } from "@/lib/ai/types";
+import type { AIMessage, AIProvider, AIResponse, AIStreamEvent, ChatRequest, ModelInfo, ProviderHealth, TokenUsage } from "@/lib/ai/types";
 
 interface OpenRouterChunk { id?: string; model?: string; choices?: Array<{ delta?: { content?: string; role?: string }; finish_reason?: string | null }>; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } }
+
+function formatMessagesForUpstream(messages: AIMessage[]) {
+  return messages.map((m) => {
+    if (typeof m.content === "string") return m;
+    if (Array.isArray(m.content)) {
+      return {
+        role: m.role,
+        content: m.content.map((part) => {
+          if (part.type === "text") return { type: "text", text: part.text };
+          if (part.type === "image") return { type: "image_url", image_url: { url: part.url } };
+          return part;
+        }),
+      };
+    }
+    return m;
+  });
+}
 
 export class OpenRouterProvider implements AIProvider {
   readonly id = "openrouter" as const;
@@ -42,7 +59,23 @@ export class OpenRouterProvider implements AIProvider {
     if (!this.apiKey) { yield { type: "error", messageId, error: createProviderError(this.id, "configuration", "OpenRouter is not configured on the server.") }; return; }
     let response: Response;
     try {
-      response = await fetch(`${this.baseUrl}/chat/completions`, { method: "POST", signal: request.signal, headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json", "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000", "X-Title": "SYNTH" }, body: JSON.stringify({ model, messages: request.messages, stream: true, temperature: request.temperature, max_tokens: request.maxTokens }) });
+      response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        signal: request.signal,
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+          "X-Title": "SYNTH",
+        },
+        body: JSON.stringify({
+          model,
+          messages: formatMessagesForUpstream(request.messages),
+          stream: true,
+          temperature: request.temperature,
+          max_tokens: request.maxTokens,
+        }),
+      });
     } catch (error) { yield { type: "error", messageId, error: createProviderError(this.id, request.signal?.aborted ? "aborted" : "connection", request.signal?.aborted ? "Generation was stopped." : "OpenRouter is unavailable.", { retryable: !request.signal?.aborted, cause: error }) }; return; }
     if (!response.ok || !response.body) {
       const code = response.status === 401 || response.status === 403 ? "authentication" : response.status === 429 ? "rate-limit" : response.status === 400 ? "invalid-request" : "upstream";

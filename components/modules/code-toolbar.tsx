@@ -26,7 +26,6 @@ interface CodeToolbarProps {
 export function CodeToolbar({
   project,
   showExplorer,
-  showPreview: _showPreview,
   showForge,
   centerView = "editor",
   onToggleExplorer,

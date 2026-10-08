@@ -1,4 +1,5 @@
 import type { MessageRole } from "@/lib/ai/types";
+import type { SynthHandoffAttachment, SynthRecommendation } from "@/lib/handoff/types";
 
 export type ChatMessageStatus = "pending" | "streaming" | "complete" | "error";
 export type MessageAction = "copy" | "edit" | "regenerate" | "like" | "dislike" | "share";
@@ -11,6 +12,8 @@ export interface ChatMessage {
   status: ChatMessageStatus;
   error?: string;
   approvalRequired?: boolean;
+  attachments?: SynthHandoffAttachment[];
+  recommendation?: SynthRecommendation;
 }
 
 export interface ChatThread {

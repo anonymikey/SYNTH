@@ -37,6 +37,7 @@ export interface WorkspaceModuleProps {
   project: ProjectSummary;
   context: ChatContextView;
   onAction?: (action: ModuleAction) => void;
+  handoff?: import("@/lib/handoff/types").SynthHandoff | null;
 }
 
 export interface CodeFile {

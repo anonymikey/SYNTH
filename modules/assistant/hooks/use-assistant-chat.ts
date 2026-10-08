@@ -6,8 +6,14 @@ import { chatReducer, initialChatState } from "@/modules/chat/chat-reducer";
 import type { ChatMessage } from "@/modules/chat/types";
 import type { EngineEvent } from "@/engine/types";
 import type { AgentMode, ChatContextView, ProjectSummary } from "@/types/workspace";
-import type { AIMessage } from "@/lib/ai/types";
+import type { AIContentPart, AIMessage } from "@/lib/ai/types";
 import { ConversationStore } from "@/modules/conversation/store";
+import type { ComposerAttachment } from "@/components/assistant/prompt-composer";
+import type { SynthHandoffAttachment } from "@/lib/handoff/types";
+import {
+  detectCapabilityIntent,
+  createRecommendationFromIntent,
+} from "@/lib/ai/capability-router";
 
 interface UseAssistantChatOptions {
   project: ProjectSummary;
@@ -80,37 +86,76 @@ export function useAssistantChat({
   }, [conversationId, state.messages, state.isStreaming, agentMode, modelId, providerId, onMessagesChange]);
 
   const sendPrompt = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, composerAttachments?: ComposerAttachment[]) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
       const requestId = crypto.randomUUID();
       const assistantId = crypto.randomUUID();
+
+      const normalizedAttachments: SynthHandoffAttachment[] = (composerAttachments ?? []).map((att) => ({
+        id: att.id,
+        name: att.name,
+        kind: att.kind,
+        size: att.size,
+        mimeType: att.mimeType,
+        url: att.previewUrl,
+        dataUrl: att.dataUrl,
+      }));
+
+      // Capability Intent Detection
+      const intentInput = {
+        userMessage: prompt,
+        attachments: normalizedAttachments,
+        project,
+        selectedFile: context.selectedFile,
+      };
+      const intentResult = detectCapabilityIntent(intentInput);
+      const recommendation = createRecommendationFromIntent(intentResult, intentInput);
+
       const userMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
         content: prompt,
         createdAt: new Date().toISOString(),
         status: "complete",
+        attachments: normalizedAttachments.length > 0 ? normalizedAttachments : undefined,
       };
+
       const assistantMessage: ChatMessage = {
         id: assistantId,
         role: "assistant",
         content: "",
         createdAt: new Date().toISOString(),
         status: "pending",
+        recommendation: recommendation ?? undefined,
       };
+
       dispatch({ type: "user-message", message: userMessage, requestId });
       dispatch({ type: "assistant-start", message: assistantMessage });
 
       try {
+        // Build multimodal messages array if images are attached
+        const imageParts: AIContentPart[] = normalizedAttachments
+          .filter((att) => att.kind === "image" && (att.dataUrl || att.url))
+          .map((att) => ({
+            type: "image",
+            url: att.dataUrl || att.url!,
+            mimeType: att.mimeType,
+          }));
+
         const conversation: AIMessage[] = [
-          ...stateRef.current.messages,
-          userMessage,
-        ].map((message) => ({
-          role: message.role,
-          content: message.content,
-        }));
+          ...stateRef.current.messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+          {
+            role: "user",
+            content: imageParts.length > 0
+              ? [{ type: "text", text: prompt }, ...imageParts]
+              : prompt,
+          },
+        ];
 
         const response = await fetch("/api/ai/chat", {
           method: "POST",
@@ -125,11 +170,19 @@ export function useAssistantChat({
             // Do NOT send a provider object — the browser does not know internal provider details.
             model: modelId,
             runtime: "web",
+            intent: intentResult.intent === "image_analysis" || intentResult.intent === "image_generation"
+              ? "vision"
+              : intentResult.intent === "website_building" || intentResult.intent === "application_building" || intentResult.intent === "bug_fixing" || intentResult.intent === "refactoring"
+              ? "coding"
+              : intentResult.intent === "multi_agent_task"
+              ? "planning"
+              : "conversation",
             context: {
               projectId: project.id,
               selectedFile: context.selectedFile,
               recentFiles: context.recentFiles,
               knowledgeIds: context.knowledge.map((item) => item.id),
+              explicitText: intentResult.assistantResponseHint,
             },
           }),
         });
@@ -175,7 +228,7 @@ export function useAssistantChat({
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [agentMode, context, modelId, project.id]
+    [agentMode, context, modelId, project]
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);

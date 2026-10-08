@@ -6,17 +6,25 @@ const MAX_PROMPT_LENGTH = 2000;
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Sign in to use SYNTH Vision." }, { status: 401 });
+    const isSupabaseConfigured = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")
+    );
+
+    if (isSupabaseConfigured) {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return NextResponse.json({ error: "Sign in to use SYNTH Vision." }, { status: 401 });
+    }
 
     const body = await request.json() as { prompt?: unknown; size?: unknown };
     const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
     if (!prompt || prompt.length > MAX_PROMPT_LENGTH) return NextResponse.json({ error: "Enter a prompt up to 2,000 characters." }, { status: 400 });
 
     const selection = await resolveSynthModelAsync("synth-vision");
-    if (selection.providerId !== "openai") return NextResponse.json({ error: "SYNTH Vision image generation is not configured with an image-capable primary route yet." }, { status: 503 });
-    if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "SYNTH Vision is not configured on the server." }, { status: 503 });
+    if (selection.providerId !== "openai" || !process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "SYNTH Vision is not currently configured for image generation." }, { status: 503 });
+    }
 
     const response = await fetch(`${process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"}/images/generations`, {
       method: "POST",

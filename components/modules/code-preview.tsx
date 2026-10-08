@@ -105,7 +105,7 @@ export function CodePreview({ project }: CodePreviewProps) {
 
           {/* Preview area */}
           <div className="flex flex-1 items-center justify-center p-6 w-full">
-            <PreviewPreparingState project={project} />
+            <PreviewPreparingState />
           </div>
         </div>
       </div>
@@ -130,11 +130,7 @@ export function CodePreview({ project }: CodePreviewProps) {
 /*  PreviewPreparingState — ORB-based preparation animation            */
 /* ------------------------------------------------------------------ */
 
-function PreviewPreparingState({
-  project: _project,
-}: {
-  project: CodePreviewProps["project"];
-}) {
+function PreviewPreparingState() {
   const steps = [
     { label: "Analyzing project", active: true },
     { label: "Building interface", active: false },

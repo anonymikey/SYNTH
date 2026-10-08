@@ -18,6 +18,8 @@ import type { ChatMessage, MessageAction } from "@/modules/chat/types";
 import type { AgentMode, ProjectSummary } from "@/types/workspace";
 import { useShortcuts } from "@/lib/shortcuts/use-shortcut";
 import { iconFor } from "@/lib/icons";
+import { HandoffStore } from "@/lib/handoff/handoff-store";
+import type { SynthRecommendation } from "@/lib/handoff/types";
 
 interface AssistantWorkspaceProps {
   project: ProjectSummary;
@@ -88,12 +90,10 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
 
       ensureConversation();
 
-      const attachmentContext = attachments.length
-        ? `\n\nAttached context: ${attachments.map((attachment) => attachment.name).join(", ")}`
-        : "";
+      const currentAttachments = [...attachments];
       setPrompt("");
       setAttachments([]);
-      await chat.sendPrompt(`${nextPrompt}${attachmentContext}`);
+      await chat.sendPrompt(nextPrompt, currentAttachments);
     },
     [prompt, chat.isStreaming, chat.sendPrompt, ensureConversation, attachments]
   );
@@ -103,16 +103,64 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
     window.dispatchEvent(new CustomEvent("synth:navigate", { detail: { destination: "code" } }));
   }, []);
 
+  const handleRecommendationAction = useCallback(
+    (recommendation: SynthRecommendation) => {
+      HandoffStore.executeHandoff(recommendation.handoff);
+      toast.info(`Opening ${recommendation.title}...`);
+    },
+    []
+  );
+
   const addAttachments = useCallback((files: File[]) => {
-    const next = files.map((file) => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      kind: file.type.startsWith("image/") ? ("image" as const) : ("file" as const),
-      size: file.size,
-    }));
-    setAttachments((current) => [...current, ...next]);
-    toast.success(`${next.length} attachment${next.length === 1 ? "" : "s"} added to the SYNTH prompt`);
-  }, []);
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    const MAX_COUNT = 5;
+
+    const remainingSlots = Math.max(0, MAX_COUNT - attachments.length);
+    if (remainingSlots === 0) {
+      toast.error("Maximum 5 attachments reached.");
+      return;
+    }
+
+    const filesToProcess = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      toast.warning(`Only ${remainingSlots} more attachment(s) can be added (max 5).`);
+    }
+
+    filesToProcess.forEach((file) => {
+      if (file.size > MAX_SIZE) {
+        toast.error(`"${file.name}" exceeds the 10 MB limit.`);
+        return;
+      }
+
+      const id = crypto.randomUUID();
+      const isImg = file.type.startsWith("image/");
+      const previewUrl = isImg ? URL.createObjectURL(file) : undefined;
+
+      // Read file data URL asynchronously
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === "string" ? reader.result : undefined;
+        const newAttachment: ComposerAttachment = {
+          id,
+          name: file.name,
+          kind: isImg ? "image" : "file",
+          size: file.size,
+          mimeType: file.type || (isImg ? "image/png" : "application/octet-stream"),
+          previewUrl: previewUrl || dataUrl,
+          dataUrl,
+        };
+
+        setAttachments((current) => [...current, newAttachment]);
+        toast.success(`Attached ${file.name}`);
+      };
+
+      reader.onerror = () => {
+        toast.error(`Could not read ${file.name}`);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }, [attachments.length]);
 
   const handleAction = useCallback(async (message: { content: string }, action: MessageAction) => {
     if (action === "copy") {
@@ -247,7 +295,11 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
         </div>
       ) : (
         <>
-          <ChatThread messages={chat.messages} onAction={handleAction} />
+          <ChatThread
+            messages={chat.messages}
+            onAction={handleAction}
+            onRecommendationAction={handleRecommendationAction}
+          />
 
           {/* Bottom composer (when conversation active) */}
           <div className="relative z-10 mx-auto w-full max-w-3xl shrink-0 px-4 pb-3 pt-3 sm:px-6 sm:pb-5">

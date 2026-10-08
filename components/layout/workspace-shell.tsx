@@ -21,6 +21,7 @@ import { SYNTH_MODULES, type ModuleDefinition } from "@/lib/config/modules";
 import { useSynthShortcuts } from "@/lib/shortcuts/use-synth-shortcuts";
 import { useTheme } from "@/components/theme/theme-provider";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
+import type { SynthHandoff } from "@/lib/handoff/types";
 
 export function WorkspaceShell() {
   return (
@@ -33,6 +34,7 @@ export function WorkspaceShell() {
 function WorkspaceShellInner() {
   const conversations = useConversations();
   const [activeDestination, setActiveDestination] = useState<WorkspaceDestination>("dashboard");
+  const [activeHandoff, setActiveHandoff] = useState<SynthHandoff | null>(null);
   const [contextOpen, setContextOpen] = useState(false);
   const [assistantFullscreen, setAssistantFullscreen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -46,11 +48,23 @@ function WorkspaceShellInner() {
 
   useEffect(() => {
     const handleSynthNavigation = (event: Event) => {
-      const destination = (event as CustomEvent<{ destination?: WorkspaceDestination }>).detail?.destination;
-      if (destination) setActiveDestination(destination);
+      const detail = (event as CustomEvent<{ destination?: WorkspaceDestination; handoff?: SynthHandoff }>).detail;
+      if (detail?.destination) {
+        if (detail.handoff) setActiveHandoff(detail.handoff);
+        setActiveDestination(detail.destination);
+      }
     };
+    const handleSynthHandoff = (event: Event) => {
+      const handoff = (event as CustomEvent<SynthHandoff>).detail;
+      if (handoff) setActiveHandoff(handoff);
+    };
+
     window.addEventListener("synth:navigate", handleSynthNavigation);
-    return () => window.removeEventListener("synth:navigate", handleSynthNavigation);
+    window.addEventListener("synth:handoff", handleSynthHandoff);
+    return () => {
+      window.removeEventListener("synth:navigate", handleSynthNavigation);
+      window.removeEventListener("synth:handoff", handleSynthHandoff);
+    };
   }, []);
 
   const openNewChat = useCallback(() => {
@@ -172,7 +186,11 @@ function WorkspaceShellInner() {
               />
             </div>
           ) : (
-            <WorkspaceView destination={activeDestination} onBackToAssistant={() => setActiveDestination("assistant")} />
+            <WorkspaceView
+              destination={activeDestination}
+              handoff={activeHandoff}
+              onBackToAssistant={() => setActiveDestination("assistant")}
+            />
           )}
         </div>
         {!assistantFullscreen && <StatusBar project={DEFAULT_PROJECT} />}

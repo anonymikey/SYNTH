@@ -10,9 +10,11 @@ import { ModuleActionFeedback } from "@/components/modules/module-action-feedbac
 import { useEngineAction } from "@/components/modules/use-engine-action";
 import type { ModuleAction, VisionAsset, WorkspaceModuleProps } from "@/components/modules/types";
 
+import { HandoffStore } from "@/lib/handoff/handoff-store";
+
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
-export function VisionModule({ project, context, onAction }: WorkspaceModuleProps) {
+export function VisionModule({ project, context, handoff: initialHandoff, onAction }: WorkspaceModuleProps) {
   const [asset, setAsset] = useState<VisionAsset>();
   const [error, setError] = useState("");
   const [prompt, setPrompt] = useState("A futuristic cyan and violet SYNTH logo concept, polished product mark, dark background");
@@ -21,7 +23,30 @@ export function VisionModule({ project, context, onAction }: WorkspaceModuleProp
   const [generationError, setGenerationError] = useState("");
   const engine = useEngineAction({ project, context });
 
-  useEffect(() => () => { if (asset) URL.revokeObjectURL(asset.previewUrl); }, [asset]);
+  // Consume handoff on mount or when changed
+  useEffect(() => {
+    const handoff = initialHandoff ?? HandoffStore.consume("vision");
+    if (!handoff) return;
+
+    if (handoff.userRequest) {
+      setPrompt(handoff.userRequest);
+    }
+
+    if (handoff.attachments && handoff.attachments.length > 0) {
+      const img = handoff.attachments.find((a) => a.kind === "image" || a.mimeType?.startsWith("image/"));
+      if (img && (img.url || img.dataUrl)) {
+        setAsset({
+          id: img.id,
+          name: img.name,
+          mimeType: img.mimeType ?? "image/png",
+          size: img.size ?? 1024,
+          previewUrl: img.url || img.dataUrl!,
+        });
+      }
+    }
+  }, [initialHandoff]);
+
+  useEffect(() => () => { if (asset?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(asset.previewUrl); }, [asset]);
 
   const stageFile = (file: File) => {
     if (!file.type.startsWith("image/")) { setError("Choose an image file to continue."); return; }
@@ -48,10 +73,10 @@ export function VisionModule({ project, context, onAction }: WorkspaceModuleProp
     try {
       const response = await fetch("/api/ai/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
       const data = await response.json() as { image?: string; error?: string };
-      if (!response.ok || !data.image) throw new Error(data.error ?? "SYNTH Vision could not generate an image.");
+      if (!response.ok || !data.image) throw new Error(data.error ?? "SYNTH Vision is not currently configured for image generation.");
       setGeneratedImage(data.image);
     } catch (generationFailure) {
-      setGenerationError(generationFailure instanceof Error ? generationFailure.message : "SYNTH Vision is temporarily unavailable.");
+      setGenerationError(generationFailure instanceof Error ? generationFailure.message : "SYNTH Vision is not currently configured for image generation.");
     } finally {
       setGenerating(false);
     }

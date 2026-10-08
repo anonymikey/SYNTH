@@ -14,7 +14,8 @@ export type ChatAction =
   | { type: "assistant-delta"; messageId: string; delta: string }
   | { type: "completed"; messageId: string }
   | { type: "approval-required"; messageId: string }
-  | { type: "failed"; messageId: string; error: string };
+  | { type: "failed"; messageId: string; error: string }
+  | { type: "set-recommendation"; messageId: string; recommendation: import("@/lib/handoff/types").SynthRecommendation };
 
 export const initialChatState: ChatState = { messages: [], isStreaming: false };
 
@@ -36,6 +37,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, status: "complete", approvalRequired: true } : message), activeRequestId: undefined, isStreaming: false };
     case "failed":
       return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, status: "error", error: action.error } : message), activeRequestId: undefined, isStreaming: false };
+    case "set-recommendation":
+      return { ...state, messages: state.messages.map((message) => message.id === action.messageId ? { ...message, recommendation: action.recommendation } : message) };
     default:
       return state;
   }

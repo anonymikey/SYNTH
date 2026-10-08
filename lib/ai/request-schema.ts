@@ -26,7 +26,28 @@ export function parseEngineRequest(input: unknown): EngineRequest {
     const record = asRecord(rawMessage);
     const role = record.role;
     if (role !== "system" && role !== "user" && role !== "assistant" && role !== "tool") throw new Error("Message role is invalid.");
-    return { role, content: asString(record.content, "Message content") };
+
+    let content: AIMessage["content"];
+    if (typeof record.content === "string") {
+      content = record.content.trim();
+    } else if (Array.isArray(record.content)) {
+      content = record.content.map((part) => {
+        const p = asRecord(part);
+        if (p.type === "text") {
+          return { type: "text" as const, text: String(p.text ?? "") };
+        }
+        if (p.type === "image") {
+          const url = String(p.url ?? "");
+          if (!url) throw new Error("Image part requires a url.");
+          return { type: "image" as const, url, mimeType: p.mimeType ? String(p.mimeType) : undefined };
+        }
+        throw new Error("Invalid content part type.");
+      });
+    } else {
+      throw new Error("Message content is invalid.");
+    }
+
+    return { role, content };
   });
 
   const mode = asString(body.mode ?? "assistant", "mode") as AgentMode;

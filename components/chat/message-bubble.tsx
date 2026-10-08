@@ -4,17 +4,29 @@ import { ThinkingOrb } from "thinking-orbs";
 import { Badge } from "@/components/ui/badge";
 import { iconFor } from "@/lib/icons";
 import type { ChatMessage, MessageAction } from "@/modules/chat/types";
+import type { SynthRecommendation } from "@/lib/handoff/types";
 import { MessageActions } from "@/components/chat/message-actions";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { RecommendationCard } from "@/components/assistant/recommendation-card";
+import { formatFileSize } from "@/components/modules/formatters";
+import { FileText, Image as ImageIcon } from "lucide-react";
 
-export function MessageBubble({ message, onAction }: { message: ChatMessage; onAction: (message: ChatMessage, action: MessageAction) => void }) {
+export function MessageBubble({
+  message,
+  onAction,
+  onRecommendationAction,
+}: {
+  message: ChatMessage;
+  onAction: (message: ChatMessage, action: MessageAction) => void;
+  onRecommendationAction?: (recommendation: SynthRecommendation) => void;
+}) {
   const isUser = message.role === "user";
   const CheckIcon = iconFor("checkCircle");
 
   return (
     <article className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[min(82%,48rem)] rounded-2xl border p-4 shadow-sm transition-colors ${
+        className={`max-w-[min(88%,52rem)] rounded-2xl border p-4 shadow-sm transition-colors ${
           isUser
             ? "border-synth-violet/25 bg-synth-violet/8"
             : "border-border bg-card/70"
@@ -38,6 +50,54 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
           )}
         </div>
 
+        {/* Visual Attachments (e.g. uploaded screenshots or files) */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2.5">
+            {message.attachments.map((att) => {
+              const isImg = att.kind === "image" || att.mimeType?.startsWith("image/");
+              const previewSrc = att.url || att.dataUrl;
+
+              return (
+                <div
+                  key={att.id}
+                  className="overflow-hidden rounded-xl border border-border/80 bg-background/60 shadow-sm"
+                >
+                  {isImg && previewSrc ? (
+                    <div className="relative group">
+                      <img
+                        src={previewSrc}
+                        alt={`Attachment ${att.name}`}
+                        className="max-h-56 max-w-full sm:max-w-xs object-cover rounded-t-xl"
+                      />
+                      <div className="flex items-center gap-1.5 border-t border-border/50 bg-background/80 px-2.5 py-1.5 backdrop-blur-xs">
+                        <ImageIcon className="size-3 text-synth-cyan shrink-0" />
+                        <span className="truncate text-[11px] font-medium text-foreground max-w-44">
+                          {att.name}
+                        </span>
+                        {att.size ? (
+                          <span className="ml-auto font-mono text-[9px] text-muted-foreground">
+                            {formatFileSize(att.size)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-2 text-xs">
+                      <FileText className="size-3.5 text-muted-foreground" />
+                      <span className="truncate max-w-44 font-medium text-foreground">{att.name}</span>
+                      {att.size ? (
+                        <span className="font-mono text-[9px] text-muted-foreground">
+                          {formatFileSize(att.size)}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Content */}
         {message.content ? (
           <MarkdownRenderer content={message.content} variant="assistant" />
@@ -47,6 +107,14 @@ export function MessageBubble({ message, onAction }: { message: ChatMessage; onA
             <span className="text-sm text-muted-foreground/70">Thinking…</span>
           </div>
         ) : null}
+
+        {/* Recommendation Card (Assistant Concierge Front Door) */}
+        {!isUser && message.recommendation && onRecommendationAction && (
+          <RecommendationCard
+            recommendation={message.recommendation}
+            onAction={onRecommendationAction}
+          />
+        )}
 
         {/* Approval required */}
         {message.approvalRequired && (
