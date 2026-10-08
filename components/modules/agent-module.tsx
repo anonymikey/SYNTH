@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,9 +22,13 @@ export function AgentModule({ project, context, handoff: initialHandoff, onActio
   const engine = useEngineAction({ project, context });
 
   // Consume handoff on mount or when changed
+  const handledHandoffRef = useRef<string | null>(null);
+
   useEffect(() => {
     const handoff = initialHandoff ?? HandoffStore.consume("agent");
     if (!handoff) return;
+    if (handledHandoffRef.current === handoff.id) return;
+    handledHandoffRef.current = handoff.id;
 
     if (handoff.suggestedTask || handoff.userRequest) {
       setTask(handoff.suggestedTask || handoff.userRequest);

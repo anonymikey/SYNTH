@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,13 @@ export function VisionModule({ project, context, handoff: initialHandoff, onActi
   const engine = useEngineAction({ project, context });
 
   // Consume handoff on mount or when changed
+  const handledHandoffRef = useRef<string | null>(null);
+
   useEffect(() => {
     const handoff = initialHandoff ?? HandoffStore.consume("vision");
     if (!handoff) return;
+    if (handledHandoffRef.current === handoff.id) return;
+    handledHandoffRef.current = handoff.id;
 
     if (handoff.userRequest) {
       setPrompt(handoff.userRequest);

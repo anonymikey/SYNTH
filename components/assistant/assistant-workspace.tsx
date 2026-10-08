@@ -225,10 +225,10 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
         {fullscreen && <Button variant="ghost" size="icon-sm" aria-label="Show workspace navigation" onClick={() => onFullscreenChange?.(false)}><MenuIcon /></Button>}
         <div>
           <h1 className="font-heading text-base font-semibold text-foreground sm:text-lg">
-            AI Chatbot
+            SYNTH Assistant
           </h1>
           <p className="text-[11px] text-muted-foreground sm:text-xs">
-            Ask anything about your code, research, planning, and creativity
+            General conversation, analysis, planning, capability recommendations, and smart handoffs
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
