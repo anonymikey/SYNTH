@@ -1,2 +1,10 @@
+import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
-export default function ResetPasswordPage() { return <AuthForm mode="reset" />; }
+import { createClient } from "@/lib/supabase/server";
+
+export default async function ResetPasswordPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/error");
+  return <AuthForm mode="reset" />;
+}

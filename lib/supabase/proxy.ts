@@ -6,6 +6,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) {
+    if (request.nextUrl.pathname.startsWith("/app")) return NextResponse.redirect(new URL("/auth/error", request.url));
     return response;
   }
   const supabase = createServerClient(
@@ -26,7 +27,8 @@ export async function updateSession(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const pathname = request.nextUrl.pathname;
     if (!user && pathname.startsWith("/app")) return NextResponse.redirect(new URL("/auth/login?next=/app", request.url));
-    if (user && pathname.startsWith("/auth")) return NextResponse.redirect(new URL("/app", request.url));
+    const recoveryPath = pathname === "/auth/reset-password";
+    if (user && pathname.startsWith("/auth") && !recoveryPath && pathname !== "/auth/callback" && pathname !== "/auth/error") return NextResponse.redirect(new URL("/app", request.url));
   } catch {
     return response;
   }
