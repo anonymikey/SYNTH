@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 
 const sourceImage = "/synth-auth-portal.png";
 
@@ -47,14 +48,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
           password,
           options: {
             data: { display_name: displayName },
-            emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`,
+            emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
           },
         });
         if (authError) throw authError;
         setMessage(data.session ? "Account created. Redirecting…" : "Check your email to confirm your SYNTH account.");
       } else if (mode === "forgot") {
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+          redirectTo: `${getAuthRedirectUrl("/auth/callback")}?next=/auth/reset-password`,
         });
         if (authError) throw authError;
         setMessage("If an account exists for that email, a reset link is on its way.");
