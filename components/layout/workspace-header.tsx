@@ -99,7 +99,13 @@ export function WorkspaceHeader({ destination = "assistant", contextOpen, onCont
   return (
     <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-background/80 px-2 backdrop-blur-xl sm:h-12 sm:px-3 md:px-5" aria-label="SYNTH workspace toolbar">
       <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-        <SidebarTrigger className="text-muted-foreground hover:text-synth-cyan md:hidden" />
+        {/* Sidebar open/toggle button — accessible on desktop and mobile */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SidebarTrigger className="border border-border/80 bg-card/60 text-muted-foreground hover:border-synth-cyan/50 hover:text-synth-cyan hover:bg-synth-cyan/10 transition-colors shadow-xs" />
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Toggle sidebar (⌘B)</TooltipContent>
+        </Tooltip>
 
         {/* Workspace selector — hidden on mobile for dashboard */}
         <div className="hidden items-center gap-2 sm:flex">

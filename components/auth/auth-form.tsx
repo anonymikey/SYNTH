@@ -120,6 +120,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "forgot" | "rese
             </form>
 
             <div className="mt-8 flex items-center gap-3 text-xs text-[var(--auth-muted)]"><span className="h-px flex-1 bg-border" /> <span>{isRecovery ? "SYNTH account recovery" : "Private workspace access"}</span> <span className="h-px flex-1 bg-border" /></div>
+            {!isRecovery && (
+              <div className="mt-4 text-center">
+                <Link href="/app" className="inline-flex items-center gap-1.5 text-xs font-medium text-synth-cyan hover:underline">
+                  Continue to Workspace in Local Mode &rarr;
+                </Link>
+              </div>
+            )}
             {isRecovery && <Link href="/auth/login" className="mt-6 block text-center text-sm font-semibold text-[var(--auth-accent)] hover:underline">Back to sign in</Link>}
           </div>
         </div>

@@ -1,16 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Pin, X } from "lucide-react";
 import { SynthBrand } from "@/components/branding/synth-brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail, SidebarSeparator, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { iconFor } from "@/lib/icons";
 import { relativeTime } from "@/lib/dates";
 import { SYNTH_MODULES, WORKSPACE_AREAS, type ModuleDefinition } from "@/lib/config/modules";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { ConversationSummary } from "@/modules/conversation/types";
 import type { WorkspaceArea } from "@/components/workspace/workspace-view-types";
 
@@ -45,7 +48,7 @@ export function WorkspaceSidebar({
   onDeleteConversation,
   onPinConversation,
 }: WorkspaceSidebarProps) {
-  const { setOpenMobile, isMobile } = useSidebar();
+  const { setOpenMobile, isMobile, toggleSidebar, isPinned, setIsPinned } = useSidebar();
   const [historyOpen, setHistoryOpen] = useState(true);
   const [historySearchOpen, setHistorySearchOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
@@ -53,6 +56,41 @@ export function WorkspaceSidebar({
   const handleOpenContext = () => {
     if (isMobile) setOpenMobile(false);
     onOpenContext?.();
+  };
+
+  const handleDashboard = () => {
+    if (isMobile) setOpenMobile(false);
+    onDashboard();
+  };
+
+  const handleSelectModule = (mod: ModuleDefinition) => {
+    if (isMobile) setOpenMobile(false);
+    onSelectModule(mod);
+  };
+
+  const handleSelectArea = (area: WorkspaceArea) => {
+    if (isMobile) setOpenMobile(false);
+    onSelectArea(area);
+  };
+
+  const handleNewChat = () => {
+    if (isMobile) setOpenMobile(false);
+    onNewChat();
+  };
+
+  const handleSettings = () => {
+    if (isMobile) setOpenMobile(false);
+    onSettings();
+  };
+
+  const handleOpenCommand = () => {
+    if (isMobile) setOpenMobile(false);
+    onOpenCommand();
+  };
+
+  const handleSelectConversation = (id: string) => {
+    if (isMobile) setOpenMobile(false);
+    onSelectConversation(id);
   };
 
   const visibleHistory = useMemo(() => {
@@ -84,10 +122,71 @@ export function WorkspaceSidebar({
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
       <SidebarHeader className="h-14 border-b border-sidebar-border px-3 py-2">
-        <div className="flex items-center justify-between gap-2">
-          <SynthBrand className="group-data-[collapsible=icon]:hidden" />
-          <div className="hidden group-data-[collapsible=icon]:block"><SynthBrand compact /></div>
-          <SidebarTrigger className="text-muted-foreground hover:text-synth-cyan" />
+        {/* Expanded state header */}
+        <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:hidden">
+          <SynthBrand />
+          <div className="flex items-center gap-1">
+            {!isMobile && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className={cn(
+                      "size-7 rounded-md transition-colors",
+                      isPinned ? "text-synth-cyan bg-synth-cyan/15 hover:bg-synth-cyan/25" : "text-muted-foreground hover:text-synth-cyan"
+                    )}
+                    onClick={() => {
+                      setIsPinned(!isPinned);
+                      toast.info(!isPinned ? "Sidebar pinned open" : "Sidebar unpinned (auto-hides on leave)");
+                    }}
+                    aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar open"}
+                  >
+                    <Pin className={cn("size-3.5 transition-transform", isPinned && "rotate-45 fill-current")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {isPinned ? "Pinned open (click to unpin)" : "Pin open (prevents auto-hide)"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                onClick={() => setOpenMobile(false)}
+                aria-label="Close navigation"
+              >
+                <X className="size-4" />
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarTrigger className="size-7 text-muted-foreground hover:text-synth-cyan" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Collapse sidebar (⌘B)</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </div>
+
+        {/* Collapsed icon-rail state header: centered brand toggle button */}
+        <div className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-9 rounded-xl p-0 hover:bg-synth-cyan/15 hover:ring-1 hover:ring-synth-cyan/40 active:scale-95 transition-all"
+                onClick={toggleSidebar}
+                aria-label="Open sidebar"
+              >
+                <SynthBrand compact />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Open sidebar (⌘B)</TooltipContent>
+          </Tooltip>
         </div>
       </SidebarHeader>
       <SidebarContent className="custom-scrollbar">
@@ -99,7 +198,7 @@ export function WorkspaceSidebar({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     isActive={activeModule === "dashboard"}
-                    onClick={onDashboard}
+                    onClick={handleDashboard}
                     tooltip="Dashboard"
                     className="group/dash"
                   >
@@ -109,7 +208,7 @@ export function WorkspaceSidebar({
                 </SidebarMenuItem>
               </SidebarMenu>
               <div className="flex gap-1.5 px-0.5">
-                <Button onClick={onNewChat} variant="outline" size="sm" className="h-8 flex-1 justify-start gap-1.5 border-synth-cyan/30 bg-synth-cyan/10 text-foreground hover:border-synth-cyan/50 hover:bg-synth-cyan/15 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                <Button onClick={handleNewChat} variant="outline" size="sm" className="h-8 flex-1 justify-start gap-1.5 border-synth-cyan/30 bg-synth-cyan/10 text-foreground hover:border-synth-cyan/50 hover:bg-synth-cyan/15 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
                   <span className="flex size-4 items-center justify-center rounded text-synth-cyan text-xs">+</span>
                   <span className="group-data-[collapsible=icon]:hidden">New Chat</span>
                   <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">⌘N</Kbd>
@@ -120,7 +219,7 @@ export function WorkspaceSidebar({
                     <span className="text-[10px] font-medium">Context</span>
                   </Button>
                 )}
-                <Button onClick={onOpenCommand} variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden">
+                <Button onClick={handleOpenCommand} variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden">
                   <SearchIcon className="size-3.5" />
                   <span className="text-[10px]">⌘K</span>
                 </Button>
@@ -141,7 +240,7 @@ export function WorkspaceSidebar({
                     <SidebarMenuButton
                       isActive={activeModule === module.id}
                       tooltip={module.label}
-                      onClick={() => onSelectModule(module)}
+                      onClick={() => handleSelectModule(module)}
                       className={cn(module.status !== "active" && "text-muted-foreground/70")}
                     >
                       <Icon className={cn("size-4", module.id === "assistant" ? "text-synth-cyan" : module.id === "vision" ? "text-synth-violet" : "text-muted-foreground")} strokeWidth={1.8} />
@@ -179,7 +278,7 @@ export function WorkspaceSidebar({
                 const Icon = iconFor(area.icon);
                 return (
                   <SidebarMenuItem key={area.id}>
-                    <SidebarMenuButton isActive={activeModule === area.id} tooltip={area.label} onClick={() => onSelectArea(area.id)}>
+                    <SidebarMenuButton isActive={activeModule === area.id} tooltip={area.label} onClick={() => handleSelectArea(area.id)}>
                       <Icon className="size-4 text-muted-foreground" strokeWidth={1.8} />
                       <span>{area.label}</span>
                     </SidebarMenuButton>
@@ -246,7 +345,7 @@ export function WorkspaceSidebar({
                           key={conv.id}
                           conv={conv}
                           isActive={conv.id === activeConversationId}
-                          onSelect={onSelectConversation}
+                          onSelect={handleSelectConversation}
                           onDelete={onDeleteConversation}
                           onPin={onPinConversation}
                         />
@@ -268,7 +367,7 @@ export function WorkspaceSidebar({
                           key={conv.id}
                           conv={conv}
                           isActive={conv.id === activeConversationId}
-                          onSelect={onSelectConversation}
+                          onSelect={handleSelectConversation}
                           onDelete={onDeleteConversation}
                           onPin={onPinConversation}
                         />
@@ -289,11 +388,12 @@ export function WorkspaceSidebar({
             <p className="truncate text-[11px] font-semibold">ANONYMIKE</p>
             <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground">Creator</p>
           </div>
-          <Button onClick={onSettings} variant="ghost" size="icon-sm" className="ml-auto text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden" aria-label="Open SYNTH settings">
+          <Button onClick={handleSettings} variant="ghost" size="icon-sm" className="ml-auto text-muted-foreground hover:text-synth-cyan group-data-[collapsible=icon]:hidden" aria-label="Open SYNTH settings">
             {(() => { const Icon = iconFor("settings"); return <Icon className="size-4" />; })()}
           </Button>
         </div>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

@@ -27,7 +27,7 @@ import { PanelLeftIcon } from "lucide-react"
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+const SIDEBAR_WIDTH_MOBILE = "min(20rem, 85vw)"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -39,6 +39,10 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  isPinned: boolean
+  setIsPinned: (pinned: boolean) => void
+  isHovered: boolean
+  setIsHovered: (hovered: boolean) => void
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -67,6 +71,8 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const [isPinned, setIsPinned] = React.useState(false)
+  const [isHovered, setIsHovered] = React.useState(false)
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -89,6 +95,7 @@ function SidebarProvider({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
+    setIsPinned(true)
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
 
@@ -121,8 +128,12 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      isPinned,
+      setIsPinned,
+      isHovered,
+      setIsHovered,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, isPinned, isHovered]
   )
 
   return (
@@ -155,13 +166,70 @@ function Sidebar({
   className,
   children,
   dir,
+  autoOpenOnHover = true,
   ...props
 }: React.ComponentProps<"div"> & {
   side?: "left" | "right"
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
+  autoOpenOnHover?: boolean
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMobile, state, open, setOpen, openMobile, setOpenMobile, isPinned, setIsHovered } = useSidebar()
+  const hoverTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const leaveTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const isHoverOpenedRef = React.useRef(false)
+
+  const handleEdgeOrRailEnter = React.useCallback(() => {
+    if (isMobile || open) return
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    hoverTimerRef.current = setTimeout(() => {
+      isHoverOpenedRef.current = true
+      setIsHovered(true)
+      setOpen(true)
+    }, 100)
+  }, [isMobile, open, setOpen, setIsHovered])
+
+  const handleContainerEnter = React.useCallback(() => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    if (!open && !isMobile && autoOpenOnHover) {
+      handleEdgeOrRailEnter()
+    }
+  }, [open, isMobile, autoOpenOnHover, handleEdgeOrRailEnter])
+
+  const handleContainerLeave = React.useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+    setIsHovered(false)
+    // Only auto-collapse if opened by hover and not explicitly pinned
+    if (isHoverOpenedRef.current && !isPinned && open && !isMobile) {
+      leaveTimerRef.current = setTimeout(() => {
+        setOpen(false)
+        isHoverOpenedRef.current = false
+      }, 400)
+    }
+  }, [open, isMobile, isPinned, setOpen, setIsHovered])
+
+  // Global mousemove edge sensor for desktop
+  React.useEffect(() => {
+    if (open || isMobile || !autoOpenOnHover) return
+    const handleMouseMove = (e: MouseEvent) => {
+      if (side === "left" && e.clientX <= 14 && e.clientX >= 0) {
+        handleEdgeOrRailEnter()
+      } else if (side === "right" && e.clientX >= window.innerWidth - 14) {
+        handleEdgeOrRailEnter()
+      }
+    }
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [open, isMobile, side, autoOpenOnHover, handleEdgeOrRailEnter])
 
   if (collapsible === "none") {
     return (
@@ -186,7 +254,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-[min(20rem,85vw)] max-w-[85vw] bg-sidebar p-0 text-sidebar-foreground shadow-2xl [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -213,6 +281,21 @@ function Sidebar({
       data-side={side}
       data-slot="sidebar"
     >
+      {/* Edge trigger zone when collapsed / offcanvas */}
+      {!isMobile && !open && autoOpenOnHover && (
+        <div
+          data-slot="sidebar-edge-sensor"
+          aria-hidden="true"
+          title="Hover edge to open sidebar"
+          className={cn(
+            "fixed inset-y-0 z-30 cursor-e-resize transition-all duration-300",
+            side === "left"
+              ? "left-0 w-3 hover:w-6 hover:bg-gradient-to-r hover:from-synth-cyan/35 hover:to-transparent"
+              : "right-0 w-3 hover:w-6 hover:bg-gradient-to-l hover:from-synth-cyan/35 hover:to-transparent"
+          )}
+          onMouseEnter={handleEdgeOrRailEnter}
+        />
+      )}
       {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
@@ -228,8 +311,10 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         data-side={side}
+        onMouseEnter={handleContainerEnter}
+        onMouseLeave={handleContainerLeave}
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex",
+          "fixed inset-y-0 z-20 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -255,7 +340,8 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state, isMobile, openMobile } = useSidebar()
+  const isOpen = isMobile ? openMobile : state === "expanded"
 
   return (
     <Button
@@ -268,9 +354,11 @@ function SidebarTrigger({
         onClick?.(event)
         toggleSidebar()
       }}
+      aria-label={isOpen ? "Collapse Sidebar (⌘B)" : "Open Sidebar (⌘B)"}
+      title={isOpen ? "Collapse Sidebar (⌘B)" : "Open Sidebar (⌘B)"}
       {...props}
     >
-      <PanelLeftIcon />
+      <PanelLeftIcon className="size-4" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

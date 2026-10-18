@@ -5,8 +5,7 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    if (request.nextUrl.pathname.startsWith("/app")) return NextResponse.redirect(new URL("/auth/error", request.url));
+  if (!supabaseUrl || !supabaseKey || supabaseUrl.includes("placeholder")) {
     return response;
   }
   const supabase = createServerClient(

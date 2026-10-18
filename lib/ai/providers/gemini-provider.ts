@@ -33,7 +33,7 @@ export class GeminiProvider implements AIProvider {
   }
 
   async healthCheck(): Promise<ProviderHealth> {
-    const isConfigured = Boolean(this.apiKey && this.apiKey.startsWith("AIza"));
+    const isConfigured = Boolean(this.apiKey && this.apiKey.trim().length > 0);
     return {
       providerId: this.id,
       status: isConfigured ? "connected" : "offline",
@@ -60,7 +60,7 @@ export class GeminiProvider implements AIProvider {
       ? request.model
       : defaultGeminiModel;
 
-    if (!this.apiKey || !this.apiKey.startsWith("AIza")) {
+    if (!this.apiKey || !this.apiKey.trim()) {
       yield {
         type: "error",
         messageId,
