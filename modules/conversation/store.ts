@@ -6,6 +6,22 @@ import type {
 const STORAGE_KEY = "synth-conversations";
 const MAX_CONVERSATIONS = 50;
 
+function isStoredConversation(value: unknown): value is StoredConversation {
+  if (!value || typeof value !== "object") return false;
+  const conversation = value as Partial<StoredConversation>;
+  return (
+    typeof conversation.id === "string" &&
+    typeof conversation.title === "string" &&
+    Array.isArray(conversation.messages) &&
+    typeof conversation.agentMode === "string" &&
+    typeof conversation.modelId === "string" &&
+    typeof conversation.providerId === "string" &&
+    typeof conversation.pinned === "boolean" &&
+    typeof conversation.createdAt === "string" &&
+    typeof conversation.updatedAt === "string"
+  );
+}
+
 function readAll(): StoredConversation[] {
   if (typeof window === "undefined") return [];
   try {
@@ -13,7 +29,7 @@ function readAll(): StoredConversation[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed as StoredConversation[];
+    return parsed.filter(isStoredConversation);
   } catch {
     return [];
   }
