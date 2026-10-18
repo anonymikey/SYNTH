@@ -19,12 +19,22 @@ export function ChatThread({
   const threadRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const shouldFollowRef = useRef(true);
+  const ignoreScrollRef = useRef(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const lastMessage = messages[messages.length - 1];
   const isStreaming = lastMessage?.status === "streaming" || lastMessage?.status === "pending";
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior = "smooth") => {
-    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+    const viewport = threadRef.current?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]');
+    if (!viewport) return;
+
+    ignoreScrollRef.current = true;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+    window.requestAnimationFrame(() => {
+      ignoreScrollRef.current = false;
+      shouldFollowRef.current = true;
+      setShowJumpToLatest(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -34,14 +44,21 @@ export function ChatThread({
     const updateScrollState = () => {
       const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
       const isNearBottom = distanceFromBottom <= 72;
-      shouldFollowRef.current = isNearBottom;
+      if (!ignoreScrollRef.current) {
+        shouldFollowRef.current = isNearBottom;
+      }
       setShowJumpToLatest(!isNearBottom && viewport.scrollHeight > viewport.clientHeight);
     };
 
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(viewport.firstElementChild ?? viewport);
     viewport.addEventListener("scroll", updateScrollState, { passive: true });
     updateScrollState();
-    return () => viewport.removeEventListener("scroll", updateScrollState);
-  }, []);
+    return () => {
+      resizeObserver.disconnect();
+      viewport.removeEventListener("scroll", updateScrollState);
+    };
+  }, [messages.length]);
 
   // Follow new content only while the reader is already near the latest message.
   useEffect(() => {
