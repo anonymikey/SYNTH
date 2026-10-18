@@ -68,8 +68,8 @@ export function ChatThread({
   }, [messages.length, lastMessage?.content, isStreaming, scrollToLatest]);
 
   return (
-    <div ref={threadRef} className="relative min-h-0 flex-1">
-      <ScrollArea className="h-full" aria-live="polite" aria-label="SYNTH Assistant conversation">
+    <div ref={threadRef} className="relative min-h-0 min-w-0 flex-1 basis-0 overflow-hidden">
+      <ScrollArea className="h-full min-h-0" aria-live="polite" aria-label="SYNTH Assistant conversation">
         <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-3 px-3 pb-6 pt-4 sm:gap-4 sm:px-6" aria-label="Conversation messages">
         {messages.map((message) => (
           <MessageBubble

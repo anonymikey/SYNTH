@@ -294,7 +294,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
           </div>
         </div>
       ) : (
-        <>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <ChatThread
             messages={chat.messages}
             onAction={handleAction}
@@ -322,7 +322,7 @@ export function AssistantWorkspace({ project, conversationId, composerRef, fulls
               onRemoveAttachment={(id) => setAttachments((current) => current.filter((attachment) => attachment.id !== id))}
             />
           </div>
-        </>
+        </div>
       )}
       <Dialog open={codingHandoffOpen} onOpenChange={setCodingHandoffOpen}>
         <DialogContent>
