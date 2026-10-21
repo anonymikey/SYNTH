@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { streamChat } from '../lib/stream';
 import { track } from '../lib/track';
-import { idsFor, withImages } from '../lib/images';
+import { withImages } from '../lib/images';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import Rate from './Rate';
 import { Monitor, Tablet, Phone, Download } from '../lib/icons';
@@ -15,7 +15,7 @@ const IDEAS = ['Landing page for a coffee shop', 'Habit tracker with streaks', '
 const WIDTH = { desktop: '100%', tablet: '820px', phone: '390px' };
 const grab = (t) => { const m = t.match(/```html\s*([\s\S]*?)(```|$)/i); return m ? m[1] : ''; };
 
-export default function Builder({ models, seed }) {
+export default function Builder({ seed }) {
   const [prompt, setPrompt] = useState('');
   const [history, setHistory] = useState([]);
   const [html, setHtml] = useState('');
@@ -29,28 +29,26 @@ export default function Builder({ models, seed }) {
   const a = useAttach();
   const ctl = useRef(null);
   const seeded = useRef(false);
-  useEffect(() => { if (seed && models.length && !seeded.current) { seeded.current = true; build(seed); } }, [seed, models.length]);
+  useEffect(() => { if (seed && !seeded.current) { seeded.current = true; build(seed); } }, [seed]);
 
   async function build(override) {
     const text = (override ?? prompt).trim();
     const imgs = a.images;
     if ((!text && !imgs.length) || busy) return;
-    const ids = idsFor(models, imgs.length > 0);
-    if (!ids.length) { setErr('No image-capable free model is available right now. Remove the image or try later.'); return; }
     const logged = (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
     setHistory((h) => [...h, { text: text || 'Build from the image', n: imgs.length }]);
     setPrompt(''); a.clear(); setErr(''); setLastId(null); setBusy(true); setView('code'); setPane('preview');
     ctl.current = new AbortController();
     const system = SYSTEM + (html ? `\n\nCurrent file:\n${html.slice(0, 40000)}` : '');
     try {
-      const full = await streamChat({ messages: [{ role: 'user', content: withImages(text, imgs, 'Build this.') }], models: ids, system },
+      const full = await streamChat({ messages: [{ role: 'user', content: withImages(text, imgs, 'Build this.') }], system },
         (t) => setLive(grab(t)), ctl.current.signal);
       const out = grab(full);
       if (!out) throw new Error('The model did not return an HTML file. Try again or pick another model.');
       setHtml(out); setView('preview');
-      setLastId(await track({ mode: 'build', prompt: logged, reply: out.slice(0, 400), model: ids[0] }));
+      setLastId(await track({ mode: 'build', prompt: logged, reply: out.slice(0, 400), model: 'auto' }));
     } catch (e) {
-      if (e.name !== 'AbortError') { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: ids[0], error: true }); }
+      if (e.name !== 'AbortError') { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }
     }
     setBusy(false);
   }

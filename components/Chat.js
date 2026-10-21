@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { streamChat } from '../lib/stream';
 import { track } from '../lib/track';
-import { idsFor, withImages } from '../lib/images';
+import { withImages } from '../lib/images';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import Markdown from './Markdown';
 import Rate from './Rate';
@@ -18,7 +18,7 @@ function toApi(msgs) {
   return msgs.map((m, i) => ({ role: m.role, content: m.role === 'user' && i === last && i >= msgs.length - 6 ? withImages(m.content, m.images, 'Describe this image.') : m.content }));
 }
 
-export default function Chat({ models, seed }) {
+export default function Chat({ seed }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -28,7 +28,7 @@ export default function Chat({ models, seed }) {
   const end = useRef(null);
   const box = useRef(null);
   const seeded = useRef(false);
-  useEffect(() => { if (seed && models.length && !seeded.current) { seeded.current = true; send(seed); } }, [seed, models.length]);
+  useEffect(() => { if (seed && !seeded.current) { seeded.current = true; send(seed); } }, [seed]);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [msgs]);
   useEffect(() => { const t = box.current; if (t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; } }, [input]);
 
@@ -38,19 +38,17 @@ export default function Chat({ models, seed }) {
     const next = [...msgs, { role: 'user', content: text, images: a.images }];
     const api = toApi(next);
     const hasImg = api.some((m) => Array.isArray(m.content));
-    const ids = idsFor(models, hasImg);
     const n = a.images.length;
     setInput(''); setErr(''); a.clear();
-    if (!ids.length) { setMsgs(next); setErr('No image-capable free model is available right now. Try again later or switch provider.'); return; }
     setMsgs([...next, { role: 'assistant', content: '' }]); setBusy(true);
     ctl.current = new AbortController();
     const logged = (text || 'image') + (hasImg ? ` [${n || 'earlier'} image]` : '');
     try {
-      const full = await streamChat({ messages: api, models: ids, system: SYSTEM }, (t) => setMsgs([...next, { role: 'assistant', content: t }]), ctl.current.signal);
-      const id = await track({ mode: 'chat', prompt: logged, reply: full, model: ids[0] });
+      const full = await streamChat({ messages: api, system: SYSTEM }, (t) => setMsgs([...next, { role: 'assistant', content: t }]), ctl.current.signal);
+      const id = await track({ mode: 'chat', prompt: logged, reply: full, model: 'auto' });
       setMsgs([...next, { role: 'assistant', content: full, id }]);
     } catch (e) {
-      if (e.name !== 'AbortError') { setMsgs(next); setErr(e.message.slice(0, 400)); track({ mode: 'chat', prompt: logged, reply: '[ERROR] ' + e.message, model: ids[0], error: true }); }
+      if (e.name !== 'AbortError') { setMsgs(next); setErr(e.message.slice(0, 400)); track({ mode: 'chat', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }
     }
     setBusy(false);
   }
@@ -62,7 +60,7 @@ export default function Chat({ models, seed }) {
           <div className="welcome">
             <img src="/logo.png" alt="SYNTH: think, build, evolve" />
             <h2>What shall we think through?</h2>
-            <p>Ask anything, or drop in an image. If a free model is busy, the next one answers instead.</p>
+            <p>Ask anything, or drop in an image and ask about it.</p>
             <div className="chips">{IDEAS.map((t) => <button key={t} className="chip" onClick={() => send(t)}>{t}</button>)}</div>
           </div>
         )}

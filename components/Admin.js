@@ -107,6 +107,19 @@ export default function Admin() {
       </section>
 
       <section>
+        <h2>Model switching log</h2>
+        <p className="muted">When a model fails, SYNTH silently switches to the next one. Each failure is recorded here (admin only).</p>
+        {(!d.issues || d.issues.length === 0) ? <p className="empty">No failures recorded.</p> : (
+          <div className="scroll"><table>
+            <thead><tr><th>When</th><th>Model</th><th>Status</th><th>Reason</th></tr></thead>
+            <tbody>{d.issues.map((x, i) => (
+              <tr key={i}><td>{ago(x.ts)}</td><td>{x.model}</td><td>{x.status || ''}</td><td>{x.msg}</td></tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </section>
+
+      <section>
         <h2>Recent activity</h2>
         <div className="scroll"><table>
           <thead><tr><th>When</th><th>Mode</th><th>Request</th><th>Rating</th></tr></thead>

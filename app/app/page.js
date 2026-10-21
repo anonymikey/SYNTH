@@ -9,8 +9,6 @@ const PIN_KEY = 'synth-sidebar-pinned';
 
 export default function Home() {
   const [tab, setTab] = useState('chat');
-  const [models, setModels] = useState([]);
-  const [pick, setPick] = useState('');
   const [seed, setSeed] = useState({ tab: '', q: '' });
   const [pinned, setPinned] = useState(false);   // desktop: locked open
   const [peek, setPeek] = useState(false);       // desktop: shown by hover
@@ -24,15 +22,6 @@ export default function Home() {
     if (t === 'build' || t === 'chat') setTab(t);
     if (q) setSeed({ tab: t === 'chat' ? 'chat' : 'build', q });
     if (location.search) history.replaceState(null, '', '/app');
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/models').then((r) => r.json()).then((j) => {
-      const list = j.models || [];
-      setModels(list);
-      const saved = localStorage.getItem('synthai-model');
-      setPick(list.find((m) => m.id === saved) ? saved : list[0]?.id || '');
-    }).catch(() => {});
   }, []);
 
   useEffect(() => { try { setPinned(localStorage.getItem(PIN_KEY) === '1'); } catch {} }, []);
@@ -52,9 +41,6 @@ export default function Home() {
     try { localStorage.setItem(PIN_KEY, next ? '1' : '0'); } catch {}
   };
   const choose = (k) => { setTab(k); setDrawer(false); };
-
-  // Chosen model first, the rest as automatic fallbacks.
-  const ordered = pick ? [models.find((m) => m.id === pick), ...models.filter((m) => m.id !== pick)].filter(Boolean) : models;
   const title = TABS.find((t) => t[0] === tab)[1];
 
   return (
@@ -74,7 +60,7 @@ export default function Home() {
             <button key={k} className={'navbtn' + (tab === k ? ' on' : '')} onClick={() => choose(k)}><Icon />{label}</button>
           ))}
         </nav>
-        <div className="sidefoot"><p className="meta"><i className="dot" />{models.length} free models ready</p></div>
+        <div className="sidefoot"><p className="meta"><i className="dot" />SYNTH Ready to Rock and Roll</p></div>
       </aside>
 
       <main className="main">
@@ -82,15 +68,9 @@ export default function Home() {
           <button className="iconbtn menubtn" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer} aria-controls="sidebar"><Menu /></button>
           <img className="topmark" src="/logo-mark.png" alt="" />
           <h1 className="toptitle">{title}</h1>
-          <label className="picker"><span>Model</span>
-            <select value={pick} onChange={(e) => { setPick(e.target.value); localStorage.setItem('synthai-model', e.target.value); }}>
-              {models.length === 0 && <option value="">No models found</option>}
-              {models.map((m) => <option key={m.id} value={m.id}>{m.name}{m.vision ? ' (images)' : ''}</option>)}
-            </select>
-          </label>
         </header>
-        <div hidden={tab !== 'chat'}><Chat models={ordered} seed={seed.tab === 'chat' ? seed.q : ''} /></div>
-        <div hidden={tab !== 'build'}><Builder models={ordered} seed={seed.tab === 'build' ? seed.q : ''} /></div>
+        <div hidden={tab !== 'chat'}><Chat seed={seed.tab === 'chat' ? seed.q : ''} /></div>
+        <div hidden={tab !== 'build'}><Builder seed={seed.tab === 'build' ? seed.q : ''} /></div>
       </main>
     </div>
   );

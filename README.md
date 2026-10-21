@@ -55,6 +55,9 @@ Add images in SYNTH ASSISTANT or SYNTHCODE with the **Add image** button, by pas
 ## Logo and icons
 `public/logo.png` (full logo) and `public/logo-mark.png` (emblem) are used in the app. `app/icon.png`, `app/apple-icon.png` and `app/favicon.ico` are picked up by Next.js automatically for browser tabs and home screens. To change the logo, replace these files.
 
+## Automatic model switching
+The model is chosen on the server; visitors never see or pick it. With an image attached, only vision-capable models are used; otherwise the top-ranked free models. If a model errors (rate limit, rejected key, empty or broken stream, or no first token within 14 s), SYNTH silently moves to the next one, up to 3 retries, before showing a friendly message. Failures are recorded in the admin panel under "Model switching log". `/api/models` is admin-only.
+
 ## Troubleshooting
 - **"Missing Authentication header" or 401:** the API key is empty, mistyped or rejected. SYNTH now trims spaces and quotes, but check that the variable is named exactly `AI_API_KEY`, is enabled for **Production**, and that you **redeployed** after adding it. `/admin` shows an "AI key" status.
 - **Storage "Missing" in /admin:** connect Upstash Redis (Vercel, Storage tab) and redeploy.

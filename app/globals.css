@@ -66,9 +66,6 @@ select{padding:9px 10px;max-width:100%}option{background:#0e1530;color:var(--ink
 .topmark{width:28px;height:28px;flex:none;filter:drop-shadow(0 0 8px rgba(79,140,255,.6))}
 .toptitle{margin:0;flex:1;min-width:0;font:700 15px var(--head);letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .menubtn{display:none}
-.picker{display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.picker select{text-transform:none;letter-spacing:0;font-size:14px;width:100%}
-.top .picker{flex-direction:row;align-items:center;gap:8px}.top .picker select{width:auto;max-width:min(280px,40vw)}
 
 /* desktop with a mouse: hover to reveal, pin to lock open */
 @media(min-width:901px) and (hover:hover){
@@ -90,7 +87,6 @@ select{padding:9px 10px;max-width:100%}option{background:#0e1530;color:var(--ink
   .menubtn{display:inline-grid}
   .top{gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px}
   .toptitle{font-size:14px;letter-spacing:.06em}
-  .top .picker span{display:none}.top .picker select{max-width:44vw}
 }
 
 /* assistant */
@@ -191,6 +187,6 @@ th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}th{co
   .devs{display:none}
   .focus{grid-template-columns:1fr}.lesson{flex-direction:column}
 }
-@media(max-width:480px){.bub{padding:10px 13px}.av{width:30px;height:30px}.m{gap:8px}.welcome img{width:min(220px,60%)}.top .picker select{max-width:38vw}}
+@media(max-width:480px){.bub{padding:10px 13px}.av{width:30px;height:30px}.m{gap:8px}.welcome img{width:min(220px,60%)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 a.brand{text-decoration:none;color:inherit}
