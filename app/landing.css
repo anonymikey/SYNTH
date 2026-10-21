@@ -201,3 +201,5 @@
   .tile span{width:60px;height:60px}.tiles{gap:8px}.box{border-radius:20px}.btn.go{padding:10px 16px}
 }
 @media(prefers-reduced-motion:reduce){.ld *,.ld *::before,.ld *::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none;filter:none}.ld{scroll-behavior:auto}}
+
+.tile{max-width:104px;text-align:center}

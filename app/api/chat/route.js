@@ -37,7 +37,7 @@ export async function POST(req) {
 
   const up = await fetch(`${base}/chat/completions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey()}`, 'Content-Type': 'application/json', 'X-Title': 'SYNTHAI' },
+    headers: { Authorization: `Bearer ${apiKey()}`, 'Content-Type': 'application/json', 'X-Title': 'SYNTH' },
     body: JSON.stringify({
       model: m,
       stream: true,

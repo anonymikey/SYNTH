@@ -41,7 +41,7 @@ export default function Admin() {
   if (!auth) return (
     <div className="adm"><form className="login" onSubmit={login}>
       <img src="/logo-mark.png" alt="" width="64" height="64" />
-      <h1>SYNTHAI admin</h1>
+      <h1>SYNTH admin</h1>
       <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Admin password" autoFocus />
       <button className="primary">Sign in</button>
       {msg && <p className="err">{msg}</p>}
@@ -56,7 +56,7 @@ export default function Admin() {
   return (
     <div className="adm">
       <header className="admbar">
-        <h1>SYNTHAI learning dashboard</h1>
+        <h1>SYNTH learning dashboard</h1>
         <button className="primary" disabled={busy} onClick={learn}>{busy ? 'Learning…' : 'Run learning now'}</button>
       </header>
       <div className="health">
@@ -73,7 +73,7 @@ export default function Admin() {
         <div><b>{counts('approved')}</b>active lessons</div>
         <div><b>{counts('pending')}</b>waiting for review</div>
       </div>
-      <p className="muted">Chat {s.chat}, builder {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${k} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? 'Last learning run ' + ago(d.lastResult.ts) + '.' : 'Learning has not run yet.'}</p>
+      <p className="muted">SYNTH ASSISTANT {s.chat}, SYNTHCODE {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${k} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? 'Last learning run ' + ago(d.lastResult.ts) + '.' : 'Learning has not run yet.'}</p>
 
       <section>
         <h2>Where it needs work</h2>

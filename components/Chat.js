@@ -8,7 +8,7 @@ import Markdown from './Markdown';
 import Rate from './Rate';
 import { Up, Stop } from '../lib/icons';
 
-const SYSTEM = `You are SYNTHAI Assistant: clear, concise and honest. Use Markdown (short paragraphs, lists, fenced code blocks with a language) when it helps.
+const SYSTEM = `You are SYNTH ASSISTANT: clear, concise and honest. Use Markdown (short paragraphs, lists, fenced code blocks with a language) when it helps.
 When the user shares images: look closely, describe what is actually visible, transcribe any text exactly, read charts and tables carefully, and say so when something is unclear or cut off instead of guessing.`;
 const IDEAS = ['Explain how neural networks learn, simply', 'Help me debug a problem in my code', 'Draft a polite follow-up email', 'Describe an image or screenshot I upload'];
 
@@ -60,7 +60,7 @@ export default function Chat({ models, seed }) {
       <div className="log">
         {msgs.length === 0 && (
           <div className="welcome">
-            <img src="/logo.png" alt="SYNTHAI: think, build, evolve" />
+            <img src="/logo.png" alt="SYNTH: think, build, evolve" />
             <h2>What shall we think through?</h2>
             <p>Ask anything, or drop in an image. If a free model is busy, the next one answers instead.</p>
             <div className="chips">{IDEAS.map((t) => <button key={t} className="chip" onClick={() => send(t)}>{t}</button>)}</div>
@@ -82,14 +82,14 @@ export default function Chat({ models, seed }) {
       <Thumbs a={a} />
       <div className="compose">
         <AttachButton a={a} />
-        <textarea ref={box} value={input} placeholder="Message SYNTHAI, or paste an image" rows={1} aria-label="Message"
+        <textarea ref={box} value={input} placeholder="Message SYNTH, or paste an image" rows={1} aria-label="Message"
           onChange={(e) => setInput(e.target.value)} onPaste={a.onPaste}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
         {busy
           ? <button className="iconbtn" onClick={() => ctl.current?.abort()} aria-label="Stop"><Stop /></button>
           : <button className="iconbtn primary" onClick={() => send()} aria-label="Send"><Up /></button>}
       </div>
-      <p className="tools"><span>Requests and ratings are logged to help SYNTHAI improve. Please don't enter personal data.</span>{msgs.length > 0 && <button className="linkbtn" onClick={() => { setMsgs([]); setErr(''); }}>Clear chat</button>}</p>
+      <p className="tools"><span>Requests and ratings are logged to help SYNTH improve. Please don't enter personal data.</span>{msgs.length > 0 && <button className="linkbtn" onClick={() => { setMsgs([]); setErr(''); }}>Clear chat</button>}</p>
     </section>
   );
 }

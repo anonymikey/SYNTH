@@ -11,7 +11,7 @@ const TILES = [
   { k: 'website', t: 'Website', I: Globe, p: 'Build a modern, responsive website for ' },
   { k: 'app', t: 'App', I: Phone, p: 'Build a working web app that ' },
   { k: 'proto', t: 'Prototype', I: Flask, p: 'Prototype an interactive demo of ' },
-  { k: 'ask', t: 'Ask Synth', I: Chat, p: '' },
+  { k: 'ask', t: 'SYNTH ASSISTANT', I: Chat, p: '' },
 ];
 const HOLD = ['a habit tracker with streaks', 'a landing page for my bakery', 'a budget dashboard with charts', 'a quiz game for kids'];
 const MODELS = ['Llama', 'Qwen', 'DeepSeek', 'Gemma', 'Mistral', 'GPT-OSS', 'GLM', 'Kimi', 'Nemotron', 'Hermes'];
@@ -82,7 +82,7 @@ export default function Landing() {
           <Reveal variant="scale" delay={240}>
             <div className="box">
               <textarea ref={box} rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-label="What do you want to build?"
-                placeholder={(mode === 'ask' ? 'Ask Synth anything, e.g. ' : 'Let\u2019s build ') + HOLD[ph] + '\u2026'}
+                placeholder={(mode === 'ask' ? 'Ask SYNTH anything, e.g. ' : 'Let\u2019s build ') + HOLD[ph] + '\u2026'}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } }} />
               <div className="boxfoot">
                 <div className="modes" role="group" aria-label="Mode">
@@ -112,8 +112,8 @@ export default function Landing() {
         <Reveal delay={100}><p className="lead">One workspace to ask, make and improve. No account, no credit card.</p></Reveal>
         <div className="beam" data-progress><i /><b className="orb" /></div>
         <div className="grid3">
-          {[['Think', 'Synth Assistant', 'Chat with a free model, drop in screenshots and get clearly formatted answers and code.', Chat],
-            ['Build', 'Web builder', 'Describe it or upload a mockup. Get a working page, preview it on any device, download the HTML.', Build],
+          {[['Think', 'SYNTH ASSISTANT', 'Chat with a free model, drop in screenshots and get clearly formatted answers and code.', Chat],
+            ['Build', 'SYNTHCODE', 'Describe it or upload a mockup. Get a working page, preview it on any device, download the HTML.', Build],
             ['Evolve', 'Learning loop', 'Ratings and sessions become lessons you approve, so SYNTH keeps getting better at your work.', Flask]].map(([k, t, d, I], i) => (
             <Reveal key={k} delay={i * 120} variant="up"><Card className="pillar"><span className="pi"><I width="24" height="24" /></span><small>{k}</small><h3>{t}</h3><p>{d}</p></Card></Reveal>
           ))}
@@ -194,7 +194,7 @@ export default function Landing() {
       <footer className="foot">
         <div className="fcols">
           <div><Link href="/" className="logo"><img src="/logo-mark.png" alt="" /><span>SYNTH</span></Link><p>Think. Build. Evolve.</p></div>
-          <div><h5>Product</h5><Link href="/app?tab=chat">Synth Assistant</Link><Link href="/app?tab=build">Web builder</Link><a href="#features">Features</a></div>
+          <div><h5>Product</h5><Link href="/app?tab=chat">SYNTH ASSISTANT</Link><Link href="/app?tab=build">SYNTHCODE</Link><a href="#features">Features</a></div>
           <div><h5>Learn</h5><a href="#how">How it works</a><a href="#evolve">How it evolves</a><a href="#faq">FAQ</a></div>
         </div>
         <p className="fine">Requests and ratings are logged to help SYNTH improve. Please don&apos;t enter personal or confidential data.</p>

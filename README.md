@@ -1,6 +1,6 @@
-# SYNTHAI
+# SYNTH
 
-Free AI assistant (Synth Assistant) and web app builder. Next.js 14, no database, no extra dependencies.
+Free AI assistant (SYNTH ASSISTANT) and web app builder (SYNTHCODE). Next.js 14, no database, no extra dependencies.
 Written from scratch (not derived from Freebuff's code), so it is yours to license as you like.
 
 ## Run locally
@@ -32,7 +32,7 @@ Markdown and code highlighting in chat, saved chats (Vercel KV or Supabase), log
 
 ## Learning and admin panel
 
-SYNTHAI's model weights do not change. What learns is its **memory**: a store of short lessons that is added to every prompt.
+SYNTH's model weights do not change. What learns is its **memory**: a store of short lessons that is added to every prompt.
 
 **How it learns**
 1. Every chat and build is logged (emails and long numbers are stripped), and users can rate replies Helpful / Not helpful. Errors count as negative.
@@ -50,13 +50,13 @@ SYNTHAI's model weights do not change. What learns is its **memory**: a store of
 Because logs contain what people type, tell your users (the footer notice does) and check the privacy rules where you operate.
 
 ## Images
-Add images in Synth Assistant or the Web builder with the **Add image** button, by pasting (Ctrl/Cmd+V) or by dropping files. Up to 4 per message. They are resized in the browser (longest side 1568 px) and sent as inline data, so they never need storage. Only image-capable models are used when an image is attached: OpenRouter reports this per model, and those models show "(images)" in the picker. Images are passed to the model provider but SYNTHAI does not store them; only a text marker such as "[1 image]" appears in the logs. In the Web builder, a screenshot or sketch is recreated as a working page.
+Add images in SYNTH ASSISTANT or SYNTHCODE with the **Add image** button, by pasting (Ctrl/Cmd+V) or by dropping files. Up to 4 per message. They are resized in the browser (longest side 1568 px) and sent as inline data, so they never need storage. Only image-capable models are used when an image is attached: OpenRouter reports this per model, and those models show "(images)" in the picker. Images are passed to the model provider but SYNTH does not store them; only a text marker such as "[1 image]" appears in the logs. In SYNTHCODE, a screenshot or sketch is recreated as a working page.
 
 ## Logo and icons
 `public/logo.png` (full logo) and `public/logo-mark.png` (emblem) are used in the app. `app/icon.png`, `app/apple-icon.png` and `app/favicon.ico` are picked up by Next.js automatically for browser tabs and home screens. To change the logo, replace these files.
 
 ## Troubleshooting
-- **"Missing Authentication header" or 401:** the API key is empty, mistyped or rejected. SYNTHAI now trims spaces and quotes, but check that the variable is named exactly `AI_API_KEY`, is enabled for **Production**, and that you **redeployed** after adding it. `/admin` shows an "AI key" status.
+- **"Missing Authentication header" or 401:** the API key is empty, mistyped or rejected. SYNTH now trims spaces and quotes, but check that the variable is named exactly `AI_API_KEY`, is enabled for **Production**, and that you **redeployed** after adding it. `/admin` shows an "AI key" status.
 - **Storage "Missing" in /admin:** connect Upstash Redis (Vercel, Storage tab) and redeploy.
 - Models are ranked automatically (safety classifiers and embedding models are excluded). Set `DEFAULT_MODEL` to pin your favourite.
 

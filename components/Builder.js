@@ -71,7 +71,7 @@ export default function Builder({ models, seed }) {
         <div className="hist">
           {history.length === 0 && (
             <div className="welcome sm">
-              <h2>Build anything</h2>
+              <h2>Build anything with SYNTHCODE</h2>
               <p>Describe an app or page, or add a screenshot or sketch to recreate. Then keep asking for changes.</p>
               <div className="chips">{IDEAS.map((t) => <button key={t} className="chip" onClick={() => build(t)}>{t}</button>)}</div>
             </div>
