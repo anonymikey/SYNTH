@@ -59,7 +59,11 @@ export default function Admin() {
         <h1>SYNTHAI learning dashboard</h1>
         <button className="primary" disabled={busy} onClick={learn}>{busy ? 'Learning…' : 'Run learning now'}</button>
       </header>
-      {!d.persistent && <p className="err">Storage is not connected, so data lives in memory and resets. Add the Upstash Redis variables (see README).</p>}
+      <div className="health">
+        {[['AI key', d.health.key], ['Storage', d.health.storage], ['Cron secret', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
+      </div>
+      {!d.health.storage && <p className="err">Storage is not connected, so logs and lessons reset. Add Upstash Redis in Vercel (Storage tab) and redeploy.</p>}
+      {!d.health.key && <p className="err">The AI key is missing or invalid, so the assistant cannot answer. Fix AI_API_KEY in Vercel and redeploy.</p>}
       {msg && <p className="note">{msg}</p>}
 
       <div className="stats">

@@ -54,3 +54,12 @@ Add images in Synth Assistant or the Web builder with the **Add image** button, 
 
 ## Logo and icons
 `public/logo.png` (full logo) and `public/logo-mark.png` (emblem) are used in the app. `app/icon.png`, `app/apple-icon.png` and `app/favicon.ico` are picked up by Next.js automatically for browser tabs and home screens. To change the logo, replace these files.
+
+## Troubleshooting
+- **"Missing Authentication header" or 401:** the API key is empty, mistyped or rejected. SYNTHAI now trims spaces and quotes, but check that the variable is named exactly `AI_API_KEY`, is enabled for **Production**, and that you **redeployed** after adding it. `/admin` shows an "AI key" status.
+- **Storage "Missing" in /admin:** connect Upstash Redis (Vercel, Storage tab) and redeploy.
+- Models are ranked automatically (safety classifiers and embedding models are excluded). Set `DEFAULT_MODEL` to pin your favourite.
+
+## Landing page and routes
+`/` is the landing page (`components/landing/`, styles in `app/landing.css`). `/app` is the workspace and `/admin` the dashboard. The landing prompt box sends the visitor to `/app` and starts the build or answer automatically.
+Swap points for React Bits are in `components/landing/bits.js` (Shiny Text, Count Up, Logo Loop, Spotlight Card, Tech Text wordmark). Paste a React Bits component over the matching export and keep its name and props.

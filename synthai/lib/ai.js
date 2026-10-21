@@ -1,8 +1,10 @@
 // One-shot (non-streaming) completion with free-model fallback. Used by the learning job.
-const base = () => process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
+import { apiBase, apiKey, keyProblem } from './env';
+const base = apiBase;
 export async function complete(messages) {
-  const key = process.env.AI_API_KEY;
-  if (!key) throw new Error('AI_API_KEY is not set.');
+  const kp = keyProblem();
+  if (kp) throw new Error(kp);
+  const key = apiKey();
   let ids = [];
   try {
     const j = await (await fetch(`${base()}/models`, { headers: { Authorization: `Bearer ${key}` } })).json();

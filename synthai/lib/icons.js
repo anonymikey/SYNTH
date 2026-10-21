@@ -1,0 +1,18 @@
+const I = (d) => function Icon(p) {
+  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}>{d}</svg>;
+};
+export const Chat = I(<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />);
+export const Build = I(<><path d="m8 8-5 4 5 4" /><path d="m16 8 5 4-5 4" /><path d="m14 5-4 14" /></>);
+export const Img = I(<><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></>);
+export const Up = I(<><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></>);
+export const Stop = I(<rect x="6" y="6" width="12" height="12" rx="2" />);
+export const Monitor = I(<><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></>);
+export const Tablet = I(<><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M11 18h2" /></>);
+export const Phone = I(<><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></>);
+export const Download = I(<><path d="M12 4v11" /><path d="m7 11 5 5 5-5" /><path d="M5 20h14" /></>);
+export const Plus = I(<><path d="M12 5v14M5 12h14" /></>);
+export const Globe = I(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></>);
+export const Flask = I(<><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" /><path d="M7 15h10" /></>);
+export const Arrow = I(<><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>);
+export const Menu = I(<path d="M4 7h16M4 12h16M4 17h16" />);
+export const Close = I(<path d="M6 6l12 12M18 6 6 18" />);

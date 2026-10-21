@@ -1,4 +1,5 @@
 import { isAdmin } from '../../../../lib/auth';
+import { keyProblem } from '../../../../lib/env';
 import { recent, lessons, getMeta, persistent } from '../../../../lib/db';
 export const dynamic = 'force-dynamic';
 export async function GET() {
@@ -9,7 +10,7 @@ export async function GET() {
   const bySource = {};
   ls.forEach((l) => { bySource[l.source] = (bySource[l.source] || 0) + 1; });
   return Response.json({
-    persistent, focus, lastResult, lessons: ls, bySource,
+    persistent, health: { key: !keyProblem(), storage: persistent, cron: !!process.env.CRON_SECRET }, focus, lastResult, lessons: ls, bySource,
     stats: { total: evs.length, last24h: count((e) => e.ts > day), up: count((e) => e.fb === 1), down: count((e) => e.fb === -1), chat: count((e) => e.mode === 'chat'), build: count((e) => e.mode === 'build') },
     recent: evs.slice(0, 30),
   });

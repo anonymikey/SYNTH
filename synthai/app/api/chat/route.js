@@ -1,5 +1,7 @@
 import { approved } from '../../../lib/db';
+import { apiBase, apiKey, keyProblem } from '../../../lib/env';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 // Accepts plain text or OpenAI-style parts. Images must be inline data URIs (never remote URLs).
 function clean(c) {
@@ -13,12 +15,11 @@ function clean(c) {
   }
   return out.length ? out : '';
 }
-export const maxDuration = 60;
 
 export async function POST(req) {
-  const base = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
-  const key = process.env.AI_API_KEY;
-  if (!key) return new Response('AI_API_KEY is not set on the server.', { status: 500 });
+  const problem = keyProblem();
+  if (problem) return new Response(problem, { status: 500 });
+  const base = apiBase();
 
   const { messages, model, system } = await req.json();
   if (!Array.isArray(messages) || !messages.length) return new Response('No messages.', { status: 400 });
@@ -36,7 +37,7 @@ export async function POST(req) {
 
   const up = await fetch(`${base}/chat/completions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Title': 'SYNTHAI' },
+    headers: { Authorization: `Bearer ${apiKey()}`, 'Content-Type': 'application/json', 'X-Title': 'SYNTHAI' },
     body: JSON.stringify({
       model: m,
       stream: true,
@@ -46,6 +47,12 @@ export async function POST(req) {
       ],
     }),
   });
-  if (!up.ok || !up.body) return new Response(await up.text(), { status: up.status });
+  if (!up.ok || !up.body) {
+    const t = await up.text();
+    let msg = t.slice(0, 200);
+    try { msg = JSON.parse(t).error?.message || msg; } catch {}
+    const hint = up.status === 401 || up.status === 403 ? ' (The provider rejected the API key. Check AI_API_KEY in Vercel and redeploy.)' : '';
+    return new Response(msg + hint, { status: up.status });
+  }
   return new Response(up.body, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } });
 }
