@@ -66,6 +66,7 @@ select{padding:9px 10px;max-width:100%}option{background:#0e1530;color:var(--ink
 .topmark{width:28px;height:28px;flex:none;filter:drop-shadow(0 0 8px rgba(79,140,255,.6))}
 .toptitle{margin:0;flex:1;min-width:0;font:700 15px var(--head);letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .menubtn{display:none}
+.panelbtn{display:none}
 
 /* desktop with a mouse: hover to reveal, pin to lock open */
 @media(min-width:901px) and (hover:hover){
@@ -73,6 +74,10 @@ select{padding:9px 10px;max-width:100%}option{background:#0e1530;color:var(--ink
   .side.peek:not(.pinned){box-shadow:24px 0 70px rgba(0,0,0,.5)}
   .app.is-pinned .main{margin-left:272px}
   .app.is-pinned .edge{display:none}
+  .panelbtn{display:inline-grid}
+  .app.is-pinned .panelbtn{display:none}
+  .panelbtn.on{background:rgba(79,140,255,.22);border-color:var(--line2);color:#fff}
+  .side:not(.pinned) .closebtn{display:inline-grid}
 }
 @media(min-width:901px) and (max-width:1180px){.app.is-pinned .build{grid-template-columns:minmax(260px,320px) minmax(0,1fr)}}
 
