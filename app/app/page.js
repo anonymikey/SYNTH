@@ -62,6 +62,7 @@ export default function Home() {
             aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar'} title={pinned ? 'Unpin sidebar' : 'Pin sidebar'}><Pin /></button>
           <button className="iconbtn sm closebtn" onClick={closeSidebar} aria-label="Close sidebar"><Close /></button>
         </div>
+        <p className="sidelabel">Workspace</p>
         <nav aria-label="Workspace">
           {TABS.map(([k, label, Icon]) => (
             <button key={k} className={'navbtn' + (tab === k ? ' on' : '')} onClick={() => choose(k)}><Icon />{label}</button>

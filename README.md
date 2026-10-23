@@ -81,3 +81,6 @@ Note: FreeLLMAPI describes itself as a personal-experimentation tool. Free tiers
 ## Landing page and routes
 `/` is the landing page (`components/landing/`, styles in `app/landing.css`). `/app` is the workspace and `/admin` the dashboard. The landing prompt box sends the visitor to `/app` and starts the build or answer automatically.
 Swap points for React Bits are in `components/landing/bits.js` (Shiny Text, Count Up, Logo Loop, Spotlight Card, Tech Text wordmark). Paste a React Bits component over the matching export and keep its name and props.
+
+## SYNTHCODE welcome screen
+Until a build starts, SYNTHCODE shows a full-page welcome: heading, subtitle, four example prompts (they fill the box so you can edit them), an animated how-it-works flow and a prompt dock at the bottom (Enter builds, Shift+Enter adds a line, paste or drop images). If the very first build fails or is stopped, you return to this screen with your prompt restored.
