@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+const pc = (v) => (v == null ? '—' : v + '%');
 const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
 
 export default function Admin() {
@@ -60,10 +61,11 @@ export default function Admin() {
         <button className="primary" disabled={busy} onClick={learn}>{busy ? 'Learning…' : 'Run learning now'}</button>
       </header>
       <div className="health">
-        {[['AI key', d.health.key], ['Storage', d.health.storage], ['Cron secret', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
+        {[['OpenRouter key', d.health.key], ['Storage', d.health.storage], ['Cron secret', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
+        <span className={'pill ' + (d.health.spark ? 'ok' : 'warn')}>SYNTHSPARK: {d.health.spark ? 'OK' : 'Not set (OpenRouter only)'}</span>
       </div>
       {!d.health.storage && <p className="err">Storage is not connected, so logs and lessons reset. Add Upstash Redis in Vercel (Storage tab) and redeploy.</p>}
-      {!d.health.key && <p className="err">The AI key is missing or invalid, so the assistant cannot answer. Fix AI_API_KEY in Vercel and redeploy.</p>}
+      {!d.health.key && !d.health.spark && <p className="err">The AI key is missing or invalid, so the assistant cannot answer. Fix AI_API_KEY in Vercel and redeploy.</p>}
       {msg && <p className="note">{msg}</p>}
 
       <div className="stats">
@@ -91,7 +93,7 @@ export default function Admin() {
         {list.length === 0 && <p className="empty">Nothing here.</p>}
         {list.map((l) => (
           <div key={l.id} className="lesson">
-            <div><b>{l.topic}</b> <span className="muted">from {l.source}, {ago(l.ts)}</span><p>{l.text}</p></div>
+            <div><b>{l.topic}</b> <span className="muted">from {l.source}{l.by ? ' (' + l.by + ')' : ''}, {ago(l.ts)}</span><p>{l.text}</p></div>
             <div className="row">
               {l.status !== 'approved' && <button className="primary" onClick={() => act('approve', l.id)}>Approve</button>}
               {l.status !== 'rejected' && <button onClick={() => act('reject', l.id)}>Reject</button>}
@@ -107,13 +109,73 @@ export default function Admin() {
       </section>
 
       <section>
-        <h2>Model switching log</h2>
-        <p className="muted">When a model fails, SYNTH silently switches to the next one. Each failure is recorded here (admin only).</p>
-        {(!d.issues || d.issues.length === 0) ? <p className="empty">No failures recorded.</p> : (
+        <h2>SYNTHSPARK Engine Diagnostics</h2>
+        <p className="muted">{d.spark.enabled ? 'Gateway routing is on, with OpenRouter free models as the fallback.' : 'Gateway not configured: requests use OpenRouter free models only.'} Every request is logged silently. Visitors never see any of this.</p>
+        <div className="stats">
+          <div><b>{d.spark.metrics.total}</b>requests logged</div>
+          <div><b>{d.spark.metrics.total ? Math.round((d.spark.metrics.success / d.spark.metrics.total) * 100) + '%' : 'n/a'}</b>clean success</div>
+          <div><b>{d.spark.metrics.fallback}</b>served after failover</div>
+          <div><b>{d.spark.metrics.failed}</b>failed completely</div>
+          <div><b>{d.spark.metrics.avgMs ? d.spark.metrics.avgMs + ' ms' : 'n/a'}</b>avg time to first token</div>
+        </div>
+        {d.spark.entries.length === 0 ? <p className="empty">No requests recorded yet.</p> : (
           <div className="scroll"><table>
-            <thead><tr><th>When</th><th>Model</th><th>Status</th><th>Reason</th></tr></thead>
-            <tbody>{d.issues.map((x, i) => (
-              <tr key={i}><td>{ago(x.ts)}</td><td>{x.model}</td><td>{x.status || ''}</td><td>{x.msg}</td></tr>
+            <thead><tr><th>Time</th><th>Task</th><th>Target node</th><th>Failovers</th><th>Latency</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>{d.spark.entries.map((x, i) => (
+              <tr key={x.tid || i}>
+                <td>{ago(x.ts)}</td>
+                <td>{x.mode === 'build' ? 'SYNTHCODE' : 'ASSISTANT'}: {x.task}</td>
+                <td>{x.node || '—'}</td>
+                <td>{x.failovers}</td>
+                <td>{x.ms} ms</td>
+                <td><span className={'pill ' + (x.status === 'Success' ? 'ok' : x.status === 'Fallback' ? 'warn' : 'bad')}>{x.status}</span></td>
+                <td className="muted">{x.fails && x.fails[0] ? x.fails[0].target + ': ' + x.fails[0].msg : ''}</td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </section>
+
+      <section>
+        <h2>SYNTHCORE Training Progress</h2>
+        <div className="core">
+          <div className="corepct"><b>{d.core.readiness.pct}%</b><span>{d.core.readiness.label}</span></div>
+          <div className="coreparts">
+            {d.core.readiness.parts.map((p) => (
+              <div key={p.name}>
+                <div className="row"><span>{p.name} <small className="muted">({p.weight}% of score)</small></span><span className="grow" /><b>{p.pct}%</b></div>
+                <div className="bar"><i style={{ width: p.pct + '%' }} /></div>
+                <small className="muted">{p.detail}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="muted">SYNTHCORE is the knowledge SYNTH builds from real use: which model handled which task, how reliably and how fast, how users rated it, and the lessons it wrote. The models themselves are not retrained. 100% means there is enough evidence to start routing by learned results. Targets are set in lib/core.js.</p>
+
+        <h3>Task coverage</h3>
+        {d.core.tasks.map((t) => (
+          <div key={t.key} className="cover">
+            <span>{t.label} <small className="muted">({t.lane})</small></span>
+            <div className="bar"><i style={{ width: t.pct + '%' }} /></div>
+            <b>{t.n}</b>
+          </div>
+        ))}
+
+        <h3>Contribution by model</h3>
+        {d.core.models.length === 0 ? <p className="empty">No training data yet. It builds up with every request.</p> : (
+          <div className="scroll"><table>
+            <thead><tr><th>Model</th><th>Training share</th><th>Served</th><th>Success</th><th>Helpful</th><th>Avg latency</th><th>Lessons</th><th>What it can do</th></tr></thead>
+            <tbody>{d.core.models.map((m) => (
+              <tr key={m.id}>
+                <td>{m.id}</td>
+                <td><b>{m.share}%</b><div className="bar sm"><i style={{ width: Math.min(100, m.share) + '%' }} /></div></td>
+                <td>{m.served}</td>
+                <td>{pc(m.success)}</td>
+                <td>{m.ratings ? pc(m.helpful) + ' (' + m.ratings + ')' : '—'}</td>
+                <td>{m.avgMs != null ? m.avgMs + ' ms' : '—'}</td>
+                <td>{m.lessons}</td>
+                <td>{m.abilities.length ? m.abilities.map((a) => <span key={a.task} className={'pill ' + (a.strong ? 'ok' : 'warn')} title={a.n + ' tasks, ' + a.pct + '% success'}>{a.label}{a.strong ? ' ★' : ''}</span>) : <span className="muted">Not enough data yet</span>}</td>
+              </tr>
             ))}</tbody>
           </table></div>
         )}

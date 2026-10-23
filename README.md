@@ -58,6 +58,21 @@ Add images in SYNTH ASSISTANT or SYNTHCODE with the **Add image** button, by pas
 ## Automatic model switching
 The model is chosen on the server; visitors never see or pick it. With an image attached, only vision-capable models are used; otherwise the top-ranked free models. If a model errors (rate limit, rejected key, empty or broken stream, or no first token within 14 s), SYNTH silently moves to the next one, up to 3 retries, before showing a friendly message. Failures are recorded in the admin panel under "Model switching log". `/api/models` is admin-only.
 
+## SYNTHSPARK (routing engine) and SYNTHCORE (training stats)
+**Engines.** Without extra setup, SYNTH routes to OpenRouter free models. Optionally add a FreeLLMAPI gateway (github.com/tashfeenahmed/freellmapi) as the first engine; OpenRouter then becomes the automatic fallback.
+1. Run FreeLLMAPI on a server you control (Docker: `curl -fsSL https://freellmapi.co/install.sh | bash`, serves on port 3001). It cannot run on Vercel because it is a long-running server with a local database.
+2. In its dashboard, Keys page: add free keys for Google, Mistral, Cerebras, NVIDIA, OpenRouter, Cloudflare and any others; copy the unified key (`freellmapi-...`).
+3. Put it behind HTTPS, then set `SPARK_BASE_URL` and `SPARK_API_KEY` in Vercel and redeploy.
+4. Optional: create gateway profiles (for example one holding vision-capable models and one holding code/reasoning models) and set `SPARK_VISION_MODEL` / `SPARK_CODE_MODEL` to `auto:<profile>`.
+
+**Routing.** SYNTH ASSISTANT uses `auto` (images are restricted to vision-capable models by the gateway); SYNTHCODE uses `auto:smart` with a code hint. Each request tries up to 2 gateway routes, then OpenRouter free models, up to 4 attempts in total. A target that errors, rejects the key, breaks the stream or shows no token within 14 s is skipped silently. The OpenRouter fallback prefers vision-capable models for the assistant and code/reasoning models for SYNTHCODE.
+
+**Diagnostics.** /admin shows "SYNTHSPARK Engine Diagnostics": time, task, target node (the real provider/model), failover count, latency to first token, and status (Success, Fallback or Failed).
+
+**SYNTHCORE.** Every served request is attributed to the node that answered, by task type (general, writing, coding help, summarising, translation, analysis, image reading, new build, edit build). Ratings, failures, latency and lessons authored are added. /admin shows each model's training share, success, helpful rate, latency and what it can do, plus an overall readiness percentage. This is accumulated evidence, not retraining of the models.
+
+Note: FreeLLMAPI describes itself as a personal-experimentation tool. Free tiers have their own terms, rate limits and no SLA, so review each provider's terms before serving the public through it.
+
 ## Troubleshooting
 - **"Missing Authentication header" or 401:** the API key is empty, mistyped or rejected. SYNTH now trims spaces and quotes, but check that the variable is named exactly `AI_API_KEY`, is enabled for **Production**, and that you **redeployed** after adding it. `/admin` shows an "AI key" status.
 - **Storage "Missing" in /admin:** connect Upstash Redis (Vercel, Storage tab) and redeploy.

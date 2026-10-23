@@ -40,13 +40,23 @@ export default function Builder({ seed }) {
     setPrompt(''); a.clear(); setErr(''); setLastId(null); setBusy(true); setView('code'); setPane('preview');
     ctl.current = new AbortController();
     const system = SYSTEM + (html ? `\n\nCurrent file:\n${html.slice(0, 40000)}` : '');
+    const user = [{ role: 'user', content: withImages(text, imgs, 'Build this.') }];
+    const meta = {};
     try {
-      const full = await streamChat({ messages: [{ role: 'user', content: withImages(text, imgs, 'Build this.') }], system },
-        (t) => setLive(grab(t)), ctl.current.signal);
-      const out = grab(full);
-      if (!out) throw new Error('The model did not return an HTML file. Try again or pick another model.');
+      let full = await streamChat({ messages: user, system, mode: 'build' }, (t) => setLive(grab(t)), ctl.current.signal, meta);
+      let out = grab(full);
+      let tid = meta.tid;
+      if (!out) {
+        // Formatting slip: count it against that model, then retry once on the next one.
+        track({ mode: 'build', prompt: logged, reply: '[FORMAT] no html block', model: 'auto', tid: meta.tid, error: true });
+        const meta2 = {};
+        full = await streamChat({ messages: user, system: system + '\n\nIMPORTANT: reply with one short sentence and then exactly one complete HTML file inside a single ```html fenced block.', mode: 'build', retry: true }, (t) => setLive(grab(t)), ctl.current.signal, meta2);
+        out = grab(full);
+        tid = meta2.tid;
+      }
+      if (!out) throw new Error('SYNTHCODE could not produce a page this time. Please try again.');
       setHtml(out); setView('preview');
-      setLastId(await track({ mode: 'build', prompt: logged, reply: out.slice(0, 400), model: 'auto' }));
+      setLastId(await track({ mode: 'build', prompt: logged, reply: out.slice(0, 400), model: 'auto', tid }));
     } catch (e) {
       if (e.name !== 'AbortError') { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }
     }

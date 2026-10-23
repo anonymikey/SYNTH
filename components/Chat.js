@@ -43,9 +43,10 @@ export default function Chat({ seed }) {
     setMsgs([...next, { role: 'assistant', content: '' }]); setBusy(true);
     ctl.current = new AbortController();
     const logged = (text || 'image') + (hasImg ? ` [${n || 'earlier'} image]` : '');
+    const meta = {};
     try {
-      const full = await streamChat({ messages: api, system: SYSTEM }, (t) => setMsgs([...next, { role: 'assistant', content: t }]), ctl.current.signal);
-      const id = await track({ mode: 'chat', prompt: logged, reply: full, model: 'auto' });
+      const full = await streamChat({ messages: api, system: SYSTEM, mode: 'chat' }, (t) => setMsgs([...next, { role: 'assistant', content: t }]), ctl.current.signal, meta);
+      const id = await track({ mode: 'chat', prompt: logged, reply: full, model: 'auto', tid: meta.tid });
       setMsgs([...next, { role: 'assistant', content: full, id }]);
     } catch (e) {
       if (e.name !== 'AbortError') { setMsgs(next); setErr(e.message.slice(0, 400)); track({ mode: 'chat', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }

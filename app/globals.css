@@ -195,3 +195,18 @@ th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}th{co
 @media(max-width:480px){.bub{padding:10px 13px}.av{width:30px;height:30px}.m{gap:8px}.welcome img{width:min(220px,60%)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 a.brand{text-decoration:none;color:inherit}
+
+/* SYNTHSPARK diagnostics and SYNTHCORE training (admin) */
+.pill.warn{color:#f5b83d;border-color:rgba(245,184,61,.4);background:rgba(245,184,61,.1)}
+.adm h3{font:600 15px var(--head);margin:22px 0 8px}
+.bar{height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin:6px 0 4px}
+.bar.sm{height:5px;min-width:90px}
+.bar i{display:block;height:100%;border-radius:6px;background:var(--grad)}
+.core{display:grid;grid-template-columns:210px 1fr;gap:22px;align-items:center;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.corepct b{display:block;font:800 56px/1 var(--head);background:linear-gradient(120deg,#7ee7ff,#6ea8ff 45%,#b79bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.corepct span{color:var(--muted);font-size:14px}
+.coreparts{display:grid;gap:12px}
+.cover{display:grid;grid-template-columns:230px 1fr 44px;gap:12px;align-items:center;font-size:14px;margin:4px 0}
+.cover .bar{margin:0}.cover b{text-align:right}
+td .pill{display:inline-block;margin:2px 4px 2px 0;font-size:12px;padding:2px 9px}
+@media(max-width:700px){.core{grid-template-columns:1fr}.cover{grid-template-columns:1fr 60px 40px}}
