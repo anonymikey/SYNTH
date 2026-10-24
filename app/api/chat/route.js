@@ -1,7 +1,7 @@
 import { approved } from '../../../lib/db';
-import { keyProblem } from '../../../lib/env';
+import { keyProblem, providerConfig } from '../../../lib/env';
 import { classify } from '../../../lib/core';
-import { route, sparkEnabled } from '../../../lib/spark';
+import { route } from '../../../lib/spark';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -20,8 +20,8 @@ function clean(c) {
 const textOf = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.filter((p) => p.type === 'text').map((p) => p.text).join(' ') : '');
 
 export async function POST(req) {
-  // Needs at least one engine: the SYNTHSPARK gateway or an OpenRouter key.
-  if (!sparkEnabled()) { const problem = keyProblem(); if (problem) return new Response(problem, { status: 500 }); }
+  // Needs at least one usable provider (OpenRouter by default; the SPARK gateway only when enabled and configured).
+  if (!providerConfig().active.length) return new Response(keyProblem() || 'No AI provider is configured.', { status: 500 });
 
   const { messages, system, mode, retry } = await req.json().catch(() => ({}));
   if (!Array.isArray(messages) || !messages.length) return new Response('No messages.', { status: 400 });
@@ -48,6 +48,6 @@ export async function POST(req) {
     hasImg && r.noTargets
       ? 'Image reading is unavailable right now. Please try again shortly, or send your message without an image.'
       : 'SYNTH is busy right now. Please try again in a moment.',
-    { status: 503 },
+    { status: 503, headers: { 'Retry-After': '5' } }, // a real error, but the client stays usable and can simply retry
   );
 }

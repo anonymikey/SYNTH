@@ -1,7 +1,7 @@
 import { isAdmin } from '../../../../lib/auth';
-import { keyProblem } from '../../../../lib/env';
+import { keyProblem, providerConfig } from '../../../../lib/env';
+import { providerHealth } from '../../../../lib/health';
 import { recent, lessons, getMeta, persistent, listJSON } from '../../../../lib/db';
-import { sparkEnabled } from '../../../../lib/spark';
 import { summary } from '../../../../lib/core';
 export const dynamic = 'force-dynamic';
 
@@ -23,13 +23,15 @@ export async function GET() {
   const count = (f) => evs.filter(f).length;
   const bySource = {};
   ls.forEach((l) => { bySource[l.source] = (bySource[l.source] || 0) + 1; });
+  const providers = providerHealth(providerConfig(), entries);
   return Response.json({
     persistent,
-    health: { key: !keyProblem(), storage: persistent, cron: !!process.env.CRON_SECRET, spark: sparkEnabled() },
+    health: { key: !keyProblem(), storage: persistent, cron: !!process.env.CRON_SECRET },
+    providers,
     focus, lastResult, lessons: ls, bySource,
     stats: { total: evs.length, last24h: count((e) => e.ts > day), up: count((e) => e.fb === 1), down: count((e) => e.fb === -1), chat: count((e) => e.mode === 'chat'), build: count((e) => e.mode === 'build') },
     recent: evs.slice(0, 30),
-    spark: { enabled: sparkEnabled(), metrics: sparkMetrics(entries), entries: entries.slice(0, 40) },
+    spark: { enabled: providers.active.includes('spark'), metrics: sparkMetrics(entries), entries: entries.slice(0, 40) },
     core: await summary(ls),
   });
 }

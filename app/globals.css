@@ -443,3 +443,6 @@ button.glow:disabled{animation:none;box-shadow:none}
 @keyframes glowpulse{50%{box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 8px 40px rgba(124,58,237,.7),0 0 52px rgba(34,211,238,.38)}}
 
 @media(prefers-reduced-motion:reduce){.wc span:first-child{opacity:1}.rwords span{opacity:.35}}
+
+/* provider health */
+.pill.neutral{color:var(--muted);border-color:var(--line);background:rgba(255,255,255,.04)}

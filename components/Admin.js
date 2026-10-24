@@ -61,11 +61,12 @@ export default function Admin() {
         <button className="primary" disabled={busy} onClick={learn}>{busy ? 'Learning…' : 'Run learning now'}</button>
       </header>
       <div className="health">
-        {[['OpenRouter key', d.health.key], ['Storage', d.health.storage], ['Cron secret', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
-        <span className={'pill ' + (d.health.spark ? 'ok' : 'warn')}>SYNTHSPARK: {d.health.spark ? 'OK' : 'Not set (OpenRouter only)'}</span>
+        {[['Storage', d.health.storage], ['Cron secret', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
+        <span className={'pill ' + d.providers.openrouter.tone}>OpenRouter: {d.providers.openrouter.label}</span>
+        <span className={'pill ' + d.providers.spark.tone}>SYNTHSPARK: {d.providers.spark.label}</span>
       </div>
       {!d.health.storage && <p className="err">Storage is not connected, so logs and lessons reset. Add Upstash Redis in Vercel (Storage tab) and redeploy.</p>}
-      {!d.health.key && !d.health.spark && <p className="err">The AI key is missing or invalid, so the assistant cannot answer. Fix AI_API_KEY in Vercel and redeploy.</p>}
+      {d.providers.active.length === 0 && <p className="err">No AI provider is ready, so the assistant cannot answer. Add AI_API_KEY (OpenRouter) in Vercel and redeploy.</p>}
       {msg && <p className="note">{msg}</p>}
 
       <div className="stats">
@@ -109,8 +110,20 @@ export default function Admin() {
       </section>
 
       <section>
+        <h2>Provider health</h2>
+        <p className="muted">Order: {d.providers.order.join(' → ')}. In use now: {d.providers.active.length ? d.providers.active.join(' → ') : 'none'}. OpenRouter is the default; the SPARK gateway is optional and never blocks the app.</p>
+        {d.providers.notes.map((n, i) => <p key={i} className="note">{n}</p>)}
+        <div className="scroll"><table>
+          <thead><tr><th>Provider</th><th>State</th><th>Served (recent)</th><th>Failed attempts</th><th>Last success</th></tr></thead>
+          <tbody>{[['OpenRouter (default)', d.providers.openrouter], ['SYNTHSPARK gateway (optional)', d.providers.spark]].map(([n, p]) => (
+            <tr key={n}><td>{n}</td><td><span className={'pill ' + p.tone}>{p.label}</span></td><td>{p.served}</td><td>{p.failed}</td><td>{p.lastOk ? ago(p.lastOk) : '—'}</td></tr>
+          ))}</tbody>
+        </table></div>
+      </section>
+
+      <section>
         <h2>SYNTHSPARK Engine Diagnostics</h2>
-        <p className="muted">{d.spark.enabled ? 'Gateway routing is on, with OpenRouter free models as the fallback.' : 'Gateway not configured: requests use OpenRouter free models only.'} Every request is logged silently. Visitors never see any of this.</p>
+        <p className="muted">Routing: {d.providers.active.length ? d.providers.active.join(' → ') : 'no provider ready'}. Every request is logged silently. Visitors never see any of this.</p>
         <div className="stats">
           <div><b>{d.spark.metrics.total}</b>requests logged</div>
           <div><b>{d.spark.metrics.total ? Math.round((d.spark.metrics.success / d.spark.metrics.total) * 100) + '%' : 'n/a'}</b>clean success</div>
