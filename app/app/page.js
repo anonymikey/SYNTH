@@ -72,11 +72,11 @@ export default function Home() {
       </aside>
 
       <main className="main" onMouseDown={(e) => { if (manual && !e.target.closest('.panelbtn')) closeSidebar(); }}>
-        <header className="top">
+        <header className={'top' + (tab === 'build' ? ' xl' : '')}>
           <button className={'iconbtn panelbtn' + (peek ? ' on' : '')} onClick={togglePanel} aria-label={peek ? 'Close sidebar' : 'Open sidebar'} title={peek ? 'Close sidebar' : 'Open sidebar'} aria-expanded={peek} aria-controls="sidebar"><Panel /></button>
           <button className="iconbtn menubtn" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer} aria-controls="sidebar"><Menu /></button>
           <img className="topmark" src="/logo-mark.png" alt="" />
-          <h1 className="toptitle">{title}</h1>
+          <div className="topttl"><h1 className="toptitle">{title}</h1>{tab === 'build' && <span className="topsub">Think. Build. Evolve.</span>}</div>
         </header>
         <div hidden={tab !== 'chat'}><Chat seed={seed.tab === 'chat' ? seed.q : ''} /></div>
         <div hidden={tab !== 'build'}><Builder seed={seed.tab === 'build' ? seed.q : ''} /></div>
