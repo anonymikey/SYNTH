@@ -3,6 +3,7 @@ import { keyProblem, providerConfig } from '../../../../lib/env';
 import { providerHealth } from '../../../../lib/health';
 import { recent, lessons, getMeta, persistent, listJSON } from '../../../../lib/db';
 import { summary } from '../../../../lib/core';
+import { toolsReport } from '../../../../lib/tools';
 export const dynamic = 'force-dynamic';
 
 function sparkMetrics(e) {
@@ -33,5 +34,6 @@ export async function GET() {
     recent: evs.slice(0, 30),
     spark: { enabled: providers.active.includes('spark'), metrics: sparkMetrics(entries), entries: entries.slice(0, 40) },
     core: await summary(ls),
+    tools: await toolsReport(),
   });
 }

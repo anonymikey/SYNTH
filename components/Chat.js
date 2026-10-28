@@ -1,12 +1,14 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
-import { streamChat } from '../lib/stream';
+import { streamChat, applyToolEvent } from '../lib/stream';
 import { track } from '../lib/track';
 import { withImages } from '../lib/images';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import Markdown from './Markdown';
 import Rate from './Rate';
-import { Up, Stop } from '../lib/icons';
+import ToolRuns from './ToolRuns';
+import { useFollow } from '../lib/follow';
+import { Up, Stop, ArrowDown } from '../lib/icons';
 
 const SYSTEM = `You are SYNTH ASSISTANT: clear, concise and honest. Use Markdown (short paragraphs, lists, fenced code blocks with a language) when it helps.
 When the user shares images: look closely, describe what is actually visible, transcribe any text exactly, read charts and tables carefully, and say so when something is unclear or cut off instead of guessing.`;
@@ -25,16 +27,16 @@ export default function Chat({ seed }) {
   const [err, setErr] = useState('');
   const a = useAttach();
   const ctl = useRef(null);
-  const end = useRef(null);
   const box = useRef(null);
   const seeded = useRef(false);
   useEffect(() => { if (seed && !seeded.current) { seeded.current = true; send(seed); } }, [seed]);
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [msgs]);
+  const follow = useFollow(msgs);
   useEffect(() => { const t = box.current; if (t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; } }, [input]);
 
   async function send(override) {
     const text = (override ?? input).trim();
     if ((!text && !a.images.length) || busy) return;
+    follow.down(false); // sending always jumps to the newest message
     const next = [...msgs, { role: 'user', content: text, images: a.images }];
     const api = toApi(next);
     const hasImg = api.some((m) => Array.isArray(m.content));
@@ -44,10 +46,12 @@ export default function Chat({ seed }) {
     ctl.current = new AbortController();
     const logged = (text || 'image') + (hasImg ? ` [${n || 'earlier'} image]` : '');
     const meta = {};
+    let tools = [], latest = '';
+    const show = () => setMsgs([...next, { role: 'assistant', content: latest, tools }]);
     try {
-      const full = await streamChat({ messages: api, system: SYSTEM, mode: 'chat' }, (t) => setMsgs([...next, { role: 'assistant', content: t }]), ctl.current.signal, meta);
+      const full = await streamChat({ messages: api, system: SYSTEM, mode: 'chat' }, (t) => { latest = t; show(); }, ctl.current.signal, meta, (ev) => { tools = applyToolEvent(tools, ev); show(); });
       const id = await track({ mode: 'chat', prompt: logged, reply: full, model: 'auto', tid: meta.tid });
-      setMsgs([...next, { role: 'assistant', content: full, id }]);
+      setMsgs([...next, { role: 'assistant', content: full, tools, id }]);
     } catch (e) {
       if (e.name !== 'AbortError') { setMsgs(next); setErr(e.message.slice(0, 400)); track({ mode: 'chat', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }
     }
@@ -56,7 +60,8 @@ export default function Chat({ seed }) {
 
   return (
     <section className="chat" {...a.dropProps}>
-      <div className="log">
+      <div className="logwrap">
+      <div className="log" ref={follow.ref} onScroll={follow.onScroll}>
         {msgs.length === 0 && (
           <div className="welcome">
             <img src="/logo.png" alt="SYNTH: think, build, evolve" />
@@ -70,12 +75,14 @@ export default function Chat({ seed }) {
             {m.role === 'assistant' && <img className="av" src="/logo-mark.png" alt="" />}
             <div className="bub">
               {m.images?.map((s, j) => <img key={j} src={s} className="mimg" alt="Uploaded" />)}
+              {m.role === 'assistant' && m.tools && m.tools.length > 0 && <ToolRuns tools={m.tools} />}
               {m.role === 'assistant' ? (m.content ? <Markdown text={m.content} /> : <span className="typing" role="status" aria-label="Thinking"><i /><i /><i /></span>) : m.content}
               {m.id && <Rate id={m.id} />}
             </div>
           </div>
         ))}
-        <div ref={end} />
+      </div>
+      {follow.away && <button className={'godown' + (busy ? ' live' : '')} onClick={() => follow.down()} aria-label="Scroll to latest message"><ArrowDown width="18" height="18" /></button>}
       </div>
       {err && <p className="err" role="alert">{err}</p>}
       <Thumbs a={a} />

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
 const pc = (v) => (v == null ? '—' : v + '%');
+const TSTATE = { healthy: ['ok', 'Healthy'], degraded: ['warn', 'Degraded'], down: ['bad', 'Down'], disabled: ['neutral', 'Off'], unknown: ['neutral', 'Not used yet'] };
 const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
 
 export default function Admin() {
@@ -12,6 +13,7 @@ export default function Admin() {
   const [msg, setMsg] = useState('');
   const [filter, setFilter] = useState('pending');
   const [busy, setBusy] = useState(false);
+  const [tbusy, setTbusy] = useState('');
   const [nt, setNt] = useState({ topic: '', text: '' });
 
   const load = useCallback(async () => {
@@ -27,6 +29,11 @@ export default function Admin() {
     if (r.ok) { setMsg(''); load(); } else setMsg((await r.json()).error || 'Login failed.');
   }
   const act = async (action, id) => { await post('/api/admin/lesson', { action, id }); load(); };
+  async function toolAct(body) {
+    setTbusy(body.id || 'all');
+    try { await post('/api/admin/tools', body); } catch {}
+    setTbusy(''); load();
+  }
   async function learn() {
     setBusy(true); setMsg('');
     const r = await post('/api/admin/learn');
@@ -51,6 +58,7 @@ export default function Admin() {
   if (!d) return <div className="adm"><p className="empty">Loading…</p></div>;
 
   const s = d.stats, rated = s.up + s.down;
+  const tcalls = d.tools.rows.reduce((a, t) => a + t.calls, 0), tok = d.tools.rows.reduce((a, t) => a + t.ok, 0);
   const counts = (st) => d.lessons.filter((l) => l.status === st).length;
   const list = d.lessons.filter((l) => l.status === filter);
 
@@ -122,6 +130,55 @@ export default function Admin() {
       </section>
 
       <section>
+        <h2>Agent tools</h2>
+        <p className="muted">Free tools SYNTH ASSISTANT and SYNTHCODE can call while answering. Every one works without an account or key, so none of them costs money. A tool that keeps failing turns red here, and you can switch any tool off without redeploying.</p>
+        {!d.tools.enabled && <p className="note">Tools are switched off for the whole app (ENABLE_TOOLS=false).</p>}
+        <div className="stats">
+          <div><b>{d.tools.rows.filter((t) => t.enabled).length}/{d.tools.rows.length}</b>tools switched on</div>
+          <div><b>{tcalls}</b>calls so far</div>
+          <div><b>{tcalls ? Math.round((100 * tok) / tcalls) + '%' : 'n/a'}</b>succeeded</div>
+          <div><b>{d.tools.rows.filter((t) => t.enabled && (t.state === 'down' || t.state === 'degraded')).length}</b>need attention</div>
+        </div>
+        <div className="row">
+          <button disabled={!!tbusy} onClick={() => toolAct({ action: 'check' })}>{tbusy === 'all' ? 'Checking…' : 'Check all tools'}</button>
+          <span className="muted">Runs one small sample call per tool. It is not counted as usage.</span>
+        </div>
+        <div className="scroll"><table>
+          <thead><tr><th>Tool</th><th>Health</th><th>Calls</th><th>Success</th><th>Avg time</th><th>Last used</th><th>Last problem</th><th /></tr></thead>
+          <tbody>{d.tools.rows.map((t) => {
+            const [tone, label] = TSTATE[t.state] || TSTATE.unknown;
+            return (
+              <tr key={t.id}>
+                <td><b>{t.label}</b><div className="muted">{t.id}</div></td>
+                <td><span className={'pill ' + tone}>{label}</span>{t.probe && <div className="muted">checked {ago(t.probe.ts)}{t.probe.ok ? ', ' + t.probe.ms + ' ms' : ', failed'}</div>}</td>
+                <td>{t.calls}</td>
+                <td>{t.calls ? Math.round((100 * t.ok) / t.calls) + '%' : '—'}</td>
+                <td>{t.avgMs != null ? t.avgMs + ' ms' : '—'}</td>
+                <td>{t.lastUsed ? ago(t.lastUsed) : '—'}</td>
+                <td className="muted">{t.lastError ? t.lastError.error : t.probe && !t.probe.ok ? t.probe.error : ''}</td>
+                <td className="tact">
+                  <button className="sm" disabled={!!tbusy} onClick={() => toolAct({ action: 'toggle', id: t.id, enabled: !t.enabled })}>{t.enabled ? 'Turn off' : 'Turn on'}</button>
+                  <button className="sm" disabled={!!tbusy} onClick={() => toolAct({ action: 'check', id: t.id })}>{tbusy === t.id ? '…' : 'Check'}</button>
+                </td>
+              </tr>
+            );
+          })}</tbody>
+        </table></div>
+        <h3>Recent tool calls</h3>
+        {d.tools.recent.length === 0 ? <p className="empty">No tool has been used yet.</p> : (
+          <div className="scroll"><table>
+            <thead><tr><th>When</th><th>Tool</th><th>Used by</th><th>Input</th><th>Result</th><th>Time</th></tr></thead>
+            <tbody>{d.tools.recent.map((x, i) => (
+              <tr key={i}>
+                <td>{ago(x.ts)}</td><td>{x.tool}</td><td>{x.mode === 'build' ? 'SYNTHCODE' : x.mode === 'chat' ? 'ASSISTANT' : ''}</td><td className="muted">{x.input}</td>
+                <td><span className={'pill ' + (x.ok ? 'ok' : 'bad')}>{x.ok ? 'OK' : 'Failed'}</span>{!x.ok && <div className="muted">{x.error}</div>}</td><td>{x.ms} ms</td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </section>
+
+      <section>
         <h2>SYNTHSPARK Engine Diagnostics</h2>
         <p className="muted">Routing: {d.providers.active.length ? d.providers.active.join(' → ') : 'no provider ready'}. Every request is logged silently. Visitors never see any of this.</p>
         <div className="stats">
@@ -137,7 +194,7 @@ export default function Admin() {
             <tbody>{d.spark.entries.map((x, i) => (
               <tr key={x.tid || i}>
                 <td>{ago(x.ts)}</td>
-                <td>{x.mode === 'build' ? 'SYNTHCODE' : 'ASSISTANT'}: {x.task}</td>
+                <td>{x.mode === 'build' ? 'SYNTHCODE' : 'ASSISTANT'}: {x.task}{x.step ? ' · after tools' : ''}</td>
                 <td>{x.node || '—'}</td>
                 <td>{x.failovers}</td>
                 <td>{x.ms} ms</td>

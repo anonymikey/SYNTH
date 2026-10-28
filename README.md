@@ -99,3 +99,42 @@ Swap points for React Bits are in `components/landing/bits.js` (Shiny Text, Coun
 
 ## SYNTHCODE welcome screen
 Until a build starts, SYNTHCODE shows a full-page welcome: heading, subtitle, four example prompts (they fill the box so you can edit them), an animated how-it-works flow and a prompt dock at the bottom (Enter builds, Shift+Enter adds a line, paste or drop images). If the very first build fails or is stopped, you return to this screen with your prompt restored.
+
+## SYNTHCODE project files
+The Code tab is a file explorer, not a single code view. The agent builds a small project (usually `index.html`, `styles.css`, `script.js`) and creates, edits or deletes files in it; you see each file appear live while it is written, then browse, search, edit, add and delete files yourself. The agent receives your edits on the next request, so you and the agent work on the same files.
+- **Preview** bundles the project into one page (linked stylesheets and scripts are inlined) and runs it in a sandboxed frame. It has no server, so projects are plain HTML, CSS and JavaScript.
+- **Download** gives a `.zip` of all files (a single file downloads as itself). **Share** sends the same file through the device share sheet where supported.
+- The agent's reply format is one fenced block per file with its path, for example ```` ```html file=index.html ````. A plain single ```` ```html ```` block still works and becomes `index.html`. Files to remove go in a ```` ```delete ```` block. See `lib/files.js`.
+- After each request, the files it created (+) or edited (~) are listed under "Last request"; click one to open it.
+
+## Chat areas
+When you scroll up in SYNTH ASSISTANT or in the SYNTHCODE prompt panel, SYNTH stops auto-scrolling so you can read, and a round down-arrow button appears to jump back to the newest message. Sending a message always jumps to the bottom.
+
+## Agent tools (free)
+SYNTH ASSISTANT and SYNTHCODE can use tools while they answer, and you see each one as it runs: a row under the message with the tool name, its input, a spinner, then a tick and the time taken (open the row for the input and a result preview). In SYNTHCODE the same rows appear on the "Last request" card, and the stage bar says "using <tool>" while one runs.
+
+**Every tool is free and works without an account or key.**
+
+| Tool | What it does | Service |
+|---|---|---|
+| `web#search` | Web search (titles, links, excerpts) | Tavily keyless mode |
+| `web#read` | Reads a public page. Tries Jina Reader, then Tavily extract | Jina Reader, Tavily |
+| `wikipedia#search`, `wikipedia#summary` | Find and summarise articles | Wikipedia API |
+| `weather#forecast` | Current weather and forecast for a place | Open-Meteo |
+| `hackernews#search` | Tech news and discussion | HN Algolia API |
+| `cdnjs#search` | Exact CDN links and versions for libraries (SYNTHCODE) | cdnjs API |
+| `currency#convert` | Currency conversion | ExchangeRate-API open endpoint |
+| `clock#now` | Today's date and time in any timezone | built in |
+| `calc#evaluate` | Exact arithmetic (a small parser, no `eval`) | built in |
+
+**How it works.** The model is told which tools exist. To use one it replies with a `<tool_call>` block; SYNTH holds that text back from the user, runs the tool on the server, hands the result back, and the model continues. Up to 3 tools per answer. Every model step goes through the same provider and model failover as before, so a dead provider can never leave a tool round hanging. Tool results are passed as untrusted data, and any tool-call text inside a result is neutralised. A link pasted into a message is read automatically before the model answers (turn off with `TOOLS_AUTO_READ=false`).
+
+**Admin.** /admin has an "Agent tools" section: which tools are on, calls, success rate, average time, last use and last problem per tool, a health state (Healthy, Degraded, Down, Off, or Not used yet), a "Check" button that runs one sample call (not counted as usage), per-tool on/off switches, and the 25 most recent calls. A tool is Down when most of its recent calls failed, or when a newer check failed. Tool usage is recorded whichever model or provider answered. Master switch: `ENABLE_TOOLS=false`.
+
+**Optional free keys.** `TAVILY_API_KEY` (free tier) and `JINA_API_KEY` only raise rate limits. Keyless limits are modest, so if search or the reader starts returning "limit reached" under load, add a free key.
+
+**Things to know**
+- The public chat endpoint can trigger these tools, so a busy site can hit the free services' keyless limits. Add the free keys, or turn individual tools off in /admin.
+- Pasted links and `web#read` pass the address to Jina or Tavily to fetch it. Search queries go to Tavily. Weather places go to Open-Meteo. Do not paste confidential links.
+- Open-Meteo is free for non-commercial use; check its terms before running SYNTH commercially.
+- Design credit: the tool ids (`provider#endpoint`) and the idea of described, health-tracked tools come from Monid's open connector standard (github.com/monid-ai/monid, MIT). Monid's own engine and catalog are not used: they need Deno and a vendor account per connector, billed through Monid, which conflicts with a free-only setup.
