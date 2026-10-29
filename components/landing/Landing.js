@@ -64,7 +64,7 @@ export default function Landing() {
 
       <header className={'nav' + (scrolled ? ' scrolled' : '') + (menu ? ' open' : '')}>
         <Link href="/" className="logo"><img src="/logo-mark.png" alt="" /><span>SYNTH</span></Link>
-        <nav className="links" aria-label="Main">{NAV.map(([n, h]) => <a key={n} href={h} onClick={() => setMenu(false)}>{n}</a>)}</nav>
+        <nav className="links" aria-label="Main">{NAV.map(([n, h]) => <a key={n} href={h} onClick={() => setMenu(false)}>{n}</a>)}<Link href="/dev-updates" onClick={() => setMenu(false)}>Dev updates</Link></nav>
         <div className="navcta">
           <Link href="/app" className="btn solid">Open workspace</Link>
           <button className="menubtn" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <Close /> : <Menu />}</button>
@@ -195,7 +195,7 @@ export default function Landing() {
         <div className="fcols">
           <div><Link href="/" className="logo"><img src="/logo-mark.png" alt="" /><span>SYNTH</span></Link><p>Think. Build. Evolve.</p></div>
           <div><h5>Product</h5><Link href="/app?tab=chat">SYNTH ASSISTANT</Link><Link href="/app?tab=build">SYNTHCODE</Link><a href="#features">Features</a></div>
-          <div><h5>Learn</h5><a href="#how">How it works</a><a href="#evolve">How it evolves</a><a href="#faq">FAQ</a></div>
+          <div><h5>Learn</h5><a href="#how">How it works</a><a href="#evolve">How it evolves</a><a href="#faq">FAQ</a><Link href="/dev-updates">Dev updates</Link></div>
         </div>
         <p className="fine">Requests and ratings are logged to help SYNTH improve. Please don&apos;t enter personal or confidential data.</p>
         <Wordmark text="SYNTH" />
