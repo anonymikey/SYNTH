@@ -1,6 +1,6 @@
 # SYNTH
 
-Free AI assistant (SYNTH ASSISTANT) and web app builder (SYNTHCODE). Next.js 14, no database, no extra dependencies.
+Free AI assistant (SYNTH ASSISTANT) and web app builder (SYNTHCODE). Next.js 15, no database, no extra dependencies.
 Written from scratch (not derived from Freebuff's code), so it is yours to license as you like.
 
 ## Run locally
@@ -27,8 +27,11 @@ Free model lineups change often, so the picker reads the provider's live list. S
 
 Your key is used server-side only. Anyone with the URL can use your free quota, so add a login or rate limit before sharing widely.
 
+## Workspace appearance
+Open **Settings** at the bottom of the sidebar, then choose **Personalization**. The workspace uses Sora headings and Inter body text by default; you can switch to system, serif or monospace fonts, select Midnight/Light/System theme, change the accent colors used by highlights and bars, adjust text size, and choose chat bubble style and message spacing. Preferences save automatically in the current browser. The Assistant and SYNTHCODE composers share the same compact toolbar layout; uploaded screenshots, voice input and image generation remain available where relevant.
+
 ## Ideas for next
-Markdown and code highlighting in chat, saved chats (Vercel KV or Supabase), login, rate limiting, multi-file projects with a file tree, one-click publish of builds, image input, a model-comparison view.
+Markdown and code highlighting in chat, saved chats (Vercel KV or Supabase), login, broader chat rate limiting, multi-file projects with a file tree, one-click publish of builds, and a model-comparison view.
 
 ## Learning and admin panel
 

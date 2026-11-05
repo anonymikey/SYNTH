@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Chat from '../../components/Chat';
 import Builder from '../../components/Builder';
 import { Chat as ChatIcon, Build as BuildIcon, Pin, Menu, Close, Panel } from '../../lib/icons';
+import Personalization from '../../components/Personalization';
 
 const TABS = [['chat', 'SYNTH ASSISTANT', ChatIcon], ['build', 'SYNTHCODE', BuildIcon]];
 const PIN_KEY = 'synth-sidebar-pinned';
@@ -68,7 +69,7 @@ export default function Home() {
             <button key={k} className={'navbtn' + (tab === k ? ' on' : '')} onClick={() => choose(k)}><Icon />{label}</button>
           ))}
         </nav>
-        <div className="sidefoot"><p className="meta"><i className="dot" />SYNTH Ready to Rock and Roll</p></div>
+        <div className="sidefoot"><Personalization /><p className="meta"><i className="dot" />SYNTH Ready to Rock and Roll</p></div>
       </aside>
 
       <main className="main" onMouseDown={(e) => { if (manual && !e.target.closest('.panelbtn')) closeSidebar(); }}>

@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { compress } from '../lib/images';
-import { Img } from '../lib/icons';
+import { Plus } from '../lib/icons';
 
 export function useAttach() {
   const [images, setImages] = useState([]);
@@ -41,6 +41,6 @@ export function AttachButton({ a }) {
   const ref = useRef();
   return (<>
     <input ref={ref} type="file" accept="image/*" multiple hidden onChange={(e) => { a.add(e.target.files); e.target.value = ''; }} />
-    <button type="button" className="iconbtn" title="Add image" aria-label="Add image" onClick={() => ref.current.click()}><Img /></button>
+    <button type="button" className="iconbtn sm attachbtn" title="Add an image or screenshot" aria-label="Add image or screenshot" onClick={() => ref.current.click()}><Plus width="19" height="19" /></button>
   </>);
 }

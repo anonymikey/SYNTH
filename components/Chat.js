@@ -108,18 +108,24 @@ export default function Chat({ seed }) {
       </div>
       {err && <p className="err" role="alert">{err}</p>}
       {!imageMode && <Thumbs a={a} />}
-      <div className="compose">
-        <button type="button" className={'iconbtn sm modebtn' + (imageMode ? ' on' : '')} onClick={() => { setImageMode((v) => !v); a.clear(); }} disabled={busy || mediaBusy}
-          aria-label={imageMode ? 'Switch to chat' : 'Generate an image'} title={imageMode ? 'Switch to chat' : 'Generate an image with Cloudflare Workers AI'}><Img width="17" height="17" /></button>
-        {!imageMode && <><AttachButton a={a} /><VoiceInput onText={(t) => setInput((v) => v ? `${v} ${t}` : t)} disabled={busy || mediaBusy} /></>}
+      <div className="compose compose-stack">
         <textarea ref={box} value={input} placeholder={imageMode ? 'Describe the image to create' : 'Message SYNTH, paste an image, or record voice'} rows={1} aria-label={imageMode ? 'Describe an image to generate' : 'Message'}
           onChange={(e) => setInput(e.target.value)} onPaste={!imageMode ? a.onPaste : undefined}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); imageMode ? generateImage() : send(); } }} />
-        {mediaBusy
-          ? <button className="iconbtn" disabled aria-label="Generating image">…</button>
-          : busy
-          ? <button className="iconbtn" onClick={() => ctl.current?.abort()} aria-label="Stop"><Stop /></button>
-          : <button className="iconbtn primary" onClick={() => imageMode ? generateImage() : send()} aria-label={imageMode ? 'Generate image' : 'Send'} disabled={!input.trim() && (imageMode || !a.images.length)}>{imageMode ? <Img /> : <Up />}</button>}
+        <div className="compose-toolbar">
+          <div className="toolbar-cluster" role="group" aria-label="Message tools">
+            {!imageMode && <AttachButton a={a} />}
+            <button type="button" className={'toolbar-chip modebtn' + (imageMode ? ' on' : '')} onClick={() => { setImageMode((v) => !v); a.clear(); }} disabled={busy || mediaBusy}
+              aria-label={imageMode ? 'Switch to chat' : 'Create an image'} title={imageMode ? 'Switch back to chat' : 'Generate an image with Cloudflare Workers AI'}><Img width="16" height="16" /><span className="toolbar-label">{imageMode ? 'Image mode' : 'Create image'}</span></button>
+          </div>
+          <span className="toolbar-spacer" />
+          {!imageMode && <VoiceInput onText={(t) => setInput((v) => v ? `${v} ${t}` : t)} disabled={busy || mediaBusy} />}
+          {mediaBusy
+            ? <button type="button" className="iconbtn primary compose-submit" disabled aria-label="Generating image">…</button>
+            : busy
+            ? <button type="button" className="iconbtn compose-submit" onClick={() => ctl.current?.abort()} aria-label="Stop response"><Stop /></button>
+            : <button type="button" className="iconbtn primary compose-submit" onClick={() => imageMode ? generateImage() : send()} aria-label={imageMode ? 'Generate image' : 'Send'} disabled={!input.trim() && (imageMode || !a.images.length)}>{imageMode ? <Img /> : <Up />}</button>}
+        </div>
       </div>
       <p className="tools"><span>Cloudflare voice and image features use a limited daily free AI allowance. Please don't enter personal data.</span>{msgs.length > 0 && <button className="linkbtn" onClick={() => { setMsgs([]); setErr(''); }}>Clear chat</button>}</p>
     </section>

@@ -213,13 +213,16 @@ export default function Builder({ seed }) {
         <div className="bw-dock">
           {err && <p className="err" role="alert">{err}</p>}
           <Thumbs a={a} />
-          <div className="compose">
-            <AttachButton a={a} />
-            <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
+          <div className="compose compose-stack">
             <textarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" aria-label="Describe what to build"
               onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
-            <button className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>Build <Arrow /></button>
+            <div className="compose-toolbar builder-toolbar">
+              <div className="toolbar-cluster"><AttachButton a={a} /></div>
+              <span className="toolbar-spacer" />
+              <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
+              <button className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>Build <Arrow /></button>
+            </div>
           </div>
           <p className="tools"><span>Enter to build, Shift+Enter for a new line. You can also paste or drop an image.</span></p>
         </div>
@@ -283,19 +286,21 @@ export default function Builder({ seed }) {
         {queued && <div className="queued"><span>Queued next: {queued}</span><button className="linkbtn" onClick={() => setQueued('')}>Cancel</button></div>}
         {hasFiles && <div className="editchips">{EDITS.map((t) => <button key={t} className="chip" onClick={() => pick(t)}>{t}</button>)}</div>}
         <Thumbs a={a} />
-        <div className="compose col">
+        <div className="compose col compose-stack">
           <div className="pbar-head"><i />prompt<span className="grow" /><span>{busy ? 'new requests are queued' : 'Enter to build'}</span></div>
           <textarea ref={wbox} value={prompt} rows={3} aria-label="Describe what to build or change"
             placeholder={busy ? 'Type your next request. It runs when this build finishes.' : hasFiles ? 'Ask for a change' : 'Describe what to build'}
             onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
-          <div className="row">
-            <AttachButton a={a} />
+          <div className="compose-toolbar builder-toolbar">
+            <div className="toolbar-cluster">
+              <AttachButton a={a} />
+              <button type="button" className="toolbar-chip" onClick={reset} title="Start a new project"><Plus width="16" height="16" /><span className="toolbar-label">New</span></button>
+            </div>
+            <span className="toolbar-spacer" />
             <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} disabled={busy} />
-            <button onClick={reset}><Plus width="16" height="16" /> New</button>
-            <span className="grow" />
-            {busy && <button className="stopbtn" onClick={stop}><Stop width="16" height="16" /> Stop</button>}
-            <button className="primary glow" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>{busy ? 'Queue' : 'Build'}</button>
+            {busy && <button type="button" className="iconbtn sm stopbtn compose-stop" onClick={stop} aria-label="Stop build" title="Stop build"><Stop width="16" height="16" /></button>}
+            <button type="button" className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>{busy ? 'Queue' : 'Build'} <Arrow width="16" height="16" /></button>
           </div>
         </div>
         {lastId && <Rate id={lastId} />}
