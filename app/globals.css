@@ -474,7 +474,7 @@ button.glow:disabled{animation:none;box-shadow:none}
 .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chev{flex:none;transition:transform .15s}.chev.open{transform:rotate(90deg)}
 .fi{flex:none;display:inline-grid;place-items:center;min-width:28px;height:16px;padding:0 4px;border-radius:4px;font:700 9px ui-monospace,Menlo,Consolas,monospace;color:#08101f}
-.k-html{background:#ff9a5c}.k-css{background:#5aa5ff}.k-js{background:#f5c451}.k-json{background:#3fd6a0}.k-md{background:#a3abc4}.k-svg{background:#c892ff}.k-file{background:#7e8bb0}
+.k-html{background:#ff9a5c}.k-css{background:#5aa5ff}.k-js{background:#f5c451}.k-ts{background:#7c83ff}.k-json{background:#3fd6a0}.k-md{background:#a3abc4}.k-svg{background:#c892ff}.k-file{background:#7e8bb0}
 .fmark{flex:none;width:7px;height:7px;border-radius:50%}.fmark.new{background:var(--ok);box-shadow:0 0 8px var(--ok)}.fmark.edit{background:#f5b83d}
 .fspin{flex:none;width:12px;height:12px;border-radius:50%;border:2px solid rgba(34,211,238,.25);border-top-color:var(--cyan);animation:spin .8s linear infinite}
 .fdone{flex:none;color:var(--ok)}
@@ -575,6 +575,10 @@ html[data-density="compact"] .m{gap:8px}
 .compose-submit.primary{box-shadow:0 5px 20px rgba(79,110,255,.25)}
 .builder-toolbar .buildbtn{min-height:40px;padding:0 16px;border-radius:14px}
 .builder-toolbar .compose-stop{width:36px;height:36px;min-height:36px}
+.builder-language{width:126px;min-height:34px;padding:5px 22px 5px 9px;border-radius:11px;background:transparent;font-size:12px}
+.builder-language:disabled{opacity:.68;cursor:not-allowed}
+.ts-compile-status{margin:12px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--muted);font-size:13px}
+.ts-compile-error{margin:12px;padding:13px 15px;border:1px solid rgba(255,105,125,.28);border-radius:12px;background:rgba(255,80,110,.07);color:var(--ink);font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
 .bw-dock .compose.compose-stack{border-radius:22px}
 .bw-dock .compose-toolbar{padding-bottom:1px}
 .build .compose.col.compose-stack{align-items:stretch}
@@ -629,6 +633,7 @@ html[data-density="compact"] .m{gap:8px}
   .toolbar-chip{min-height:34px;padding:0 9px;font-size:12px}
   .compose-submit{width:36px;height:36px;min-height:36px}
   .builder-toolbar .buildbtn{min-height:36px;padding:0 12px}
+  .builder-language{width:112px;min-height:32px;padding:4px 18px 4px 7px;font-size:11px}
   .theme-options{grid-template-columns:1fr}
   .theme-options .pref-choice{min-height:48px}
   .font-options{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -641,6 +646,11 @@ html[data-density="compact"] .m{gap:8px}
   .accent-options .pref-choice{min-width:calc(50% - 4px)}
   .settings-foot{padding:11px 14px;font-size:10px}
   .settings-reset{font-size:11px;padding:4px 6px}
+}
+@media(max-width:380px){
+  .builder-toolbar .builder-language{width:90px}
+  .builder-toolbar .toolbar-chip .toolbar-label{display:none}
+  .builder-toolbar .toolbar-spacer{min-width:0}
 }
 
 /* files the agent touched, under the last request */

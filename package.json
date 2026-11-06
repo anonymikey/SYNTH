@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-esbuild-wasm.js",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-esbuild-wasm.js",
     "build": "next build",
     "test": "node --experimental-default-type=module --test test/*.test.js",
     "start": "next start"
   },
   "dependencies": {
+    "esbuild-wasm": "0.28.2",
     "next": "15.5.29",
     "react": "18.3.1",
     "react-dom": "18.3.1"

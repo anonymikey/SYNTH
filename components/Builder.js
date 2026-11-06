@@ -4,7 +4,8 @@ import { streamChat, applyToolEvent } from '../lib/stream';
 import { track } from '../lib/track';
 import { withImages } from '../lib/images';
 import { useFollow } from '../lib/follow';
-import { parseFiles, mergeFiles, entryOf, bundle, filesForPrompt, makeZip } from '../lib/files';
+import { parseFiles, mergeFiles, entryOf, bundle, filesForPrompt, makeZip, typescriptFiles, typescriptEntry } from '../lib/files';
+import { compileTypeScript } from '../lib/typescript-client';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import VoiceInput from './VoiceInput';
 import ResponseToolbar from './ResponseToolbar';
@@ -33,6 +34,25 @@ Rules:
 - Responsive, accessible, and it must actually work.
 - When files already exist (listed below), return only the files you change or add, each with its COMPLETE new contents. To remove a file, add a block that starts with \`\`\`delete and lists the path on its own line.
 - When an image is provided (a screenshot, mockup or sketch), recreate its layout, colors, spacing and visible text faithfully and make the controls work. Draw icons and pictures with inline SVG or CSS.`;
+const TYPESCRIPT_SYSTEM = `You are SYNTHCODE, a coding agent that builds small browser web apps as a project of files.
+Reply with one short sentence, then every file you create or change, each in its own fenced code block with the path on the opening line:
+\`\`\`html file=index.html
+...
+\`\`\`
+\`\`\`css file=styles.css
+...
+\`\`\`
+\`\`\`ts file=script.ts
+...
+\`\`\`
+Rules:
+- Build a browser app with index.html, optional styles.css, and exactly one plain TypeScript source file named script.ts. The preview compiles script.ts to browser JavaScript automatically.
+- Link styles.css from index.html when used. Reference the compiled runtime as <script src="script.js"></script>; SYNTHCODE supplies that file for preview and project export.
+- Use standard TypeScript syntax and browser DOM APIs. Do not use JSX/TSX, npm packages, import/export statements, Node.js APIs, or a server/build configuration. Keep all application logic in script.ts.
+- The preview is a browser-only sandbox with no server. Do not fetch() project files; put data in script.ts. Do not rely on external images or libraries.
+- Keep the app responsive, accessible, and functional.
+- When files already exist (listed below), return only the files you change or add, each with its COMPLETE new contents. To remove a file, add a block that starts with \`\`\`delete and lists the path on its own line.
+- When an image is provided (a screenshot, mockup or sketch), recreate its layout, colors, spacing and visible text faithfully and make the controls work. Draw icons and pictures with inline SVG or CSS.`;
 const IDEAS = ['Landing page for a coffee shop', 'Habit tracker with streaks', 'Pomodoro timer with sounds', 'Kanban board with drag and drop'];
 const EDITS = ['Add dark mode', 'Make it mobile friendly', 'Add smooth animations', 'Improve the colors'];
 const WIDTH = { desktop: '100%', tablet: '820px', phone: '390px' };
@@ -57,6 +77,8 @@ function BuildAnswer({ text }) {
 
 export default function Builder({ seed }) {
   const [prompt, setPrompt] = useState('');
+  const [language, setLanguage] = useState('web');
+  const [compileState, setCompileState] = useState(null);
   const [history, setHistory] = useState([]);   // { text, n, status: building | done | stopped | failed, changed: [{ path, kind }] }
   const [files, setFiles] = useState({});       // the project: { 'index.html': '...', 'css/theme.css': '...' }
   const [dirs, setDirs] = useState([]);         // empty folders the user created
@@ -96,8 +118,48 @@ export default function Builder({ seed }) {
   }, [pane, histFollow.down]);
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
 
-  const html = useMemo(() => bundle(files), [files]); // one self-contained page for the sandboxed preview
   const hasFiles = Object.keys(files).length > 0;
+  const tsFiles = useMemo(() => typescriptFiles(files), [files]);
+  const tsxFiles = useMemo(() => Object.keys(files).filter((path) => /\.tsx$/i.test(path)), [files]);
+  const tsEntry = useMemo(() => typescriptEntry(files), [files]);
+  const tsProject = language === 'typescript' || tsFiles.length > 0 || tsxFiles.length > 0;
+
+  useEffect(() => {
+    if (tsxFiles.length) {
+      setCompileState({ files, status: 'error', error: 'TSX/JSX is not supported in this first TypeScript preview. Use one plain .ts browser script.' });
+      return;
+    }
+    if (!tsFiles.length) {
+      setCompileState(language === 'typescript' && hasFiles
+        ? { files, status: 'error', error: 'This TypeScript project needs a .ts source file. Add script.ts or start a new TypeScript project.' }
+        : null);
+      return;
+    }
+    if (!tsEntry) {
+      setCompileState({ files, status: 'error', error: 'This first TypeScript preview supports one source file. Keep the browser logic in script.ts.' });
+      return;
+    }
+    let active = true;
+    const snapshot = files;
+    setCompileState({ files: snapshot, status: 'loading' });
+    compileTypeScript(snapshot[tsEntry], tsEntry)
+      .then(({ code }) => { if (active) setCompileState({ files: snapshot, status: 'done', code }); })
+      .catch((error) => { if (active) setCompileState({ files: snapshot, status: 'error', error: String(error?.message || 'TypeScript compilation failed.').slice(0, 3000) }); });
+    return () => { active = false; };
+  }, [files, language, hasFiles, tsEntry, tsFiles, tsxFiles]);
+
+  const tsCompiling = hasFiles && tsProject && (compileState?.files !== files || compileState.status === 'loading');
+  const tsCompileError = compileState?.files === files && compileState.status === 'error' ? compileState.error : '';
+  const html = useMemo(() => {
+    if (!tsProject) return bundle(files);
+    if (compileState?.files !== files || compileState.status !== 'done') return '';
+    const previewFiles = { ...files, 'script.js': compileState.code };
+    const page = entryOf(previewFiles);
+    if (page) {
+      previewFiles[page] = previewFiles[page].replace(/(<script\b[^>]*\bsrc\s*=\s*["'])(?:\.\/)?(?:[^"']*\/)?[^/"']+\.ts(["'][^>]*>\s*<\/script>)/gi, '$1script.js$2');
+    }
+    return bundle(previewFiles);
+  }, [files, tsProject, compileState]); // compile only TypeScript source; run the result in the existing sandboxed preview
   const liveMap = useMemo(() => {
     if (!busy) return null;
     const o = {};
@@ -128,7 +190,7 @@ export default function Builder({ seed }) {
     if (!text && !imgs.length) return;
     if (busy) { setQueued(text || 'Build from the image'); setPrompt(''); return; } // the bar stays usable: this runs when the current build ends
     const first = history.length === 0 && !hasFiles;
-    const logged = (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
+    const logged = (language === 'typescript' ? '[typescript] ' : '') + (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
     const runKey = newId();
     const conversationId = projectConversation.current || (projectConversation.current = newId());
     latestBuild.current = runKey;
@@ -141,7 +203,8 @@ export default function Builder({ seed }) {
       else { setLeaving(true); later(() => { setLeaving(false); setEntering(true); later(() => setEntering(false), 800); }, 380); }
     }
     ctl.current = new AbortController();
-    const system = SYSTEM + (hasFiles ? `\n\nCurrent files:\n${filesForPrompt(files, selected)}` : '');
+    const baseSystem = language === 'typescript' ? TYPESCRIPT_SYSTEM : SYSTEM;
+    const system = baseSystem + (hasFiles ? `\n\nCurrent files:\n${filesForPrompt(files, selected)}` : '');
     const user = [{ role: 'user', content: withImages(text, imgs, 'Build this.') }];
     const meta = {};
     const mark = (status, changed) => { const used = toolsRef.current; setHistory((h) => h.map((x, i) => (i === h.length - 1 ? { ...x, status, tools: used, ...(changed ? { changed } : {}) } : x))); };
@@ -150,16 +213,23 @@ export default function Builder({ seed }) {
       let parsed = parseFiles(reply);
       let merged = mergeFiles(files, parsed);
       let tid = meta.tid;
-      if (slipped(parsed, merged)) {
+      if (slipped(parsed, merged) || (language === 'typescript' && !typescriptEntry(merged.files))) {
         // Formatting slip: count it against that model, then retry once on the next one.
         track({ mode: 'build', prompt: logged, reply: '[FORMAT] no usable files', model: 'auto', tid: meta.tid, error: true, conversationId });
         const meta2 = {};
-        reply = await streamChat({ messages: user, system: system + '\n\nIMPORTANT: reply with one short sentence, then every file in its own fenced code block with the path on the opening line (for example ```html file=index.html). The project must include index.html.', mode: 'build', retry: true }, setLive, ctl.current.signal, meta2, onTool);
+        const reminder = language === 'typescript'
+          ? '\n\nIMPORTANT: reply with one short sentence and complete file blocks. Include index.html and exactly one TypeScript source block named script.ts (```ts file=script.ts). Keep all browser logic in script.ts, use no imports, and have index.html reference script.js.'
+          : '\n\nIMPORTANT: reply with one short sentence, then every file in its own fenced code block with the path on the opening line (for example ```html file=index.html). The project must include index.html.';
+        reply = await streamChat({ messages: user, system: system + reminder, mode: 'build', retry: true }, setLive, ctl.current.signal, meta2, onTool);
         parsed = parseFiles(reply);
         merged = mergeFiles(files, parsed);
         tid = meta2.tid;
       }
-      if (slipped(parsed, merged)) throw new Error('SYNTHCODE could not produce a page this time. Please try again.');
+      if (slipped(parsed, merged) || (language === 'typescript' && !typescriptEntry(merged.files))) {
+        throw new Error(language === 'typescript'
+          ? 'SYNTHCODE could not produce a TypeScript project with a script.ts source file this time. Please try again.'
+          : 'SYNTHCODE could not produce a page this time. Please try again.');
+      }
       setFiles(merged.files);
       setMarks(Object.fromEntries(merged.changed.filter((c) => c.kind !== 'del').map((c) => [c.path, c.kind])));
       setSelected((s) => (s && s in merged.files ? s : entryOf(merged.files)));
@@ -184,7 +254,7 @@ export default function Builder({ seed }) {
 
   function reset() {
     if (busy) { skip.current = true; ctl.current?.abort(); }
-    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastBuildImages([]); projectConversation.current = ''; latestBuild.current = ''; setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false);
+    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastBuildImages([]); projectConversation.current = ''; latestBuild.current = ''; setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false); setLanguage('web'); setCompileState(null);
     a.clear();
   }
 
@@ -197,10 +267,13 @@ export default function Builder({ seed }) {
 
   // Several files download as a .zip, a single file as itself.
   function packaged() {
-    const names = Object.keys(files);
+    const exportFiles = compileState?.files === files && compileState.status === 'done'
+      ? { ...files, 'script.js': compileState.code }
+      : files;
+    const names = Object.keys(exportFiles);
     return names.length > 1
-      ? { blob: new Blob([makeZip(files)], { type: 'application/zip' }), name: 'synthcode-project.zip' }
-      : { blob: new Blob([files[names[0]] || ''], { type: 'text/plain' }), name: names[0] || 'index.html' };
+      ? { blob: new Blob([makeZip(exportFiles)], { type: 'application/zip' }), name: 'synthcode-project.zip' }
+      : { blob: new Blob([exportFiles[names[0]] || ''], { type: 'text/plain' }), name: names[0] || 'index.html' };
   }
   function download() {
     const { blob, name } = packaged();
@@ -249,7 +322,13 @@ export default function Builder({ seed }) {
               onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
             <div className="compose-toolbar builder-toolbar">
-              <div className="toolbar-cluster"><AttachButton a={a} /></div>
+              <div className="toolbar-cluster">
+                <AttachButton a={a} />
+                <select className="builder-language" aria-label="Project language" title="Choose a new project language. TypeScript transpiles .ts without full type-checking or package imports." value={language} disabled={busy || hasFiles} onChange={(e) => setLanguage(e.target.value)}>
+                  <option value="web">Web</option>
+                  <option value="typescript">TypeScript</option>
+                </select>
+              </div>
               <span className="toolbar-spacer" />
               <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
               <button className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>Build <Arrow /></button>
@@ -335,7 +414,7 @@ export default function Builder({ seed }) {
         {hasFiles && <div className="editchips">{EDITS.map((t) => <button key={t} className="chip" onClick={() => pick(t)}>{t}</button>)}</div>}
         <Thumbs a={a} />
         <div className="compose col compose-stack">
-          <div className="pbar-head"><i />prompt<span className="grow" /><span>{busy ? 'new requests are queued' : 'Enter to build'}</span></div>
+          <div className="pbar-head"><i />prompt<span className="grow" /><span>{busy ? 'new requests are queued' : language === 'typescript' ? 'TypeScript transpiles for preview' : 'Enter to build'}</span></div>
           <textarea ref={wbox} value={prompt} rows={3} aria-label="Describe what to build or change"
             placeholder={busy ? 'Type your next request. It runs when this build finishes.' : hasFiles ? 'Ask for a change' : 'Describe what to build'}
             onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
@@ -344,6 +423,10 @@ export default function Builder({ seed }) {
             <div className="toolbar-cluster">
               <AttachButton a={a} />
               <button type="button" className="toolbar-chip" onClick={reset} title="Start a new project"><Plus width="16" height="16" /><span className="toolbar-label">New</span></button>
+              <select className="builder-language" aria-label="Project language" title="Choose a new project language. TypeScript transpiles .ts without full type-checking or package imports; use New to switch later." value={language} disabled={busy || hasFiles} onChange={(e) => setLanguage(e.target.value)}>
+                <option value="web">Web</option>
+                <option value="typescript">TypeScript</option>
+              </select>
             </div>
             <span className="toolbar-spacer" />
             <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} disabled={busy} />
@@ -370,8 +453,8 @@ export default function Builder({ seed }) {
             <button className="iconbtn sm act-opt" disabled={!html} onClick={() => setFrame((n) => n + 1)} aria-label="Refresh preview" title="Refresh preview"><Refresh /></button>
             <button className="iconbtn sm" disabled={!html} onClick={() => setFull(true)} aria-label="Open full screen" title="Open full screen"><Open /></button>
             <button className="iconbtn sm act-opt" disabled={!hasFiles} onClick={() => copyText(files[selected] ?? files[entryOf(files)] ?? '')} aria-label="Copy open file" title="Copy open file"><Copy /></button>
-            <button className="iconbtn sm" disabled={!hasFiles} onClick={download} aria-label="Download project" title="Download project"><Download /></button>
-            <button className="iconbtn sm" disabled={!hasFiles} onClick={send} aria-label="Share project" title="Share project"><Send /></button>
+            <button className="iconbtn sm" disabled={!hasFiles || tsCompiling} onClick={download} aria-label="Download project" title="Download project"><Download /></button>
+            <button className="iconbtn sm" disabled={!hasFiles || tsCompiling} onClick={send} aria-label="Share project" title="Share project"><Send /></button>
           </div>
         </div>
 
@@ -386,7 +469,11 @@ export default function Builder({ seed }) {
             )
             : busy
               ? <AssemblingPreview lines={live ? live.split('\n').length : 0} width={WIDTH[dev]} />
-              : <p className="empty">Your app appears here.</p>}
+              : tsCompiling
+                ? <div className="ts-compile-status" role="status">Preparing the TypeScript preview…</div>
+                : tsCompileError
+                  ? <div className="ts-compile-error" role="alert"><b>TypeScript preview could not compile.</b>{'\n'}{tsCompileError}</div>
+                  : <p className="empty">Your app appears here.</p>}
         </div>
         <div className="pane" hidden={view !== 'code'}>
           <FileExplorer files={files} dirs={dirs} selected={selected} onSelect={setSelected} onSave={saveFile} onCreate={createFile} onFolder={createFolder} onDelete={deleteFile} onCopy={copyText} busy={busy} live={liveMap} marks={marks} />
