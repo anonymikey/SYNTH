@@ -44,7 +44,7 @@ test('public pages use SYNTH branding instead of exposing service names', () => 
   const publicCopy = files.map((file) => readFileSync(new URL(file, import.meta.url), 'utf8')).join('\n');
   assert.match(publicCopy, /SYNTH Image Master/);
   assert.match(publicCopy, /SYNTH Learning Studio/);
-  for (const hidden of [/Cloudflare Workers AI/i, /OpenRouter/i, /\bSPARK\b/i, /Llama|Qwen|DeepSeek|Mistral|Gemma/i, /free-tier models/i, /\badmin(?:istrator)?s?\b/i]) {
+  for (const hidden of [/Cloudflare Workers AI/i, /cloudflare\.com/i, /OpenRouter/i, /\bSPARK\b/i, /Llama|Qwen|DeepSeek|Mistral|Gemma/i, /free-tier models/i, /\badmin(?:istrator)?s?\b/i]) {
     assert.doesNotMatch(publicCopy, hidden);
   }
 });

@@ -1,78 +1,77 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Close, Arrow, Build, Flask, Img, Mic, Settings } from '../lib/icons';
+import { Close, Arrow, Build, Flask, Globe, Settings } from '../lib/icons';
 
-const STORAGE_KEY = 'synth-capabilities-banner-v1';
+const STORAGE_KEY = 'synth-capabilities-banner-v2';
 const SYNC_EVENT = 'synth-capabilities-banner-dismissed';
 
 const CONTENT = {
   landing: {
     art: '/synth-banner-landing.webp',
-    eyebrow: 'THE SYNTH WORKSPACE, EVOLVED',
-    title: 'Think. Build. Make it yours.',
-    description: 'Ask with tools and images, build responsive projects from prompts or screenshots, and make the workspace your own.',
+    eyebrow: 'SYNTHCODE · MULTI-LANGUAGE PROJECTS',
+    title: 'Build beyond the browser.',
+    description: 'Preview Web and TypeScript projects, or generate downloadable Python, Rust, Go, C++ and Node.js backend source in the same workspace.',
     features: [
-      { icon: Flask, text: 'Built-in tools + automatic recovery' },
-      { icon: Img, text: 'Vision + image tools*' },
-      { icon: Mic, text: 'Voice transcription*' },
-      { icon: Build, text: 'Responsive previews' },
-      { icon: Settings, text: 'Personalized appearance' },
+      { icon: Build, text: 'Web + TypeScript browser preview*' },
+      { icon: Flask, text: 'Python · Rust · Go · C++ source' },
+      { icon: Globe, text: 'Node.js backend starters' },
+      { icon: Settings, text: 'README guides + ZIP export' },
     ],
     actions: [
-      { label: 'Try Assistant', href: '/app?tab=chat', primary: true },
-      { label: 'Build with SYNTHCODE', href: '/app?tab=build' },
-      { label: 'See the latest', href: '/dev-updates' },
+      { label: 'Try SYNTHCODE', href: '/app?tab=build', primary: true },
+      { label: 'Read the release notes', href: '/dev-updates/synthcode-multilanguage-projects' },
     ],
-    note: '*SYNTH Image Master and voice tools use optional connected services; account limits may apply.',
+    note: '*TypeScript preview is transpile-only. Python, Rust, Go, C++ and backend projects export source only; SYNTHCODE does not compile, test, run or deploy them.',
   },
   assistant: {
     art: '/synth-banner-assistant.webp',
-    eyebrow: 'SYNTH ASSISTANT · NEW CAPABILITIES',
-    title: 'Ask, explore, attach, or dictate.',
-    description: 'Use built-in tools and image understanding in chat. Optional image creation and speech transcription are available through SYNTH Image Master.',
+    eyebrow: 'SYNTHCODE · NEW PROJECT MODES',
+    title: 'More than browser projects.',
+    description: 'From SYNTH ASSISTANT, open SYNTHCODE to preview Web and TypeScript projects or export Python, Rust, Go, C++ and Node.js backend source.',
     features: [
-      { icon: Flask, text: 'Included workspace tools' },
-      { icon: Img, text: 'Image understanding + creation*' },
-      { icon: Mic, text: 'Voice transcription*' },
+      { icon: Build, text: 'Browser preview: Web + TypeScript*' },
+      { icon: Flask, text: 'Source exports: Python, Rust, Go, C++' },
+      { icon: Globe, text: 'Node.js backend starters' },
     ],
     actions: [
-      { label: 'Build with SYNTHCODE', href: '/app?tab=build', primary: true },
-      { label: 'What’s new', href: '/dev-updates' },
+      { label: 'Open SYNTHCODE', href: '/app?tab=build', primary: true },
+      { label: 'Read the release notes', href: '/dev-updates/synthcode-multilanguage-projects' },
     ],
-    note: '*Optional media tools depend on workspace setup and the connected service’s limits.',
+    note: '*Python, Rust, Go, C++ and backend modes export source files only; SYNTHCODE does not compile or run them.',
   },
   builder: {
     art: '/synth-banner-builder.webp',
-    eyebrow: 'SYNTHCODE · FROM PROMPT TO PROJECT',
-    title: 'Build it, preview it, keep refining.',
-    description: 'Start with a description or screenshot. SYNTHCODE creates and edits project files, with live previews sized for desktop, tablet, and phone.',
+    eyebrow: 'SYNTHCODE · MORE PROJECT LANGUAGES',
+    title: 'Preview browser apps. Export source projects.',
+    description: 'Choose Web or TypeScript for a browser preview, or generate multi-file Python, Rust, Go, C++ and Node.js backend starter projects with local run instructions.',
     features: [
-      { icon: Build, text: 'Multi-file projects' },
-      { icon: Img, text: 'Screenshots and sketches' },
-      { icon: Mic, text: 'Voice transcription*' },
+      { icon: Build, text: 'Web + TypeScript preview*' },
+      { icon: Flask, text: 'Python · Rust · Go · C++ source' },
+      { icon: Globe, text: 'Node.js backend starter source' },
+      { icon: Settings, text: 'README + ZIP download' },
     ],
     actions: [
       { label: 'Ask SYNTH ASSISTANT', href: '/app?tab=chat', primary: true },
-      { label: 'What’s new', href: '/dev-updates' },
+      { label: 'Read the release notes', href: '/dev-updates/synthcode-multilanguage-projects' },
     ],
-    note: '*Voice transcription depends on workspace setup and connected-service limits.',
+    note: '*TypeScript preview is transpile-only. Other listed language modes export source; SYNTHCODE does not compile, test, run, or deploy them.',
   },
   updates: {
     art: '/synth-banner-updates.webp',
     eyebrow: 'LATEST SYNTH RELEASE',
-    title: 'New tools. Your workspace.',
-    description: 'Discover SYNTH Image Master, voice input, streamlined composers, and browser-saved appearance settings.',
+    title: 'More ways to build with SYNTHCODE.',
+    description: 'TypeScript browser previews and downloadable Python, Rust, Go, C++ and Node.js backend source projects—one combined release.',
     features: [
-      { icon: Flask, text: 'Optional workspace tools' },
-      { icon: Mic, text: 'Voice + image tools*' },
-      { icon: Settings, text: 'Personalization saved locally' },
+      { icon: Build, text: 'Web + TypeScript preview*' },
+      { icon: Flask, text: 'Five source-export modes' },
+      { icon: Settings, text: 'Local run guides + ZIPs' },
     ],
     actions: [
-      { label: 'Read latest', href: '/dev-updates/synth-media-tools', primary: true },
+      { label: 'Read release notes', href: '/dev-updates/synthcode-multilanguage-projects', primary: true },
       { label: 'Open SYNTH', href: '/app' },
     ],
-    note: '*Optional media tools follow the connected service’s limits.',
+    note: '*Python, Rust, Go, C++, and Node.js backend projects are source-only exports. SYNTHCODE does not run or deploy them.',
   },
 };
 

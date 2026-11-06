@@ -2,6 +2,20 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'synthcode-multilanguage-projects',
+        date: '2026-11-06',
+        title: 'SYNTHCODE grows beyond browser projects',
+        summary: 'Preview Web and TypeScript projects, or export Python, Rust, Go, C++ and Node.js backend starter source with local run guides.',
+        tags: ['SYNTHCODE', 'Languages', 'Source export', 'TypeScript'],
+        content: [
+            'SYNTHCODE now offers Web, TypeScript, Python, Rust, Go, C++ and Node.js backend project modes. Choose a mode before the first request. Source projects can include multiple files, language-aware file badges, local setup/run instructions in README.md, Code-tab editing, and a ZIP download.',
+            'Web projects continue to use the existing sandboxed browser preview. The TypeScript mode transpiles one plain .ts file to browser JavaScript for that preview and includes the generated JavaScript in the project download. This is transpilation only: it does not provide full type-checking or resolve external packages.',
+            'Python, Rust, Go, C++ and Node.js backend modes generate source files only. They include conventional entry files and project metadata where appropriate, such as Cargo.toml, go.mod, CMakeLists.txt, or a package.json start script, plus README.md with local commands. SYNTHCODE does not install dependencies, compile, test, run, host, or deploy these projects, and it cannot verify that their code or local instructions work.',
+            'Download the ZIP and follow its README in your own development environment. Node.js backend starters are source packages, not live servers or hosted APIs. Any configuration values use placeholders; never put private credentials into generated files.',
+            'The landing page, SYNTHCODE workspace banner and Dev Updates now share this release announcement. Dismissing it is saved in this browser only; it does not sync to other devices.',
+        ],
+    },
+    {
         slug: 'synthcore-learning-failover',
         date: '2026-11-05',
         title: 'SYNTHCORE learning has stronger automatic recovery',

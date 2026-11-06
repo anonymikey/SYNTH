@@ -15,13 +15,13 @@ const TILES = [
   { k: 'ask', t: 'SYNTH ASSISTANT', I: Chat, p: '' },
 ];
 const HOLD = ['a habit tracker with streaks', 'a landing page for my bakery', 'a budget dashboard with charts', 'a quiz game for kids'];
-const CAPABILITIES = ['Reasoning', 'Vision', 'Coding', 'Writing', 'Summaries', 'Analysis', 'Image creation', 'Voice input', 'Fast responses', 'Automatic recovery'];
+const CAPABILITIES = ['Web preview', 'TypeScript preview', 'Python source', 'Rust source', 'Go source', 'C++ source', 'Node.js backend source', 'Responsive layouts', 'Project ZIP export', 'Local run guides'];
 const NAV = [['Features', '#features'], ['How it works', '#how'], ['Evolve', '#evolve'], ['FAQ', '#faq']];
 const FAQ = [
   ['Is SYNTH really free?', 'There is no SYNTH subscription required to start. SYNTH uses services configured for the workspace; availability, limits and any charges depend on the connected account. Optional SYNTH Image Master and voice tools follow the same account-specific limits.'],
   ['How does SYNTH learn?', 'SYNTHCORE builds a memory of short lessons from ratings and sessions, plus lessons shared by other agents. The SYNTH Learning Studio reviews lessons before they are added to prompts, so you stay in control.'],
   ['Are my images stored?', 'Images may be processed by an external AI service to answer your request and are not stored by SYNTH. Logs only record that an image was attached. Avoid sharing confidential information.'],
-  ['What can I build?', 'Multi-file web pages and apps, usually in HTML, CSS and JavaScript. Preview your project on desktop, tablet and phone, keep asking for changes, then download the project files.'],
+  ['What can I build?', 'Use Web for multi-file browser pages and apps, or TypeScript for a browser preview that transpiles one plain .ts file without full type-checking or package imports. Python, Rust, Go, C++ and Node.js backend modes generate downloadable source projects and local run instructions only; SYNTHCODE does not compile, test, run, host or deploy those projects.'],
   ['Do I need an account?', 'No. Open the workspace and start.'],
   ['What are the new image and voice features?', 'SYNTH Image Master provides optional image creation and voice transcription when enabled in workspace settings. These features use a connected external service and are subject to that account’s limits and terms.'],
   ['Will SYNTH remember my appearance settings?', 'Yes. Theme, accent, typography, text size and chat appearance preferences are saved in local storage in this browser.'],
@@ -83,7 +83,7 @@ export default function Landing() {
         <div className="heroin">
           <Reveal variant="blur"><p className="eyebrow"><ShinyText>Think · Build · Evolve</ShinyText></p></Reveal>
           <Reveal variant="blur" delay={80}><h1>What will you build today?</h1></Reveal>
-          <Reveal variant="blur" delay={160}><p className="sub">Chat, build and ship with flexible AI tools; SYNTHCORE turns real usage into learning insights in the SYNTH Learning Studio.</p></Reveal>
+          <Reveal variant="blur" delay={160}><p className="sub">Chat, preview responsive browser projects, or export source projects with SYNTHCODE. Personalize your workspace and explore learning insights in the SYNTH Learning Studio.</p></Reveal>
           <Reveal variant="scale" delay={240}>
             <div className="box">
               <textarea ref={box} rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-label="What do you want to build?"
@@ -118,7 +118,7 @@ export default function Landing() {
         <div className="beam" data-progress><i /><b className="orb" /></div>
         <div className="grid3">
           {[['Think', 'SYNTH ASSISTANT', 'Ask questions, share screenshots and get clearly formatted answers and code.', Chat],
-            ['Build', 'SYNTHCODE', 'Describe it or upload a mockup. Get a working page, preview it on any device, download the HTML.', Build],
+            ['Build', 'SYNTHCODE', 'Preview Web and TypeScript projects, or export Python, Rust, Go, C++ and Node.js backend source with a local run guide.', Build],
             ['Evolve', 'Learning loop', 'Ratings and sessions become lessons you approve, so SYNTH keeps getting better at your work.', Flask]].map(([k, t, d, I], i) => (
             <Reveal key={k} delay={i * 120} variant="up"><Card className="pillar"><span className="pi"><I width="24" height="24" /></span><small>{k}</small><h3>{t}</h3><p>{d}</p></Card></Reveal>
           ))}
@@ -143,7 +143,7 @@ export default function Landing() {
       <section className="sec">
         <Reveal><h2 className="center">Everything in <span className="gt">one space</span></h2></Reveal>
         <div className="bento">
-          {[['b4', 'Builds real pages', 'Streaming code, live preview, iterate with plain language.', <MockBuilder />],
+          {[['b4', 'Previews and source projects', 'Stream and refine browser projects, or export multi-file Python, Rust, Go, C++ and backend source packages.', <MockBuilder />],
             ['b2', 'Reads images', 'Screenshots, charts and sketches in, working pages out.', <MockVision />],
             ['b2', 'Never stuck', 'If one engine is busy, SYNTH tries the next available option.', <MockFallback />],
             ['b2', 'Learns from use', 'Lessons from sessions and other agents, approved by you.', <MockLearn />],
