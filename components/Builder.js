@@ -14,6 +14,7 @@ import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit } from '../lib/icons';
+import { safeFrontendText } from '../lib/brand-view.js';
 
 const SYSTEM = `You are SYNTHCODE, a coding agent that builds small web apps as a project of files.
 Reply with one short sentence, then every file you create or change, each in its own fenced code block with the path on the opening line:
@@ -172,7 +173,7 @@ export default function Builder({ seed }) {
       if (skip.current) { setBusy(false); return; } // "New" was pressed while building
       setQueued('');
       const aborted = e.name === 'AbortError';
-      if (!aborted) { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
+      if (!aborted) { setErr(safeFrontendText(e.message.slice(0, 400))); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
       if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setView('preview'); } // nothing built yet: back to the welcome screen
       else { mark(aborted ? 'stopped' : 'failed'); setLive(''); } // keep the last good project
     }

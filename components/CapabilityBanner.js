@@ -13,7 +13,7 @@ const CONTENT = {
     title: 'Think. Build. Make it yours.',
     description: 'Ask with tools and images, build responsive projects from prompts or screenshots, and make the workspace your own.',
     features: [
-      { icon: Flask, text: 'Built-in tools + failover' },
+      { icon: Flask, text: 'Built-in tools + automatic recovery' },
       { icon: Img, text: 'Vision + image tools*' },
       { icon: Mic, text: 'Voice transcription*' },
       { icon: Build, text: 'Responsive previews' },
@@ -24,15 +24,15 @@ const CONTENT = {
       { label: 'Build with SYNTHCODE', href: '/app?tab=build' },
       { label: 'See the latest', href: '/dev-updates' },
     ],
-    note: '*Cloudflare image and voice tools need optional setup; Cloudflare limits apply.',
+    note: '*SYNTH Image Master and voice tools use optional connected services; account limits may apply.',
   },
   assistant: {
     art: '/synth-banner-assistant.webp',
     eyebrow: 'SYNTH ASSISTANT · NEW CAPABILITIES',
     title: 'Ask, explore, attach, or dictate.',
-    description: 'Use built-in tools and image understanding in chat. Optional image generation and speech transcription work when Cloudflare Workers AI is configured.',
+    description: 'Use built-in tools and image understanding in chat. Optional image creation and speech transcription are available through SYNTH Image Master.',
     features: [
-      { icon: Flask, text: 'Free built-in tools' },
+      { icon: Flask, text: 'Included workspace tools' },
       { icon: Img, text: 'Image understanding + creation*' },
       { icon: Mic, text: 'Voice transcription*' },
     ],
@@ -40,7 +40,7 @@ const CONTENT = {
       { label: 'Build with SYNTHCODE', href: '/app?tab=build', primary: true },
       { label: 'What’s new', href: '/dev-updates' },
     ],
-    note: '*Cloudflare media features require the provider to be enabled with server-side account credentials and are subject to its limits.',
+    note: '*Optional media tools depend on workspace setup and the connected service’s limits.',
   },
   builder: {
     art: '/synth-banner-builder.webp',
@@ -56,23 +56,23 @@ const CONTENT = {
       { label: 'Ask SYNTH ASSISTANT', href: '/app?tab=chat', primary: true },
       { label: 'What’s new', href: '/dev-updates' },
     ],
-    note: '*Voice transcription requires Cloudflare Workers AI to be enabled and configured. Usage follows Cloudflare’s limits.',
+    note: '*Voice transcription depends on workspace setup and connected-service limits.',
   },
   updates: {
     art: '/synth-banner-updates.webp',
     eyebrow: 'LATEST SYNTH RELEASE',
     title: 'New tools. Your workspace.',
-    description: 'Discover optional Cloudflare media tools, streamlined composers, and browser-saved appearance settings.',
+    description: 'Discover SYNTH Image Master, voice input, streamlined composers, and browser-saved appearance settings.',
     features: [
-      { icon: Flask, text: 'Cloudflare is optional' },
+      { icon: Flask, text: 'Optional workspace tools' },
       { icon: Mic, text: 'Voice + image tools*' },
       { icon: Settings, text: 'Personalization saved locally' },
     ],
     actions: [
-      { label: 'Read latest', href: '/dev-updates/cloudflare-voice-personalization', primary: true },
+      { label: 'Read latest', href: '/dev-updates/synth-media-tools', primary: true },
       { label: 'Open SYNTH', href: '/app' },
     ],
-    note: '*Cloudflare media features need setup and follow Cloudflare’s limits.',
+    note: '*Optional media tools follow the connected service’s limits.',
   },
 };
 

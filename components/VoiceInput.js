@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Stop } from '../lib/icons';
+import { safeFrontendText } from '../lib/brand-view.js';
 
 const MAX_RECORD_MS = 60_000;
 const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
@@ -34,10 +35,10 @@ export default function VoiceInput({ onText, disabled = false }) {
       form.append('audio', file, file.name || 'voice.webm');
       const response = await fetch('/api/transcribe', { method: 'POST', body: form });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Audio transcription failed.');
+      if (!response.ok) throw new Error(safeFrontendText(data.error || 'Audio transcription failed.'));
       if (!data.text) throw new Error('No speech was detected.');
       onText(data.text);
-    } catch (e) { setError(e.message || 'Could not transcribe audio.'); }
+    } catch (e) { setError(safeFrontendText(e.message || 'Could not transcribe audio.')); }
     finally { setBusy(false); }
   }
 

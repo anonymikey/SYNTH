@@ -15,15 +15,15 @@ const TILES = [
   { k: 'ask', t: 'SYNTH ASSISTANT', I: Chat, p: '' },
 ];
 const HOLD = ['a habit tracker with streaks', 'a landing page for my bakery', 'a budget dashboard with charts', 'a quiz game for kids'];
-const MODELS = ['Llama', 'Qwen', 'DeepSeek', 'Gemma', 'Mistral', 'GPT-OSS', 'GLM', 'Kimi', 'Nemotron', 'Hermes'];
+const CAPABILITIES = ['Reasoning', 'Vision', 'Coding', 'Writing', 'Summaries', 'Analysis', 'Image creation', 'Voice input', 'Fast responses', 'Automatic recovery'];
 const NAV = [['Features', '#features'], ['How it works', '#how'], ['Evolve', '#evolve'], ['FAQ', '#faq']];
 const FAQ = [
-  ['Is SYNTH really free?', 'SYNTH can start with free-tier models using a compatible provider key. Provider limits apply, and optional Cloudflare image generation and speech transcription require a Cloudflare account setup and follow its allowance. SYNTH does not charge you; provider terms and limits still apply.'],
-  ['How does SYNTH learn?', 'The underlying models do not change. SYNTH keeps a memory of short lessons drawn from ratings and sessions, plus lessons shared by other agents. An admin approves lessons before they are added to prompts, so you stay in control.'],
-  ['Are my images stored?', 'Images are sent to the model provider for that message and are not stored by SYNTH. Logs only record that an image was attached.'],
+  ['Is SYNTH really free?', 'There is no SYNTH subscription required to start. SYNTH uses services configured for the workspace; availability, limits and any charges depend on the connected account. Optional SYNTH Image Master and voice tools follow the same account-specific limits.'],
+  ['How does SYNTH learn?', 'SYNTHCORE builds a memory of short lessons from ratings and sessions, plus lessons shared by other agents. The SYNTH Learning Studio reviews lessons before they are added to prompts, so you stay in control.'],
+  ['Are my images stored?', 'Images may be processed by an external AI service to answer your request and are not stored by SYNTH. Logs only record that an image was attached. Avoid sharing confidential information.'],
   ['What can I build?', 'Multi-file web pages and apps, usually in HTML, CSS and JavaScript. Preview your project on desktop, tablet and phone, keep asking for changes, then download the project files.'],
   ['Do I need an account?', 'No. Open the workspace and start.'],
-  ['What are the new image and voice features?', 'Cloudflare Workers AI can be enabled as an optional server-side provider. Image generation and speech transcription require Cloudflare to be enabled and configured by the workspace administrator, and are subject to Cloudflare limits.'],
+  ['What are the new image and voice features?', 'SYNTH Image Master provides optional image creation and voice transcription when enabled in workspace settings. These features use a connected external service and are subject to that account’s limits and terms.'],
   ['Will SYNTH remember my appearance settings?', 'Yes. Theme, accent, typography, text size and chat appearance preferences are saved in local storage in this browser.'],
 ];
 
@@ -83,7 +83,7 @@ export default function Landing() {
         <div className="heroin">
           <Reveal variant="blur"><p className="eyebrow"><ShinyText>Think · Build · Evolve</ShinyText></p></Reveal>
           <Reveal variant="blur" delay={80}><h1>What will you build today?</h1></Reveal>
-          <Reveal variant="blur" delay={160}><p className="sub">Chat, build and ship with free-tier AI; SYNTHCORE turns real usage into learning insights for the admin panel.</p></Reveal>
+          <Reveal variant="blur" delay={160}><p className="sub">Chat, build and ship with flexible AI tools; SYNTHCORE turns real usage into learning insights in the SYNTH Learning Studio.</p></Reveal>
           <Reveal variant="scale" delay={240}>
             <div className="box">
               <textarea ref={box} rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-label="What do you want to build?"
@@ -105,19 +105,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* MODELS */}
+      {/* CAPABILITIES */}
       <section className="strip">
-        <Reveal><p className="cap">Free models from leading labs, ranked and rotated automatically (availability changes, so SYNTH reads the live list)</p></Reveal>
-        <Marquee items={MODELS} />
+        <Reveal><p className="cap">SYNTH routes each task to an available engine and recovers automatically when a service is busy.</p></Reveal>
+        <Marquee items={CAPABILITIES} />
       </section>
 
       {/* PILLARS */}
       <section className="sec center" id="features">
         <Reveal><h2>Empowering <span className="gt">builders and thinkers</span></h2></Reveal>
-        <Reveal delay={100}><p className="lead">One workspace to ask, make and improve. No SYNTH account required; optional provider features are clearly identified.</p></Reveal>
+        <Reveal delay={100}><p className="lead">One workspace to ask, make and improve. No SYNTH account required; optional services follow their account-specific limits.</p></Reveal>
         <div className="beam" data-progress><i /><b className="orb" /></div>
         <div className="grid3">
-          {[['Think', 'SYNTH ASSISTANT', 'Chat with a free model, drop in screenshots and get clearly formatted answers and code.', Chat],
+          {[['Think', 'SYNTH ASSISTANT', 'Ask questions, share screenshots and get clearly formatted answers and code.', Chat],
             ['Build', 'SYNTHCODE', 'Describe it or upload a mockup. Get a working page, preview it on any device, download the HTML.', Build],
             ['Evolve', 'Learning loop', 'Ratings and sessions become lessons you approve, so SYNTH keeps getting better at your work.', Flask]].map(([k, t, d, I], i) => (
             <Reveal key={k} delay={i * 120} variant="up"><Card className="pillar"><span className="pi"><I width="24" height="24" /></span><small>{k}</small><h3>{t}</h3><p>{d}</p></Card></Reveal>
@@ -145,9 +145,9 @@ export default function Landing() {
         <div className="bento">
           {[['b4', 'Builds real pages', 'Streaming code, live preview, iterate with plain language.', <MockBuilder />],
             ['b2', 'Reads images', 'Screenshots, charts and sketches in, working pages out.', <MockVision />],
-            ['b2', 'Never stuck', 'If a free model is busy, the next one answers.', <MockFallback />],
+            ['b2', 'Never stuck', 'If one engine is busy, SYNTH tries the next available option.', <MockFallback />],
             ['b2', 'Learns from use', 'Lessons from sessions and other agents, approved by you.', <MockLearn />],
-            ['b2', 'You see everything', 'An admin dashboard shows ratings, focus areas and lessons.', <MockAdmin />],
+            ['b2', 'You see everything', 'The SYNTH Learning Studio shows ratings, focus areas and reviewed lessons.', <MockAdmin />],
             ['b6', 'Responsive everywhere', 'The workspace and every page you build adapt to phone, tablet and desktop.', <MockDevices />]].map(([c, t, d, v], i) => (
             <Reveal key={t} className={'bc ' + c} delay={(i % 3) * 100} variant="up"><Card className="bcard"><div className="bvis">{v}</div><h3>{t}</h3><p>{d}</p></Card></Reveal>
           ))}
@@ -159,7 +159,7 @@ export default function Landing() {
         <Reveal variant="left"><EvolveLoop /></Reveal>
         <div>
           <Reveal><h2 className="left">An assistant that <span className="gt">evolves</span></h2></Reveal>
-          <Reveal delay={100}><p className="lead left">The models stay the same. SYNTH&apos;s memory does not.</p></Reveal>
+          <Reveal delay={100}><p className="lead left">SYNTH&apos;s learning memory grows with every approved lesson.</p></Reveal>
           <ol className="steps4">
             {[['Use', 'Every chat and build is logged, with emails and numbers stripped.'], ['Rate', 'Helpful or not helpful. Errors count against it.'], ['Learn', 'A daily job turns patterns into lessons and flags weak areas.'], ['Approve', 'You review lessons before they ever reach a prompt.']].map(([t, d], i) => (
               <Reveal as="li" key={t} delay={i * 110} variant="right"><b>{t}</b><span>{d}</span></Reveal>
@@ -170,7 +170,7 @@ export default function Landing() {
 
       {/* STATS */}
       <section className="sec stats">
-        {[[0, '$', '', 'to start with a free key'], [3, '', '', 'models tried automatically'], [4, '', '', 'images per message'], [24, '', 'h', 'learning cycle']].map(([n, p, s, l], i) => (
+        {[[0, '$', '', 'SYNTH subscription required'], [3, '', '', 'SYNTH experiences in one workspace'], [4, '', '', 'images per message'], [24, '', 'h', 'learning cycle']].map(([n, p, s, l], i) => (
           <Reveal key={l} delay={i * 100} className="stat"><b><CountUp to={n} prefix={p} suffix={s} /></b><span>{l}</span></Reveal>
         ))}
       </section>

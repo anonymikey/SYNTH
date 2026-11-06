@@ -1,3 +1,10 @@
-import Admin from '../../components/Admin';
-export const metadata = { title: 'SYNTH admin', robots: 'noindex' };
-export default function Page() { return <Admin />; }
+import { redirect } from 'next/navigation';
+
+export const metadata = {
+  title: 'SYNTH Learning Studio',
+  robots: { index: false, follow: false },
+};
+
+export default function Page() {
+  redirect('/learning-studio');
+}
