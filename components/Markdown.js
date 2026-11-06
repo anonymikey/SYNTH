@@ -37,7 +37,7 @@ export default function Markdown({ text }) {
       else out.push(<p key={k++}>{lines.map((l, i) => <span key={i}>{i > 0 && <br />}{inline(l)}</span>)}</p>);
     }
   });
-  const re = /```(\w*)\n([\s\S]*?)(```|$)/g;
+  const re = /```(\w*)[^\n]*\n([\s\S]*?)(```|$)/g;
   while ((m = re.exec(text))) {
     block(text.slice(last, m.index));
     out.push(<Code key={k++} lang={m[1]} code={m[2].replace(/\n$/, '')} />);

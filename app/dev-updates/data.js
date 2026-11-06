@@ -2,6 +2,34 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'assistant-response-actions',
+        date: '2026-11-05',
+        title: 'More control over every SYNTH response',
+        summary: 'Copy, rate, listen to, share and regenerate Assistant replies and SYNTHCODE build outputs; build answers now include a concise summary and expandable full response.',
+        tags: ['Assistant', 'Feedback', 'Privacy', 'Admin'],
+        content: [
+            'Completed Assistant replies and successful SYNTHCODE build outputs now include actions to copy the full answer, rate it helpful or not helpful, listen with your browser’s speech synthesis, share it, and inspect response details. SYNTHCODE keeps the project activity compact by showing the answer summary and letting you expand the complete Markdown output above its toolbar. Speech controls support play, pause, resume and stop where the browser provides speech synthesis. The current SYNTHCODE build can also be regenerated with its original screenshot and current project files; earlier build outputs retain the other actions but are not replayed without their historical project snapshot.',
+            'A negative rating can include a category—such as inaccurate information, poor explanation, irrelevant response or incomplete answer—and an optional note. The rating and note update the existing activity record rather than creating duplicate feedback events. Admin now shows the category, note and links to regenerated answers; rating changes continue to adjust SYNTHCORE’s existing model-level signal.',
+            'Sharing uses the native share sheet when available. The link fallback requires a separate confirmation and includes only the selected response, never its prompt or conversation history. Its unguessable link expires after 24 hours and is excluded from search indexing. Persistent Upstash storage is required for production links; without it, the toolbar offers copy-text fallback instead.',
+            'Assistant regeneration runs through the existing streaming chat route using the messages before the selected answer, then replaces that answer in place while preserving the remaining transcript. SYNTHCODE uses its existing file-aware build pipeline and the current project state. A new linked activity record is created for each successful regeneration. Generated-image responses can be regenerated through their existing image endpoint as well.',
+            'These interactions improve SYNTHCORE’s evidence and admin visibility; they do not retrain provider models or expose conversations through public links.',
+        ],
+    },
+    {
+        slug: 'cloudflare-voice-personalization',
+        date: '2026-11-05',
+        title: 'More ways to think and build in SYNTH',
+        summary: 'Cloudflare can join the provider lineup; optional image and voice tools, refined composers, and device-saved workspace personalization bring more ways to create.',
+        tags: ['Cloudflare', 'Voice', 'Images', 'Personalization', 'SYNTHCODE'],
+        content: [
+            'SYNTH can now use Cloudflare Workers AI as an optional third provider alongside OpenRouter and the SPARK gateway. It is off by default: an administrator must enable it, supply the Cloudflare account ID and API token on the server, and include it in the provider order. Once configured, it participates in the existing provider routing, failover, diagnostics and admin health reporting.',
+            'The Assistant composer now offers Cloudflare Workers AI image generation and speech-to-text. These are optional media routes, not unconditional free services: they require valid server-side Cloudflare credentials, depend on the model and service being available, and are subject to Cloudflare account limits. Image attachments for chat continue through the vision-capable model route.',
+            'The Assistant and SYNTHCODE composers now use the same compact, grouped toolbar. You can attach screenshots or sketches in SYNTHCODE, use voice transcription when Cloudflare is configured, edit the resulting project files, preview responsive layouts, and download your work.',
+            'Settings in the workspace sidebar open Personalization. Theme, accent, font, text size, chat style and density are saved in local storage in this browser; they do not sync automatically to other devices. New capabilities banners appear on the landing page, in both workspaces, and here in Dev Updates. Clicking a banner action or dismissing it stores a shared local dismissal flag, so the announcement does not return on this browser.',
+            'SYNTHCORE continues to record task outcomes, provider/model attribution, ratings and lessons for the admin panel. The underlying models are not retrained. Lessons still follow the configured review and approval process before they are added to prompts.',
+        ],
+    },
+    {
         slug: 'free-tools-for-synth',
         date: '2026-10-28',
         title: 'Free tools: SYNTH can now search, read and calculate',

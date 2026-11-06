@@ -7,7 +7,8 @@ import { useFollow } from '../lib/follow';
 import { parseFiles, mergeFiles, entryOf, bundle, filesForPrompt, makeZip } from '../lib/files';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import VoiceInput from './VoiceInput';
-import Rate from './Rate';
+import ResponseToolbar from './ResponseToolbar';
+import Markdown from './Markdown';
 import ToolRuns from './ToolRuns';
 import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
@@ -37,6 +38,21 @@ const WIDTH = { desktop: '100%', tablet: '820px', phone: '390px' };
 // A reply that changes nothing, or leaves the project without a page, counts as a formatting slip.
 const slipped = (parsed, merged) => (!parsed.files.length && !parsed.deletes.length) || !entryOf(merged.files);
 const SYMBOL = { new: '+', edit: '~', del: '−' };
+const newId = () => globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+
+function BuildAnswer({ text }) {
+  const full = String(text || '');
+  const summary = full.replace(/```[\s\S]*?```/g, '').trim();
+  return (
+    <div className="build-answer">
+      <div className="build-answer-summary"><Markdown text={summary || 'The project response is ready. Expand to inspect the complete AI output.'} /></div>
+      <details className="build-answer-details">
+        <summary>Full AI response</summary>
+        <div className="build-answer-full"><Markdown text={full} /></div>
+      </details>
+    </div>
+  );
+}
 
 export default function Builder({ seed }) {
   const [prompt, setPrompt] = useState('');
@@ -51,7 +67,7 @@ export default function Builder({ seed }) {
   const [dev, setDev] = useState('desktop');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [lastId, setLastId] = useState(null);
+  const [lastBuildImages, setLastBuildImages] = useState([]);
   const [leaving, setLeaving] = useState(false);   // welcome screen fading out
   const [entering, setEntering] = useState(false); // build workspace fading in
   const [justDone, setJustDone] = useState(false); // real preview revealing after a build
@@ -63,6 +79,8 @@ export default function Builder({ seed }) {
   const a = useAttach();
   const ctl = useRef(null);
   const wbox = useRef(null);
+  const projectConversation = useRef('');
+  const latestBuild = useRef('');
   const seeded = useRef(false);
   const skip = useRef(false);
   const okRef = useRef(false);
@@ -70,6 +88,11 @@ export default function Builder({ seed }) {
   const noteT = useRef(null);
   const timers = useRef([]);
   const histFollow = useFollow(history);
+  useEffect(() => {
+    if (pane !== 'prompt') return;
+    const frame = requestAnimationFrame(() => histFollow.down(false));
+    return () => cancelAnimationFrame(frame);
+  }, [pane, histFollow.down]);
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
 
   const html = useMemo(() => bundle(files), [files]); // one self-contained page for the sandboxed preview
@@ -95,17 +118,22 @@ export default function Builder({ seed }) {
   const onTool = (ev) => { toolsRef.current = applyToolEvent(toolsRef.current, ev); setTools(toolsRef.current); };
   const flash = (m) => { setNote(m); clearTimeout(noteT.current); noteT.current = setTimeout(() => setNote(''), 2200); };
   const copyText = async (t) => { try { await navigator.clipboard.writeText(t); flash('Copied'); } catch { flash('Could not copy'); } };
+  const saveBuildFeedback = (id, value, feedback) => setHistory((current) => current.map((entry) => entry.id === id ? { ...entry, fb: value, feedback } : entry));
 
-  async function build(override, instant) {
+  async function build(override, instant, options = {}) {
     const text = (override ?? prompt).trim();
-    const imgs = a.images;
+    const replaying = !!options.regeneration;
+    const imgs = Array.isArray(options.images) ? [...options.images] : [...a.images];
     if (!text && !imgs.length) return;
     if (busy) { setQueued(text || 'Build from the image'); setPrompt(''); return; } // the bar stays usable: this runs when the current build ends
     const first = history.length === 0 && !hasFiles;
     const logged = (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
+    const runKey = newId();
+    const conversationId = projectConversation.current || (projectConversation.current = newId());
+    latestBuild.current = runKey;
     skip.current = false; okRef.current = false;
-    setHistory((h) => [...h, { text: text || 'Build from the image', n: imgs.length, status: 'building' }]);
-    setPrompt(''); a.clear(); setErr(''); setLastId(null); setLive(''); setMarks({}); toolsRef.current = []; setTools([]); setBusy(true); setView('preview'); setPane('preview');
+    setHistory((h) => [...h, { text: text || 'Build from the image', n: imgs.length, status: 'building', clientId: runKey }]);
+    if (!replaying) { setPrompt(''); a.clear(); } setErr(''); setLive(''); setMarks({}); toolsRef.current = []; setTools([]); setBusy(true); setView('preview'); setPane('preview');
     if (first) {
       // Welcome screen fades out, then the build workspace fades in.
       if (instant) { setEntering(true); later(() => setEntering(false), 800); }
@@ -123,7 +151,7 @@ export default function Builder({ seed }) {
       let tid = meta.tid;
       if (slipped(parsed, merged)) {
         // Formatting slip: count it against that model, then retry once on the next one.
-        track({ mode: 'build', prompt: logged, reply: '[FORMAT] no usable files', model: 'auto', tid: meta.tid, error: true });
+        track({ mode: 'build', prompt: logged, reply: '[FORMAT] no usable files', model: 'auto', tid: meta.tid, error: true, conversationId });
         const meta2 = {};
         reply = await streamChat({ messages: user, system: system + '\n\nIMPORTANT: reply with one short sentence, then every file in its own fenced code block with the path on the opening line (for example ```html file=index.html). The project must include index.html.', mode: 'build', retry: true }, setLive, ctl.current.signal, meta2, onTool);
         parsed = parseFiles(reply);
@@ -137,12 +165,14 @@ export default function Builder({ seed }) {
       mark('done', merged.changed); okRef.current = true;
       setJustDone(true); later(() => setJustDone(false), 900);
       setBusy(false); // finished: stop the working animations right away, before the logging call returns
-      setLastId(await track({ mode: 'build', prompt: logged, reply: `[files ${parsed.files.map((f) => f.path).join(', ')}] ` + (parsed.files[0]?.content || '').slice(0, 250), model: 'auto', tid }));
+      const id = await track({ mode: 'build', prompt: logged, reply: `[files ${parsed.files.map((f) => f.path).join(', ')}] ` + (parsed.files[0]?.content || '').slice(0, 250), model: 'auto', tid, conversationId, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) });
+      setHistory((current) => current.map((entry) => entry.clientId === runKey ? { ...entry, reply, id, fb: 0, feedback: null, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) } : entry));
+      if (latestBuild.current === runKey) setLastBuildImages(imgs);
     } catch (e) {
       if (skip.current) { setBusy(false); return; } // "New" was pressed while building
       setQueued('');
       const aborted = e.name === 'AbortError';
-      if (!aborted) { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true }); }
+      if (!aborted) { setErr(e.message.slice(0, 400)); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
       if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setView('preview'); } // nothing built yet: back to the welcome screen
       else { mark(aborted ? 'stopped' : 'failed'); setLive(''); } // keep the last good project
     }
@@ -153,7 +183,7 @@ export default function Builder({ seed }) {
 
   function reset() {
     if (busy) { skip.current = true; ctl.current?.abort(); }
-    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastId(null); setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false);
+    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastBuildImages([]); projectConversation.current = ''; latestBuild.current = ''; setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false);
     a.clear();
   }
 
@@ -248,7 +278,10 @@ export default function Builder({ seed }) {
               <details className="earlier">
                 <summary>Earlier requests ({history.length - 1})</summary>
                 {history.slice(0, -1).map((h, i) => (
-                  <button key={i} className="eprev" onClick={() => pick(h.text)} title="Use this request as a starting point"><i className={'sdot ' + h.status} />{h.text}</button>
+                  <div key={h.clientId || i} className="earlier-response">
+                    <button className="eprev" onClick={() => pick(h.text)} title="Use this request as a starting point"><i className={'sdot ' + h.status} />{h.text}</button>
+                    {h.reply && <><BuildAnswer text={h.reply} /><ResponseToolbar key={h.id || h.clientId || i} id={h.id} response={h.reply} messageKey={h.clientId || h.id || i} initialRating={h.fb || 0} initialFeedback={h.feedback} disabled={busy} showRegenerate={false} onFeedbackSaved={saveBuildFeedback} /></>}
+                  </div>
                 ))}
               </details>
             )}
@@ -277,6 +310,20 @@ export default function Builder({ seed }) {
                   <button className="linkbtn" onClick={() => pick(last.text)} disabled={busy}><Edit width="14" height="14" /> Edit</button>
                   {(last.status === 'failed' || last.status === 'stopped') && <button className="linkbtn" onClick={() => build(last.text)} disabled={busy}><Refresh width="14" height="14" /> Retry</button>}
                 </div>
+                {last.status === 'done' && last.reply && <BuildAnswer text={last.reply} />}
+                {last.status === 'done' && last.reply && <ResponseToolbar
+                  key={last.id || last.clientId}
+                  id={last.id}
+                  response={last.reply}
+                  messageKey={last.clientId || last.id}
+                  initialRating={last.fb || 0}
+                  initialFeedback={last.feedback}
+                  onRegenerate={() => build(last.text, false, { regeneration: true, regeneratedFrom: last.id || '', images: lastBuildImages })}
+                  regenerateDescription="Rebuild from this request using the current project files and original screenshot"
+                  disabled={busy}
+                  regeneratedFrom={last.regeneratedFrom}
+                  onFeedbackSaved={saveBuildFeedback}
+                />}
               </div>
             )}
           </div>
@@ -303,7 +350,6 @@ export default function Builder({ seed }) {
             <button type="button" className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>{busy ? 'Queue' : 'Build'} <Arrow width="16" height="16" /></button>
           </div>
         </div>
-        {lastId && <Rate id={lastId} />}
       </aside>
 
       <div className="stage panel">

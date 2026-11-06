@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { updates, formatDate } from './data';
+import CapabilityBanner from '../../components/CapabilityBanner';
 
 // Server component, so it can export metadata. Do not add "use client" to this file.
 export const metadata = {
@@ -15,6 +16,7 @@ export default function DevUpdatesPage() {
                 <h1>What we are building</h1>
                 <p className="du-lead">Features, fixes and the thinking behind them, newest first.</p>
             </section>
+            <div className="du-feature-banner"><CapabilityBanner variant="updates" /></div>
             <section className="du-grid" aria-label="Updates">
                 {updates.map((u) => (
                     <article key={u.slug} className="du-card">

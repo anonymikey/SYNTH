@@ -4,6 +4,7 @@ import Chat from '../../components/Chat';
 import Builder from '../../components/Builder';
 import { Chat as ChatIcon, Build as BuildIcon, Pin, Menu, Close, Panel } from '../../lib/icons';
 import Personalization from '../../components/Personalization';
+import CapabilityBanner from '../../components/CapabilityBanner';
 
 const TABS = [['chat', 'SYNTH ASSISTANT', ChatIcon], ['build', 'SYNTHCODE', BuildIcon]];
 const PIN_KEY = 'synth-sidebar-pinned';
@@ -79,6 +80,7 @@ export default function Home() {
           <img className="topmark" src="/logo-mark.png" alt="" />
           <div className="topttl"><h1 className="toptitle">{title}</h1>{tab === 'build' && <span className="topsub">Think. Build. Evolve.</span>}</div>
         </header>
+        <CapabilityBanner variant={tab === 'build' ? 'builder' : 'assistant'} />
         <div hidden={tab !== 'chat'}><Chat seed={seed.tab === 'chat' ? seed.q : ''} /></div>
         <div hidden={tab !== 'build'}><Builder seed={seed.tab === 'build' ? seed.q : ''} /></div>
       </main>

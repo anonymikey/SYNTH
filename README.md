@@ -1,6 +1,6 @@
 # SYNTH
 
-Free AI assistant (SYNTH ASSISTANT) and web app builder (SYNTHCODE). Next.js 15, no database, no extra dependencies.
+Free-tier AI assistant (SYNTH ASSISTANT) and responsive web app builder (SYNTHCODE), with provider failover, optional Cloudflare image/voice tools, admin learning evidence and browser-saved personalization. Next.js 15; no database required.
 Written from scratch (not derived from Freebuff's code), so it is yours to license as you like.
 
 ## Run locally
@@ -28,10 +28,15 @@ Free model lineups change often, so the picker reads the provider's live list. S
 Your key is used server-side only. Anyone with the URL can use your free quota, so add a login or rate limit before sharing widely.
 
 ## Workspace appearance
-Open **Settings** at the bottom of the sidebar, then choose **Personalization**. The workspace uses Sora headings and Inter body text by default; you can switch to system, serif or monospace fonts, select Midnight/Light/System theme, change the accent colors used by highlights and bars, adjust text size, and choose chat bubble style and message spacing. Preferences save automatically in the current browser. The Assistant and SYNTHCODE composers share the same compact toolbar layout; uploaded screenshots, voice input and image generation remain available where relevant.
+Open **Settings** at the bottom of the sidebar, then choose **Personalization**. The workspace uses Sora headings and Inter body text by default; you can switch to system, serif or monospace fonts, select Midnight/Light/System theme, change the accent colors used by highlights and bars, adjust text size, and choose chat bubble style and message spacing. Preferences save automatically in the current browser. The Assistant and SYNTHCODE composers share the same compact toolbar layout; uploaded screenshots, voice input and image generation remain available where relevant. A capabilities announcement links the landing page, both workspaces and Dev Updates; clicking one of its actions or its close button dismisses it across all four areas using one shared local-storage flag in that browser.
+
+## Assistant response actions
+Completed Assistant answers and successful SYNTHCODE build outputs include copy, helpful/not-helpful feedback, browser read-aloud controls, sharing and response details. SYNTHCODE shows a concise reply summary with the full Markdown answer expandable above the same toolbar. Negative feedback can include one of five categories and an optional note. It updates the same interaction event used by Admin and SYNTHCORE; rating changes are applied to existing model-level counts rather than recorded as duplicate events. The Admin recent-activity table displays feedback details and links regenerated events to the response they replaced. Assistant replies regenerate using the preceding conversation context; the latest SYNTHCODE output regenerates through the existing file-aware build route using current project files and its original screenshot. Earlier build outputs retain copy/rating/speech/share/details but are not replayed without their historical project snapshot.
+
+Share uses the browser's native share sheet when available. Otherwise, the user can explicitly create a 24-hour link that contains **only one selected response**, not its prompt or conversation history. The token is unguessable, the page is excluded from search indexing, and production links require persistent Upstash storage. If that storage is unavailable, the safe fallback is copying the response text. Anyone given a valid share link can view that response until it expires; review sensitive content before creating one. Generated image files are not embedded in response text links; use their Download image control to share the image itself.
 
 ## Ideas for next
-Markdown and code highlighting in chat, saved chats (Vercel KV or Supabase), login, broader chat rate limiting, multi-file projects with a file tree, one-click publish of builds, and a model-comparison view.
+Potential future work—not shipped: persistent saved chats/projects across sessions, login or team accounts, broader rate limits for chat, one-click publishing of SYNTHCODE projects, and an advanced model-comparison view. Markdown answers, code rendering and multi-file projects with a file explorer are already available.
 
 ## Learning and admin panel
 

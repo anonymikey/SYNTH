@@ -23,14 +23,17 @@ export async function GET() {
   const day = Date.now() - 864e5;
   const count = (f) => evs.filter(f).length;
   const bySource = {};
+  const feedbackByCategory = {};
   ls.forEach((l) => { bySource[l.source] = (bySource[l.source] || 0) + 1; });
+  evs.forEach((e) => { const category = e.feedback?.category; if (category) feedbackByCategory[category] = (feedbackByCategory[category] || 0) + 1; });
   const providers = providerHealth(providerConfig(), entries);
   return Response.json({
     persistent,
     health: { key: !keyProblem(), storage: persistent, cron: !!process.env.CRON_SECRET },
     providers,
     focus, lastResult, lessons: ls, bySource,
-    stats: { total: evs.length, last24h: count((e) => e.ts > day), up: count((e) => e.fb === 1), down: count((e) => e.fb === -1), chat: count((e) => e.mode === 'chat'), build: count((e) => e.mode === 'build') },
+    stats: { total: evs.length, last24h: count((e) => e.ts > day), up: count((e) => e.fb === 1), down: count((e) => e.fb === -1), chat: count((e) => e.mode === 'chat'), build: count((e) => e.mode === 'build'), feedbackNotes: count((e) => !!e.feedback?.comment) },
+    feedback: { byCategory: feedbackByCategory },
     recent: evs.slice(0, 30),
     spark: { enabled: providers.active.includes('spark'), metrics: sparkMetrics(entries), entries: entries.slice(0, 40) },
     core: await summary(ls),

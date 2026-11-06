@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
 const pc = (v) => (v == null ? '—' : v + '%');
 const TSTATE = { healthy: ['ok', 'Healthy'], degraded: ['warn', 'Degraded'], down: ['bad', 'Down'], disabled: ['neutral', 'Off'], unknown: ['neutral', 'Not used yet'] };
+const FEEDBACK_LABEL = { inaccurate: 'Inaccurate information', 'poor-explanation': 'Poor explanation', irrelevant: 'Irrelevant response', incomplete: 'Incomplete answer', other: 'Other' };
 const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
 
 export default function Admin() {
@@ -84,7 +85,9 @@ export default function Admin() {
         <div><b>{rated ? Math.round((s.up / rated) * 100) + '%' : 'n/a'}</b>rated helpful ({rated} ratings)</div>
         <div><b>{counts('approved')}</b>active lessons</div>
         <div><b>{counts('pending')}</b>waiting for review</div>
+        <div><b>{s.feedbackNotes || 0}</b>feedback notes attached to responses</div>
       </div>
+      {Object.keys(d.feedback?.byCategory || {}).length > 0 && <p className="muted">Recent response feedback: {Object.entries(d.feedback.byCategory).map(([key, value]) => `${FEEDBACK_LABEL[key] || key} (${value})`).join(' · ')}.</p>}
       <p className="muted">SYNTH ASSISTANT {s.chat}, SYNTHCODE {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${k} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? 'Last learning run ' + ago(d.lastResult.ts) + '.' : 'Learning has not run yet.'}</p>
 
       <section>
@@ -255,9 +258,14 @@ export default function Admin() {
       <section>
         <h2>Recent activity</h2>
         <div className="scroll"><table>
-          <thead><tr><th>When</th><th>Mode</th><th>Request</th><th>Rating</th></tr></thead>
+          <thead><tr><th>When</th><th>Mode</th><th>Request</th><th>Response</th><th>Rating</th><th>Feedback details</th></tr></thead>
           <tbody>{d.recent.map((e) => (
-            <tr key={e.id}><td>{ago(e.ts)}</td><td>{e.mode}</td><td>{e.prompt.slice(0, 90)}</td><td>{e.fb === 1 ? 'Helpful' : e.fb === -1 ? 'Not helpful / error' : ''}</td></tr>
+            <tr key={e.id}>
+              <td>{ago(e.ts)}</td><td>{e.mode}</td><td>{(e.prompt || '').slice(0, 90)}</td>
+              <td>{e.regeneratedFrom ? <><span className="pill warn">Regenerated</span><small className="admin-subtext">From {e.regeneratedFrom}</small></> : 'Original'}</td>
+              <td>{e.error ? 'Generation error' : e.fb === 1 ? 'Helpful' : e.fb === -1 ? 'Not helpful' : ''}</td>
+              <td>{e.feedback?.category && <span className="pill warn">{FEEDBACK_LABEL[e.feedback.category] || e.feedback.category}</span>}{e.feedback?.comment && <p className="admin-feedback-note">{e.feedback.comment}</p>}</td>
+            </tr>
           ))}</tbody>
         </table></div>
       </section>

@@ -6,6 +6,7 @@ import '../../app/landing.css';
 import { Reveal, ShinyText, CountUp, Marquee, Wordmark, Card } from './bits';
 import { Flow, EvolveLoop, DemoWindow, MockBuilder, MockVision, MockFallback, MockLearn, MockAdmin, MockDevices } from './visuals';
 import { Globe, Build, Phone, Chat, Flask, Arrow, Menu, Close } from '../../lib/icons';
+import CapabilityBanner from '../CapabilityBanner';
 
 const TILES = [
   { k: 'website', t: 'Website', I: Globe, p: 'Build a modern, responsive website for ' },
@@ -17,11 +18,13 @@ const HOLD = ['a habit tracker with streaks', 'a landing page for my bakery', 'a
 const MODELS = ['Llama', 'Qwen', 'DeepSeek', 'Gemma', 'Mistral', 'GPT-OSS', 'GLM', 'Kimi', 'Nemotron', 'Hermes'];
 const NAV = [['Features', '#features'], ['How it works', '#how'], ['Evolve', '#evolve'], ['FAQ', '#faq']];
 const FAQ = [
-  ['Is SYNTH really free?', 'SYNTH runs on free models, so with a free API key it costs nothing to start. Free tiers have rate limits, which is why SYNTH automatically tries the next model when one is busy.'],
+  ['Is SYNTH really free?', 'SYNTH can start with free-tier models using a compatible provider key. Provider limits apply, and optional Cloudflare image generation and speech transcription require a Cloudflare account setup and follow its allowance. SYNTH does not charge you; provider terms and limits still apply.'],
   ['How does SYNTH learn?', 'The underlying models do not change. SYNTH keeps a memory of short lessons drawn from ratings and sessions, plus lessons shared by other agents. An admin approves lessons before they are added to prompts, so you stay in control.'],
   ['Are my images stored?', 'Images are sent to the model provider for that message and are not stored by SYNTH. Logs only record that an image was attached.'],
-  ['What can I build?', 'Single-file web pages and apps in HTML, CSS and JavaScript. Preview them on desktop, tablet and phone, keep asking for changes, then download the file.'],
+  ['What can I build?', 'Multi-file web pages and apps, usually in HTML, CSS and JavaScript. Preview your project on desktop, tablet and phone, keep asking for changes, then download the project files.'],
   ['Do I need an account?', 'No. Open the workspace and start.'],
+  ['What are the new image and voice features?', 'Cloudflare Workers AI can be enabled as an optional server-side provider. Image generation and speech transcription require Cloudflare to be enabled and configured by the workspace administrator, and are subject to Cloudflare limits.'],
+  ['Will SYNTH remember my appearance settings?', 'Yes. Theme, accent, typography, text size and chat appearance preferences are saved in local storage in this browser.'],
 ];
 
 export default function Landing() {
@@ -71,6 +74,8 @@ export default function Landing() {
         </div>
       </header>
 
+      <CapabilityBanner variant="landing" />
+
       {/* HERO */}
       <section className="hero">
         <div className="blobs" aria-hidden="true"><i className="b1" /><i className="b2" /><i className="b3" /><i className="b4" /></div>
@@ -78,7 +83,7 @@ export default function Landing() {
         <div className="heroin">
           <Reveal variant="blur"><p className="eyebrow"><ShinyText>Think · Build · Evolve</ShinyText></p></Reveal>
           <Reveal variant="blur" delay={80}><h1>What will you build today?</h1></Reveal>
-          <Reveal variant="blur" delay={160}><p className="sub">Chat, build and ship apps and websites with free AI that learns from every session.</p></Reveal>
+          <Reveal variant="blur" delay={160}><p className="sub">Chat, build and ship with free-tier AI; SYNTHCORE turns real usage into learning insights for the admin panel.</p></Reveal>
           <Reveal variant="scale" delay={240}>
             <div className="box">
               <textarea ref={box} rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-label="What do you want to build?"
@@ -109,7 +114,7 @@ export default function Landing() {
       {/* PILLARS */}
       <section className="sec center" id="features">
         <Reveal><h2>Empowering <span className="gt">builders and thinkers</span></h2></Reveal>
-        <Reveal delay={100}><p className="lead">One workspace to ask, make and improve. No account, no credit card.</p></Reveal>
+        <Reveal delay={100}><p className="lead">One workspace to ask, make and improve. No SYNTH account required; optional provider features are clearly identified.</p></Reveal>
         <div className="beam" data-progress><i /><b className="orb" /></div>
         <div className="grid3">
           {[['Think', 'SYNTH ASSISTANT', 'Chat with a free model, drop in screenshots and get clearly formatted answers and code.', Chat],
