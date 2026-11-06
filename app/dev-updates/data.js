@@ -2,6 +2,18 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'synthcore-learning-failover',
+        date: '2026-11-05',
+        title: 'SYNTHCORE learning now has stronger provider failover',
+        summary: 'Learning retries healthy configured models after rate limits, slow providers or malformed output, and Admin shows which model completed the run.',
+        tags: ['SYNTHCORE', 'Reliability', 'Admin'],
+        content: [
+            'The scheduled and manual learning job already used the shared provider order; its recovery is now more robust. Failed OpenRouter models are temporarily cooled down, a slow primary cannot consume the time reserved for later configured providers, and invalid learning JSON triggers another model attempt instead of ending the run immediately.',
+            'The Admin dashboard now retains the last run’s outcome, the model that produced lessons, and the failed targets it recovered from. If a run still fails, it shows the provider/model attempts rather than only a truncated upstream error.',
+            'Fallbacks use only providers that are enabled, configured with valid server credentials, and included in PROVIDER_ORDER. SYNTHCORE continues to collect task evidence and approved prompt lessons; this does not fine-tune model weights or activate SYNTHCORE as a first-party inference model.',
+        ],
+    },
+    {
         slug: 'assistant-response-actions',
         date: '2026-11-05',
         title: 'More control over every SYNTH response',

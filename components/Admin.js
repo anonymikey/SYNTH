@@ -37,10 +37,19 @@ export default function Admin() {
   }
   async function learn() {
     setBusy(true); setMsg('');
-    const r = await post('/api/admin/learn');
-    const j = await r.json();
-    setMsg(j.error ? j.error : `Analysed ${j.analyzed} interactions. ${j.added} new lessons, ${j.pulled} pulled from other agents.`);
-    setBusy(false); load();
+    try {
+      const r = await post('/api/admin/learn');
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || `Learning request failed (HTTP ${r.status}).`);
+      const recovered = j.attempts?.length ? ` Recovered after ${j.attempts.length} failed model attempt(s).` : '';
+      const model = j.model ? ` Model used: ${j.model}.` : '';
+      setMsg(j.error || `Analysed ${j.analyzed} interactions. ${j.added} new lessons, ${j.pulled} pulled from other agents.${model}${recovered}`);
+    } catch (error) {
+      setMsg(`Learning request failed: ${String(error.message || error).slice(0, 300)}`);
+    } finally {
+      setBusy(false);
+      load();
+    }
   }
   async function add(e) {
     e.preventDefault();
@@ -78,6 +87,7 @@ export default function Admin() {
       {!d.health.storage && <p className="err">Storage is not connected, so logs and lessons reset. Add Upstash Redis in Vercel (Storage tab) and redeploy.</p>}
       {d.providers.active.length === 0 && <p className="err">No AI provider is ready, so the assistant cannot answer. Configure at least one enabled provider in the server environment and redeploy.</p>}
       {msg && <p className="note">{msg}</p>}
+      {d.lastResult?.error && !msg && <p className="err" role="status">Latest learning run failed: {d.lastResult.error}</p>}
 
       <div className="stats">
         <div><b>{s.total}</b>interactions logged</div>
@@ -88,7 +98,8 @@ export default function Admin() {
         <div><b>{s.feedbackNotes || 0}</b>feedback notes attached to responses</div>
       </div>
       {Object.keys(d.feedback?.byCategory || {}).length > 0 && <p className="muted">Recent response feedback: {Object.entries(d.feedback.byCategory).map(([key, value]) => `${FEEDBACK_LABEL[key] || key} (${value})`).join(' · ')}.</p>}
-      <p className="muted">SYNTH ASSISTANT {s.chat}, SYNTHCODE {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${k} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? 'Last learning run ' + ago(d.lastResult.ts) + '.' : 'Learning has not run yet.'}</p>
+      <p className="muted">SYNTH ASSISTANT {s.chat}, SYNTHCODE {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${k} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? `Last learning run ${ago(d.lastResult.ts)}${d.lastResult.model ? `; completed by ${d.lastResult.model}` : ''}${d.lastResult.attempts?.length ? ` after ${d.lastResult.attempts.length} failed attempt(s)` : ''}.` : 'Learning has not run yet.'}</p>
+      {d.lastResult?.attempts?.length > 0 && <p className="note" aria-live="polite">Learning attempts: {d.lastResult.attempts.map((a) => `${a.target} (${a.status ? `HTTP ${a.status}` : 'unavailable'}: ${a.error})`).join(' → ')}{d.lastResult.model ? ` → succeeded with ${d.lastResult.model}.` : ''}</p>}
 
       <section>
         <h2>Where it needs work</h2>
@@ -224,7 +235,7 @@ export default function Admin() {
             ))}
           </div>
         </div>
-        <p className="muted">SYNTHCORE is the knowledge SYNTH builds from real use: which model handled which task, how reliably and how fast, how users rated it, and the lessons it wrote. The models themselves are not retrained. 100% means there is enough evidence to start routing by learned results. Targets are set in lib/core.js.</p>
+        <p className="muted">SYNTHCORE currently collects real-use evidence and approved prompt lessons; provider model weights are not retrained. This readiness score measures evidence coverage only: it does not create or activate a SYNTHCORE inference model, and it does not change provider routing. Using a trained SYNTH model first later requires a model endpoint plus a separate inference integration. Targets are set in lib/core.js.</p>
 
         <h3>Task coverage</h3>
         {d.core.tasks.map((t) => (

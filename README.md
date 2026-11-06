@@ -44,8 +44,10 @@ SYNTH's model weights do not change. What learns is its **memory**: a store of s
 
 **How it learns**
 1. Every chat and build is logged (emails and long numbers are stripped), and users can rate replies Helpful / Not helpful. Errors count as negative.
-2. Once a day (Vercel Cron, 03:00 UTC) and whenever you press *Run learning now*, a free model reads recent activity and writes (a) lessons and (b) weak areas with severity.
+2. Once a day (Vercel Cron, 03:00 UTC) and whenever you press *Run learning now*, an active model reads recent activity and writes (a) lessons and (b) weak areas with severity. The learning completion uses the same `PROVIDER_ORDER` as the app: it tries up to three eligible OpenRouter models, then moves through enabled, configured fallback providers. Rate-limited OpenRouter models are cooled down, time is reserved for later providers, and malformed JSON is treated as a failed attempt so another model can try. The Admin panel records the successful model and failed attempts.
 3. **Only lessons you approve in /admin are injected into prompts.** Set `AUTO_APPROVE=true` to let its own lessons go live automatically. Lessons from other agents always wait for review.
+
+At least one fallback provider must be enabled, have valid server credentials, and appear in `PROVIDER_ORDER` for it to be used; disabled providers are never called. If every configured provider or persistent storage is unavailable, a run can still fail, and the Admin panel reports the attempted targets. SYNTHCORE currently learns prompt memory and readiness evidence—it does not fine-tune model weights. Using SYNTHCORE as the first inference model later requires an actual trained model/endpoint and a separate inference-routing integration; the readiness percentage alone does not activate one.
 
 **Learning from other agents**
 - Push: `POST /api/agents/ingest` with header `x-agent-key` and body `{"lessons":[{"topic":"...","text":"..."}]}`. Keys come from `AGENT_KEYS`.
