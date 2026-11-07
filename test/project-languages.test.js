@@ -5,14 +5,21 @@ import {
   LANGUAGE_OPTIONS,
   SOURCE_ONLY_NOTICE,
   SOURCE_PROJECTS,
+  autoProjectPrompt,
+  autoProjectRetry,
+  inferProjectMode,
   isSourceOnlyLanguage,
   languageLabel,
   languageSelectTitle,
   languageStatus,
+  normalizeLanguagePreference,
+  parseProjectMode,
+  resolveProjectMode,
   sourceProjectEntry,
   sourceProjectIssue,
   sourceProjectPrompt,
   sourceProjectRetry,
+  stripProjectModeMarker,
 } from '../lib/project-languages.js';
 
 const validProjects = {
@@ -23,14 +30,51 @@ const validProjects = {
   backend: { 'package.json': JSON.stringify({ scripts: { start: 'node server.js' } }), 'server.js': 'const http = require("node:http");', 'README.md': 'Run locally:\nnpm install\nnpm start' },
 };
 
-test('language selector keeps browser modes and exposes each source-export mode', () => {
-  assert.deepEqual(LANGUAGE_OPTIONS.map(({ value }) => value), ['web', 'typescript', 'python', 'rust', 'go', 'cpp', 'backend']);
+test('Auto is the default language preference and all supported project modes remain available', () => {
+  assert.deepEqual(LANGUAGE_OPTIONS.map(({ value }) => value), ['auto', 'web', 'typescript', 'python', 'rust', 'go', 'cpp', 'backend']);
+  assert.equal(normalizeLanguagePreference(null), 'auto');
+  assert.equal(normalizeLanguagePreference('unknown'), 'auto');
+  assert.equal(normalizeLanguagePreference('rust'), 'rust');
+  assert.equal(languageLabel('auto'), 'Auto');
+  assert.match(languageSelectTitle('auto'), /chooses one supported mode/i);
   for (const language of Object.keys(SOURCE_PROJECTS)) assert.equal(isSourceOnlyLanguage(language), true);
   assert.equal(isSourceOnlyLanguage('typescript'), false);
   assert.equal(languageLabel('backend'), 'Node.js backend');
   assert.match(languageSelectTitle('backend'), /source-only/);
   assert.match(languageStatus('cpp'), /source export only/);
   assert.match(SOURCE_ONLY_NOTICE, /does not compile, test, run, or deploy/);
+});
+
+test('Auto prompt selects one mode in the existing generation request and clearly distinguishes source-only exports', () => {
+  const prompt = autoProjectPrompt();
+  assert.match(prompt, /Choose exactly one best-fit mode/);
+  assert.match(prompt, /SYNTHCODE_MODE: <mode>/);
+  for (const mode of ['web', 'typescript', 'python', 'rust', 'go', 'cpp', 'backend']) assert.match(prompt, new RegExp(`- ${mode}:`));
+  assert.match(prompt, /does not install dependencies, compile, type-check, test, execute, host, or deploy/i);
+  assert.match(autoProjectRetry('go'), /SYNTHCODE_MODE: go/);
+  assert.match(autoProjectRetry(''), /Choose exactly one supported mode/);
+});
+
+test('Auto mode marker parsing and file inference resolve one mode conservatively', () => {
+  assert.equal(parseProjectMode('SYNTHCODE_MODE: Go\nBuilt a service.'), 'go');
+  assert.equal(parseProjectMode('SYNTHCODE_MODE: PHP\nNot supported.'), '');
+  assert.equal(parseProjectMode('A sentence first.\nSYNTHCODE_MODE: python'), '');
+  assert.equal(inferProjectMode({ 'main.py': 'print(1)' }), 'python');
+  assert.equal(inferProjectMode({ 'Cargo.toml': '[package]', 'src/main.rs': 'fn main() {}' }), 'rust');
+  assert.equal(inferProjectMode({ 'go.mod': 'module demo', 'main.go': 'package main' }), 'go');
+  assert.equal(inferProjectMode({ 'CMakeLists.txt': 'project(demo)', 'src/main.cpp': 'int main() {}' }), 'cpp');
+  assert.equal(inferProjectMode({ 'package.json': '{"scripts":{"start":"node server.js"}}', 'server.js': 'void 0;' }), 'backend');
+  assert.equal(inferProjectMode({ 'index.html': '<main/>', 'script.ts': 'document.body' }), 'typescript');
+  assert.equal(inferProjectMode({ 'index.html': '<main/>', 'script.js': 'void 0;' }), 'web');
+  assert.equal(inferProjectMode({ 'main.py': 'print(1)', 'main.go': 'package main' }), '');
+  assert.equal(resolveProjectMode('SYNTHCODE_MODE: cpp\n', { 'index.html': '<main/>' }), 'cpp');
+  assert.equal(resolveProjectMode('', { 'src/main.rs': 'fn main() {}' }), 'rust');
+});
+
+test('Auto mode marker is removed from visible output without removing the response body', () => {
+  assert.equal(stripProjectModeMarker('SYNTHCODE_MODE: rust\n\nGenerated files are ready.\n'), 'Generated files are ready.\n');
+  assert.equal(stripProjectModeMarker('SYNTHCODE_MODE:'), '');
+  assert.equal(stripProjectModeMarker('The project is ready.'), 'The project is ready.');
 });
 
 test('each source project passes validation only with its README and essential files', () => {

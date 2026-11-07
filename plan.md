@@ -6,7 +6,7 @@ The user selected **source generation/export only** for Python, Rust, Go, C++, a
 
 The project remains a Next.js application on Vercel. The existing streaming build pipeline, client-side project-file parser, Code explorer/editor, and ZIP exporter remain the source-generation path. No new API route is needed. The iframe stays reserved for Web and TypeScript browser previews.
 
-`components/Builder.js` owns language selection before a project starts, language-aware prompts/retry/validation, source-only completion state, Code-view default, and download behavior. `lib/project-languages.js` owns source-mode labels, instructions, entry selection, and essential-file validation. `lib/files.js` recognizes new language fences and file badges. `components/CapabilityBanner.js` announces the release across the landing page, workspace, and Dev Updates. `components/landing/Landing.js`, `app/page.js`, and `app/dev-updates/data.js` describe the shipped capability and boundary. Tests cover the mode registry, file formats, project validity, and public copy.
+`components/Builder.js` owns Auto and language-aware generation, validation/retry, source-only completion state, Code-view default, and download behavior. `components/BuilderLanguageSettings.js` owns the Builder-only language-preference side panel. `lib/project-languages.js` owns source-mode labels, instructions, response-mode resolution, entry selection, and essential-file validation. `lib/files.js` recognizes new language fences and file badges. `components/CapabilityBanner.js` announces the release across the landing page, workspace, and Dev Updates. `components/landing/Landing.js`, `app/page.js`, and `app/dev-updates/data.js` describe the shipped capability and boundary. Tests cover mode selection, persistence, file formats, project validity, and public copy.
 
 ## Project structure
 
@@ -27,7 +27,7 @@ After implementation, publish one combined Dev Update covering the already-added
 
 **Color philosophy:** Reuse the deep navy background and translucent panels, with cyan, blue, and violet accents for focus, progress, and capability emphasis. The existing palette includes `#05070f`, `#22d3ee`, `#4f8cff`, and `#8b5cf6`.
 
-**Layout paradigm:** Preserve SYNTHCODE's split work surface: project/history and prompt controls on one side, the Code/Preview stage on the other. Select the project mode in the composer before generation; source-only projects open directly in Code, while Preview explains the limitation and offers working navigation/download actions.
+**Layout paradigm:** Preserve SYNTHCODE's split work surface: project/history and prompt controls on one side, the Code/Preview stage on the other. Default new projects to Auto; put explicit language preferences in a Builder-only side drawer and keep an active project's selected mode stable. Source-only projects open directly in Code, while Preview explains the limitation and offers working navigation/download actions. On smaller screens, prioritize one-pane navigation, wrap toolbars and preserve touch-sized controls without horizontal overflow.
 
 **Signature elements:** Retain the subtle dotted-grid background, cyan-to-blue-to-violet gradients, and compact rounded chips/status indicators.
 
@@ -42,6 +42,14 @@ After implementation, publish one combined Dev Update covering the already-added
 **Wordmark and logo:** Reuse the existing SYNTH wordmark and mark; do not create a competing logo.
 
 **Signature brand color:** SYNTH cyan `#22d3ee`, balanced by the existing blue/violet accent gradient.
+
+## Auto language selection and SYNTHCODE settings
+
+New projects use **Auto** by default. The existing generation request asks the coding agent to choose one best-fit supported mode (Web, TypeScript, Python, Rust, Go, C++, or Node.js backend); it does not make a separate routing/model call. The response identifies its chosen mode for file validation, with a conservative file-shape fallback. Hide that protocol marker from displayed assistant copy. Keep the selected effective mode fixed for follow-up edits in the same project and preserve the existing failover and single format-retry path.
+
+Add a language-preference side drawer reachable from SYNTHCODE only. Save `auto` or a specific supported language in `localStorage`; Auto remains the default. A changed preference applies to the next new project only, not the currently open project's files or preview. Reset/New starts a clean project using the saved preference. Keep the site-wide Personalization dialog limited to its existing appearance controls.
+
+For responsiveness, retain the two-pane desktop project/history plus stage layout, switch to the existing tabbed one-pane pattern on narrow screens, and ensure the Assistant conversation and composer, Builder toolbars, project header, file explorer, and preference drawer fit common phone/tablet widths with wrapping or internal scrolling rather than horizontal page overflow. Preserve usable touch targets and keyboard-accessible controls.
 
 ## Safety and accuracy
 

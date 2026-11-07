@@ -7,13 +7,12 @@ import { assertStandaloneTypeScript } from '../lib/typescript-source.js';
 
 const builderSource = readFileSync(new URL('../components/Builder.js', import.meta.url), 'utf8');
 
-test('fresh-project welcome exposes language selection before the first build', () => {
+test('fresh-project welcome exposes language preferences in Settings before the first build', () => {
   const welcomeBranch = builderSource.split('if (welcome) {')[1]?.split("\n  return (\n    <section className={'build'")[0] || '';
-  assert.match(welcomeBranch, /aria-label="Project language"/);
-  assert.match(welcomeBranch, /value=\{language\}/);
-  assert.match(welcomeBranch, /<option value="typescript">TypeScript<\/option>/);
-  assert.match(welcomeBranch, /onChange=\{\(e\) => setLanguage\(e\.target\.value\)\}/);
-  assert.match(welcomeBranch, /disabled=\{busy \|\| hasFiles\}/);
+  assert.match(welcomeBranch, /BuilderLanguageSettings open=\{settingsOpen\}/);
+  assert.match(welcomeBranch, /LanguageSettingsButton preference=\{languagePreference\}/);
+  assert.match(welcomeBranch, /onClick=\{\(\) => setSettingsOpen\(true\)\}/);
+  assert.match(welcomeBranch, /disabled=\{!preferenceReady/);
 });
 
 test('TypeScript code fences default to script.ts and are recognized by the explorer', () => {

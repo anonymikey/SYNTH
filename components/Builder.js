@@ -5,7 +5,7 @@ import { track } from '../lib/track';
 import { withImages } from '../lib/images';
 import { useFollow } from '../lib/follow';
 import { parseFiles, mergeFiles, entryOf, bundle, filesForPrompt, makeZip, typescriptFiles, typescriptEntry } from '../lib/files';
-import { SOURCE_ONLY_NOTICE, SOURCE_PROJECTS, isSourceOnlyLanguage, languageLabel, languageSelectTitle, languageStatus, sourceProjectEntry, sourceProjectIssue, sourceProjectPrompt, sourceProjectRetry } from '../lib/project-languages';
+import { SOURCE_ONLY_NOTICE, autoProjectPrompt, autoProjectRetry, isSourceOnlyLanguage, languageLabel, languageStatus, normalizeLanguagePreference, resolveProjectMode, sourceProjectEntry, sourceProjectIssue, sourceProjectPrompt, sourceProjectRetry, stripProjectModeMarker } from '../lib/project-languages';
 import { compileTypeScript } from '../lib/typescript-client';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import VoiceInput from './VoiceInput';
@@ -14,6 +14,7 @@ import Markdown from './Markdown';
 import ToolRuns from './ToolRuns';
 import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
+import BuilderLanguageSettings, { LanguageSettingsButton } from './BuilderLanguageSettings';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
@@ -57,8 +58,10 @@ Rules:
 const IDEAS = ['Landing page for a coffee shop', 'Habit tracker with streaks', 'Pomodoro timer with sounds', 'Kanban board with drag and drop'];
 const EDITS = ['Add dark mode', 'Make it mobile friendly', 'Add smooth animations', 'Improve the colors'];
 const WIDTH = { desktop: '100%', tablet: '820px', phone: '390px' };
+const LANGUAGE_PREFERENCE_KEY = 'synthcode-language-preference-v1';
 const entryFor = (files, language) => isSourceOnlyLanguage(language) ? sourceProjectEntry(files, language) : entryOf(files);
 function projectIssue(files, language) {
+  if (language === 'auto') return 'Choose one supported project mode and include its required files.';
   if (language === 'typescript') {
     if (!entryOf(files)) return 'Include an HTML page such as index.html.';
     if (!typescriptEntry(files)) return 'Include exactly one .ts source file.';
@@ -88,7 +91,10 @@ function BuildAnswer({ text }) {
 
 export default function Builder({ seed }) {
   const [prompt, setPrompt] = useState('');
-  const [language, setLanguage] = useState('web');
+  const [language, setLanguage] = useState('auto');
+  const [languagePreference, setLanguagePreference] = useState('auto');
+  const [preferenceReady, setPreferenceReady] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [compileState, setCompileState] = useState(null);
   const [history, setHistory] = useState([]);   // { text, n, status: building | done | stopped | failed, changed: [{ path, kind }] }
   const [files, setFiles] = useState({});       // the project: { 'index.html': '...', 'css/theme.css': '...' }
@@ -122,6 +128,17 @@ export default function Builder({ seed }) {
   const noteT = useRef(null);
   const timers = useRef([]);
   const histFollow = useFollow(history);
+  useEffect(() => {
+    let saved = 'auto';
+    try { saved = normalizeLanguagePreference(window.localStorage.getItem(LANGUAGE_PREFERENCE_KEY)); } catch {}
+    setLanguagePreference(saved);
+    setLanguage(saved);
+    setPreferenceReady(true);
+  }, []);
+  useEffect(() => {
+    if (!preferenceReady) return;
+    try { window.localStorage.setItem(LANGUAGE_PREFERENCE_KEY, languagePreference); } catch {}
+  }, [languagePreference, preferenceReady]);
   useEffect(() => {
     if (pane !== 'prompt') return;
     const frame = requestAnimationFrame(() => histFollow.down(false));
@@ -184,7 +201,7 @@ export default function Builder({ seed }) {
 
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearTimeout(noteT.current); }, []);
   useEffect(() => { const t = wbox.current; if (t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; } }, [prompt]);
-  useEffect(() => { if (seed && !seeded.current) { seeded.current = true; build(seed, true); } }, [seed]);
+  useEffect(() => { if (seed && preferenceReady && !seeded.current) { seeded.current = true; build(seed, true); } }, [seed, preferenceReady]);
   useEffect(() => { if (!busy && queued && okRef.current) { const q = queued; setQueued(''); build(q); } }, [busy, queued]); // run the next request when this build finishes
   useEffect(() => {
     if (!full) return;
@@ -197,74 +214,97 @@ export default function Builder({ seed }) {
   const flash = (m) => { setNote(m); clearTimeout(noteT.current); noteT.current = setTimeout(() => setNote(''), 2200); };
   const copyText = async (t) => { try { await navigator.clipboard.writeText(t); flash('Copied'); } catch { flash('Could not copy'); } };
   const saveBuildFeedback = (id, value, feedback) => setHistory((current) => current.map((entry) => entry.id === id ? { ...entry, fb: value, feedback } : entry));
+  const changeLanguagePreference = (value) => {
+    const next = normalizeLanguagePreference(value);
+    setLanguagePreference(next);
+    if (!busy && !hasFiles && history.length === 0) setLanguage(next);
+  };
 
   async function build(override, instant, options = {}) {
     const text = (override ?? prompt).trim();
     const replaying = !!options.regeneration;
     const imgs = Array.isArray(options.images) ? [...options.images] : [...a.images];
     if (!text && !imgs.length) return;
+    if (!preferenceReady) return;
     if (busy) { setQueued(text || 'Build from the image'); setPrompt(''); return; } // the bar stays usable: this runs when the current build ends
     const first = history.length === 0 && !hasFiles;
-    const logged = (language !== 'web' ? `[${language}] ` : '') + (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
+    const requestedLanguage = language;
+    let projectLanguage = requestedLanguage === 'auto' ? '' : requestedLanguage;
+    const makeLog = (mode = '') => {
+      const tag = requestedLanguage === 'auto' ? `[auto${mode ? `:${mode}` : ''}] ` : requestedLanguage !== 'web' ? `[${requestedLanguage}] ` : '';
+      return tag + (text || 'image only') + (imgs.length ? ` [${imgs.length} image]` : '');
+    };
+    let logged = makeLog();
     const runKey = newId();
     const conversationId = projectConversation.current || (projectConversation.current = newId());
     latestBuild.current = runKey;
     skip.current = false; okRef.current = false;
     setHistory((h) => [...h, { text: text || 'Build from the image', n: imgs.length, status: 'building', clientId: runKey }]);
-    if (!replaying) { setPrompt(''); a.clear(); } setErr(''); setLive(''); setMarks({}); toolsRef.current = []; setTools([]); setBusy(true); setView(sourceOnly ? 'code' : 'preview'); setPane('preview');
+    if (!replaying) { setPrompt(''); a.clear(); } setErr(''); setLive(''); setMarks({}); toolsRef.current = []; setTools([]); setBusy(true); setView(isSourceOnlyLanguage(projectLanguage) ? 'code' : 'preview'); setPane('preview');
     if (first) {
       // Welcome screen fades out, then the build workspace fades in.
       if (instant) { setEntering(true); later(() => setEntering(false), 800); }
       else { setLeaving(true); later(() => { setLeaving(false); setEntering(true); later(() => setEntering(false), 800); }, 380); }
     }
     ctl.current = new AbortController();
-    const baseSystem = language === 'typescript' ? TYPESCRIPT_SYSTEM : sourceOnly ? sourceProjectPrompt(language) : SYSTEM;
+    const baseSystem = requestedLanguage === 'auto' ? autoProjectPrompt() : projectLanguage === 'typescript' ? TYPESCRIPT_SYSTEM : isSourceOnlyLanguage(projectLanguage) ? sourceProjectPrompt(projectLanguage) : SYSTEM;
     const system = baseSystem + (hasFiles ? `\n\nCurrent files:\n${filesForPrompt(files, selected)}` : '');
     const user = [{ role: 'user', content: withImages(text, imgs, 'Build this.') }];
     const meta = {};
     const mark = (status, changed) => { const used = toolsRef.current; setHistory((h) => h.map((x, i) => (i === h.length - 1 ? { ...x, status, tools: used, ...(changed ? { changed } : {}) } : x))); };
+    const showLive = (value) => setLive(stripProjectModeMarker(value));
     try {
-      let reply = await streamChat({ messages: user, system, mode: 'build' }, setLive, ctl.current.signal, meta, onTool);
+      let reply = await streamChat({ messages: user, system, mode: 'build' }, showLive, ctl.current.signal, meta, onTool);
       let parsed = parseFiles(reply);
       let merged = mergeFiles(files, parsed);
       let tid = meta.tid;
-      if (slipped(parsed, merged.files, language)) {
+      if (requestedLanguage === 'auto') projectLanguage = resolveProjectMode(reply, merged.files);
+      logged = makeLog(projectLanguage);
+      if (!projectLanguage || slipped(parsed, merged.files, projectLanguage)) {
         // Formatting slip: count it against that model, then retry once on the next one.
         track({ mode: 'build', prompt: logged, reply: '[FORMAT] no usable files', model: 'auto', tid: meta.tid, error: true, conversationId });
         const meta2 = {};
-        const reminder = language === 'typescript'
+        const reminder = requestedLanguage === 'auto'
+          ? autoProjectRetry(projectLanguage)
+          : projectLanguage === 'typescript'
           ? '\n\nIMPORTANT: reply with one short sentence and complete file blocks. Include index.html and exactly one TypeScript source block named script.ts (```ts file=script.ts). Keep all browser logic in script.ts, use no imports, and have index.html reference script.js.'
-          : sourceOnly
-            ? sourceProjectRetry(language)
+          : isSourceOnlyLanguage(projectLanguage)
+            ? sourceProjectRetry(projectLanguage)
             : '\n\nIMPORTANT: reply with one short sentence, then every file in its own fenced code block with the path on the opening line (for example ```html file=index.html). The project must include index.html.';
-        reply = await streamChat({ messages: user, system: system + reminder, mode: 'build', retry: true }, setLive, ctl.current.signal, meta2, onTool);
+        reply = await streamChat({ messages: user, system: system + reminder, mode: 'build', retry: true }, showLive, ctl.current.signal, meta2, onTool);
         parsed = parseFiles(reply);
         merged = mergeFiles(files, parsed);
         tid = meta2.tid;
+        if (requestedLanguage === 'auto') projectLanguage = resolveProjectMode(reply, merged.files) || projectLanguage;
+        logged = makeLog(projectLanguage);
       }
-      if (slipped(parsed, merged.files, language)) {
-        const issue = projectIssue(merged.files, language);
-        throw new Error(language === 'typescript'
-          ? `SYNTHCODE could not produce a complete TypeScript project: ${issue || 'no usable project files'}. Please try again.`
-          : sourceOnly
-            ? `SYNTHCODE could not produce a complete ${languageLabel(language)} source project: ${issue || 'no usable project files'}. Please try again.`
-            : 'SYNTHCODE could not produce a page this time. Please try again.');
+      if (!projectLanguage || slipped(parsed, merged.files, projectLanguage)) {
+        const issue = projectLanguage ? projectIssue(merged.files, projectLanguage) : '';
+        throw new Error(!projectLanguage
+          ? 'SYNTHCODE could not identify a supported project mode. Name a language in your request or choose one in Settings, then try again.'
+          : projectLanguage === 'typescript'
+            ? `SYNTHCODE could not produce a complete TypeScript project: ${issue || 'no usable project files'}. Please try again.`
+            : isSourceOnlyLanguage(projectLanguage)
+              ? `SYNTHCODE could not produce a complete ${languageLabel(projectLanguage)} source project: ${issue || 'no usable project files'}. Please try again.`
+              : 'SYNTHCODE could not produce a page this time. Please try again.');
       }
+      setLanguage(projectLanguage);
+      setView(isSourceOnlyLanguage(projectLanguage) ? 'code' : 'preview');
       setFiles(merged.files);
       setMarks(Object.fromEntries(merged.changed.filter((c) => c.kind !== 'del').map((c) => [c.path, c.kind])));
-      setSelected((s) => (s && s in merged.files ? s : entryFor(merged.files, language)));
+      setSelected((s) => (s && s in merged.files ? s : entryFor(merged.files, projectLanguage)));
       mark('done', merged.changed); okRef.current = true;
       setJustDone(true); later(() => setJustDone(false), 900);
       setBusy(false); // finished: stop the working animations right away, before the logging call returns
       const id = await track({ mode: 'build', prompt: logged, reply: `[files ${parsed.files.map((f) => f.path).join(', ')}] ` + (parsed.files[0]?.content || '').slice(0, 250), model: 'auto', tid, conversationId, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) });
-      setHistory((current) => current.map((entry) => entry.clientId === runKey ? { ...entry, reply, id, fb: 0, feedback: null, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) } : entry));
+      setHistory((current) => current.map((entry) => entry.clientId === runKey ? { ...entry, reply: stripProjectModeMarker(reply), id, fb: 0, feedback: null, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) } : entry));
       if (latestBuild.current === runKey) setLastBuildImages(imgs);
     } catch (e) {
       if (skip.current) { setBusy(false); return; } // "New" was pressed while building
       setQueued('');
       const aborted = e.name === 'AbortError';
       if (!aborted) { setErr(safeFrontendText(e.message.slice(0, 400))); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
-      if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setView(sourceOnly ? 'code' : 'preview'); } // nothing built yet: back to the welcome screen
+      if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setLanguage(languagePreference); setView(isSourceOnlyLanguage(languagePreference) ? 'code' : 'preview'); } // nothing built yet: back to the welcome screen
       else { mark(aborted ? 'stopped' : 'failed'); setLive(''); } // keep the last good project
     }
     setBusy(false);
@@ -274,7 +314,7 @@ export default function Builder({ seed }) {
 
   function reset() {
     if (busy) { skip.current = true; ctl.current?.abort(); }
-    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastBuildImages([]); projectConversation.current = ''; latestBuild.current = ''; setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false); setLanguage('web'); setCompileState(null);
+    setFiles({}); setDirs([]); setSelected(''); setMarks({}); toolsRef.current = []; setTools([]); setLive(''); setHistory([]); setErr(''); setLastBuildImages([]); projectConversation.current = ''; latestBuild.current = ''; setPane('prompt'); setPrompt(''); setQueued(''); setBusy(false); setFull(false); setView('preview'); setJustDone(false); setLanguage(languagePreference); setCompileState(null);
     a.clear();
   }
 
@@ -323,11 +363,12 @@ export default function Builder({ seed }) {
   if (welcome) {
     return (
       <section className={'bw' + (leaving ? ' leaving' : '')} {...a.dropProps}>
+        <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
         <div className="bw-scroll">
           <div className="bw-hero">
             <img className="bw-mark" src="/logo-mark.png" alt="" />
             <h2>Build or export with SYNTHCODE</h2>
-            <p>Choose a project mode, describe what you want, and keep asking for changes. Browser projects can be previewed; source projects can be exported.</p>
+            <p>Describe what you want and SYNTHCODE will choose a suitable project mode. Open Settings to set a preference; browser projects can be previewed and source projects exported.</p>
             <div className="bw-pills">
               {IDEAS.map((t, i) => <button key={t} className="bw-pill" style={{ '--i': i }} onClick={() => pick(t)}>{t}</button>)}
             </div>
@@ -344,15 +385,11 @@ export default function Builder({ seed }) {
             <div className="compose-toolbar builder-toolbar">
               <div className="toolbar-cluster">
                 <AttachButton a={a} />
-                <select className="builder-language" aria-label="Project language" title={languageSelectTitle(language)} value={language} disabled={busy || hasFiles} onChange={(e) => setLanguage(e.target.value)}>
-                  <option value="web">Web</option>
-                  <option value="typescript">TypeScript</option>
-                  {Object.entries(SOURCE_PROJECTS).map(([value, project]) => <option key={value} value={value}>{value === 'backend' ? 'Backend' : project.label}</option>)}
-                </select>
+                <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} />
               </div>
               <span className="toolbar-spacer" />
               <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
-              <button className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>{sourceOnly ? 'Generate' : 'Build'} <Arrow /></button>
+              <button className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{sourceOnly ? 'Generate' : 'Build'} <Arrow /></button>
             </div>
           </div>
           <p className={'tools' + (sourceOnly ? ' source-only-tools' : '')}><span>{sourceOnly ? SOURCE_ONLY_NOTICE : 'Enter to build, Shift+Enter for a new line. You can also paste or drop an image.'}</span></p>
@@ -363,15 +400,19 @@ export default function Builder({ seed }) {
 
   return (
     <section className={'build' + (entering ? ' enter' : '')} data-pane={pane} {...a.dropProps}>
-      <div className="seg" role="tablist">
-        <button className={pane === 'prompt' ? 'on' : ''} onClick={() => setPane('prompt')}>Describe</button>
-        <button className={pane === 'preview' ? 'on' : ''} onClick={() => setPane('preview')}>Preview</button>
+      <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
+      <div className="seg" role="group" aria-label="Workspace pane selection">
+        <button type="button" aria-pressed={pane === 'prompt'} className={pane === 'prompt' ? 'on' : ''} onClick={() => setPane('prompt')}>Describe</button>
+        <button type="button" aria-pressed={pane === 'preview'} className={pane === 'preview' ? 'on' : ''} onClick={() => setPane('preview')}>Preview</button>
       </div>
 
       <aside className="panel">
         <div className="phead">
-          <div><small>Project</small><b title={history[0]?.text}>{history[0]?.text || 'Untitled'}</b></div>
-          <span className={'status' + (busy ? ' busy' : hasFiles ? ' done' : '')}><i />{busy ? 'Building…' : hasFiles ? 'Ready' : 'Idle'}</span>
+          <div className="phead-title"><small>Project · {languageLabel(language)}</small><b title={history[0]?.text}>{history[0]?.text || 'Untitled'}</b></div>
+          <div className="phead-tools">
+            <span className={'status' + (busy ? ' busy' : hasFiles ? ' done' : '')}><i />{busy ? 'Building…' : hasFiles ? 'Ready' : 'Idle'}</span>
+            <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} iconOnly />
+          </div>
         </div>
         <div className="histwrap">
           <div className="hist" ref={histFollow.ref} onScroll={histFollow.onScroll}>
@@ -444,28 +485,24 @@ export default function Builder({ seed }) {
             <div className="toolbar-cluster">
               <AttachButton a={a} />
               <button type="button" className="toolbar-chip" onClick={reset} title="Start a new project"><Plus width="16" height="16" /><span className="toolbar-label">New</span></button>
-              <select className="builder-language" aria-label="Project language" title={`${languageSelectTitle(language)} Use New to switch after a project has started.`} value={language} disabled={busy || hasFiles} onChange={(e) => setLanguage(e.target.value)}>
-                <option value="web">Web</option>
-                <option value="typescript">TypeScript</option>
-                {Object.entries(SOURCE_PROJECTS).map(([value, project]) => <option key={value} value={value}>{value === 'backend' ? 'Backend' : project.label}</option>)}
-              </select>
             </div>
             <span className="toolbar-spacer" />
             <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} disabled={busy} />
             {busy && <button type="button" className="iconbtn sm stopbtn compose-stop" onClick={stop} aria-label="Stop build" title="Stop build"><Stop width="16" height="16" /></button>}
-            <button type="button" className="primary glow buildbtn" onClick={() => build()} disabled={!prompt.trim() && !a.images.length}>{busy ? 'Queue' : sourceOnly ? 'Generate' : 'Build'} <Arrow width="16" height="16" /></button>
+            <button type="button" className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{busy ? 'Queue' : sourceOnly ? 'Generate' : 'Build'} <Arrow width="16" height="16" /></button>
           </div>
         </div>
       </aside>
 
       <div className="stage panel">
         <div className="stagebar">
-          <div className="tabs" role="tablist">
-            <button role="tab" aria-selected={view === 'preview'} className={view === 'preview' ? 'on' : ''} onClick={() => setView('preview')}><Globe width="16" height="16" />Preview</button>
-            <button role="tab" aria-selected={view === 'code'} className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}><Build width="16" height="16" />Code</button>
+          <div className="tabs" role="group" aria-label="Project view">
+            <button type="button" aria-pressed={view === 'preview'} className={view === 'preview' ? 'on' : ''} onClick={() => setView('preview')}><Globe width="16" height="16" />Preview</button>
+            <button type="button" aria-pressed={view === 'code'} className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}><Build width="16" height="16" />Code</button>
             {busy && <span className="busytag"><i />{using ? 'using ' + using.label : <WordCycle />}…</span>}
           </div>
           <div className="actions" role="toolbar" aria-label="Page actions">
+            <div className="builder-stage-settings"><LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} iconOnly /></div>
             {!sourceOnly && <div className="devs">
               {[['desktop', Monitor], ['tablet', Tablet], ['phone', Phone]].map(([k, Ic]) => (
                 <button key={k} className={'iconbtn sm' + (dev === k ? ' on' : '')} onClick={() => setDev(k)} aria-label={k + ' width'} title={k}><Ic /></button>

@@ -12,3 +12,15 @@
 - [x] Add one Dev Update covering the TypeScript preview and the Python, Rust, Go, C++, and Node.js backend source-export modes together, with the not-compiled/tested/run/deployed limitation stated explicitly.
 - [x] Update the SYNTHCODE workspace and landing-page capability banners to describe the same supported modes and limitations. Keep the copy responsive and branded, preserve the release-notes link on mobile, and increment the local dismissal key so users who dismissed the previous announcement can see this release once.
 - [x] Update landing-page FAQ and metadata where needed so they distinguish browser previews from source-only exports and do not imply live backend execution.
+
+## Auto language selection and SYNTHCODE-only preferences
+
+- [x] Default new SYNTHCODE projects to Auto and let the existing generation agent choose the best supported output mode for the request: Web, TypeScript, Python, Rust, Go, C++, or Node.js backend. Keep language choice within the current generation/failover path—no separate routing-model call.
+- [x] Add a language-preference settings side panel inside SYNTHCODE only. Let users keep Auto or select an explicit supported language; persist the preference locally. A changed preference applies to new projects only, while edits to an open project preserve its original effective language. New/Reset starts a clean project using the saved preference.
+- [x] Resolve the agent's selected mode safely, validate generated files against that mode, hide the internal mode marker from user-visible output, and preserve one bounded formatting retry plus existing provider failover. Keep Web/TypeScript browser-preview behavior and source-only limits for Python/Rust/Go/C++/Node.js backend projects.
+
+## Responsive workspaces
+
+- [x] Organize SYNTH Assistant and SYNTHCODE at desktop, tablet, and phone widths. Keep content and controls within the viewport, allow long messages/files to wrap or scroll inside their pane, and prevent horizontal page overflow.
+- [x] Keep Assistant conversation, response actions, image/voice controls and composer readable and touch-usable on small screens.
+- [x] Keep Builder project/history, mode/settings access, composer controls, preview/code tabs, file explorer and download/share actions orderly on small screens. Make the settings drawer accessible from both Describe and Preview/Code panes, fit the viewport, and remain keyboard-accessible; preserve the desktop split-pane experience.
