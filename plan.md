@@ -51,6 +51,12 @@ Add a language-preference side drawer reachable from SYNTHCODE only. Save `auto`
 
 For responsiveness, retain the two-pane desktop project/history plus stage layout, switch to the existing tabbed one-pane pattern on narrow screens, and ensure the Assistant conversation and composer, Builder toolbars, project header, file explorer, and preference drawer fit common phone/tablet widths with wrapping or internal scrolling rather than horizontal page overflow. Preserve usable touch targets and keyboard-accessible controls.
 
+## SYNTH Assistant welcome presentation
+
+Reuse `components/Chat.js` and the existing Assistant shell; do not add routes, providers, dependencies, or parallel chat state. For an empty conversation, arrange the existing SYNTH logo, concise branded heading and guidance, the same working message composer, then the existing actionable starter prompts in a calm, centered vertical hierarchy. When messages exist, keep the composer docked at the bottom of the Assistant workspace and preserve the current message log, response actions, tool runs, clear-chat behavior and error handling.
+
+Keep SYNTH's dark atmospheric background, glass panels, cyan/blue/violet accents, logo, and overlay sidebar behavior. Refine spacing and microcopy without reproducing another product's complete visual identity or adding nonfunctional controls. Preserve attachments, paste/drop images, voice input, image generation, disclosure copy and seed-prompt handoff. At desktop, tablet and phone widths, let the empty view breathe while keeping its composer and prompt suggestions usable; permit internal vertical scrolling on short screens and prevent horizontal page overflow.
+
 ## Safety and accuracy
 
 Never execute generated source or dependencies in the Next.js application, Vercel functions, or the browser preview. Do not describe source generation as compilation, testing, execution, hosting, or deployment. Python/Rust/Go/C++/Node.js backend exports include appropriate source/build/dependency files and local run instructions, but SYNTHCODE does not verify those instructions. TypeScript only transpiles a single `.ts` file for the existing browser preview; it does not type-check or resolve packages.

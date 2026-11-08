@@ -1045,3 +1045,52 @@ html[data-theme="light"] .build-answer,html[data-theme="system"] .build-answer{b
   .build[data-pane=prompt] .stage{display:none}
   .build[data-pane=preview] aside.panel{display:none}
 }
+
+
+/* SYNTH Assistant welcome: retain the dark glass workspace while giving the empty state a calm, centered hierarchy. */
+.chat.chat-empty{max-width:1000px;padding:0 clamp(14px,3vw,30px) calc(10px + env(safe-area-inset-bottom))}
+.chat-empty .log.welcome-log{justify-content:flex-start;gap:0;padding:16px 0 22px;overscroll-behavior:contain}
+.chat-empty .welcome{display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;width:min(100%,880px);max-width:880px;margin:auto;padding:clamp(16px,3vh,30px) 0 22px}
+.chat-empty .welcome-logo{width:clamp(104px,11vw,140px);max-width:40%;height:auto;margin:0 auto 14px;filter:drop-shadow(0 0 30px rgba(79,140,255,.42))}
+.chat-empty .welcome h2{margin:0 0 9px;text-align:center;font-size:clamp(29px,3.2vw,38px)}
+.chat-empty .welcome-copy{max-width:540px;margin:0 auto;color:var(--muted);font-size:15px;line-height:1.55;text-align:center}
+.chat-empty .welcome-composer{width:min(100%,860px);margin:28px auto 0;text-align:left}
+.chat-empty .welcome-composer .tools{justify-content:center;text-align:center}
+.chat-empty .welcome-composer .tools>span{display:block;max-width:700px}
+.chat-empty .welcome-starters{width:min(100%,860px);margin:20px auto 0}
+.chat-empty .welcome-starters h3{margin:0 0 9px;color:var(--muted);font:600 12px/1.3 var(--head);letter-spacing:.07em;text-align:left;text-transform:uppercase}
+.chat-empty .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.chat-empty .chip{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:50px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.035);line-height:1.35;text-align:left;white-space:normal}
+.chat-empty .chip:hover:not(:disabled){border-color:var(--line2);background:rgba(255,255,255,.075);box-shadow:0 0 20px rgba(79,140,255,.15)}
+@media(max-width:900px){
+  .chat-empty .log.welcome-log{padding:8px 0 calc(14px + env(safe-area-inset-bottom))}
+  .chat-empty .welcome{padding:clamp(12px,3vh,22px) 0}
+  .chat-empty .welcome-logo{width:clamp(88px,17vw,126px);margin-bottom:12px}
+  .chat-empty .welcome-composer{margin-top:22px}
+  .chat-empty .welcome-starters{margin-top:16px}
+}
+@media(max-width:560px){
+  .chat.chat-empty{padding-right:12px;padding-left:12px}
+  .chat-empty .welcome-logo{width:84px;max-width:40%;margin-bottom:8px}
+  .chat-empty .welcome h2{margin-bottom:6px;font-size:clamp(25px,7vw,31px)}
+  .chat-empty .welcome-copy{font-size:13.5px}
+  .chat-empty .welcome-composer{margin-top:14px}
+  .chat-empty .welcome-starters{margin-top:12px}
+  .chat-empty .chips{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .chat-empty .chip{min-height:44px;padding:10px 13px;font-size:13px}
+}
+@media(max-width:380px){
+  .chat-empty .welcome{padding-top:8px;padding-bottom:10px}
+  .chat-empty .welcome-logo{width:54px;margin-bottom:2px}
+  .chat-empty .welcome h2{margin-bottom:4px;font-size:23px}
+  .chat-empty .welcome-composer{margin-top:8px}
+  .chat-empty .welcome-starters{margin-top:12px}
+  .chat-empty .chips{grid-template-columns:1fr}
+}
+@media(max-height:650px) and (max-width:900px){
+  .chat-empty .log.welcome-log{padding-top:6px}
+  .chat-empty .welcome{padding-top:8px;padding-bottom:12px}
+  .chat-empty .welcome-logo{width:70px;margin-bottom:6px}
+  .chat-empty .welcome-composer{margin-top:14px}
+  .chat-empty .welcome-starters{margin-top:12px}
+}

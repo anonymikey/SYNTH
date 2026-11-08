@@ -24,3 +24,10 @@
 - [x] Organize SYNTH Assistant and SYNTHCODE at desktop, tablet, and phone widths. Keep content and controls within the viewport, allow long messages/files to wrap or scroll inside their pane, and prevent horizontal page overflow.
 - [x] Keep Assistant conversation, response actions, image/voice controls and composer readable and touch-usable on small screens.
 - [x] Keep Builder project/history, mode/settings access, composer controls, preview/code tabs, file explorer and download/share actions orderly on small screens. Make the settings drawer accessible from both Describe and Preview/Code panes, fit the viewport, and remain keyboard-accessible; preserve the desktop split-pane experience.
+
+## SYNTH Assistant welcome layout
+
+- [x] Reorganize the empty SYNTH AI Assistant state to align spacing and wording with the supplied reference: keep the SYNTH logo visible on the welcome surface and use a clear hierarchy of concise headline/copy, the working composer and actionable prompt suggestions.
+- [x] Preserve SYNTH's dark atmospheric style, glass surfaces, colors and overlay sidebar behavior; do not copy another product's full visual identity or branding.
+- [x] Keep existing content and functionality: attachment/paste/drop, voice input, image generation, seed prompts, conversation history, response toolbar, tool runs, clear chat, errors and the connected-service privacy note must continue to work. The composer returns to the workspace footer once a conversation starts.
+- [x] Keep the welcome state and active conversation orderly on desktop, tablet and phone. Avoid horizontal page overflow; allow internal vertical scrolling when the prompt/composer/suggestions exceed a short viewport and keep controls touch-usable.
