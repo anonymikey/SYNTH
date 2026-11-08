@@ -31,3 +31,10 @@
 - [x] Preserve SYNTH's dark atmospheric style, glass surfaces, colors and overlay sidebar behavior; do not copy another product's full visual identity or branding.
 - [x] Keep existing content and functionality: attachment/paste/drop, voice input, image generation, seed prompts, conversation history, response toolbar, tool runs, clear chat, errors and the connected-service privacy note must continue to work. The composer returns to the workspace footer once a conversation starts.
 - [x] Keep the welcome state and active conversation orderly on desktop, tablet and phone. Avoid horizontal page overflow; allow internal vertical scrolling when the prompt/composer/suggestions exceed a short viewport and keep controls touch-usable.
+
+## Assistant response formatting and website sources
+
+- [x] Render valid Markdown headings, unordered/ordered lists, paragraphs, inline emphasis/code/links, blockquotes and fenced code as formatted content instead of showing heading hashes or list markers as raw characters; keep ordinary literal hash characters as content.
+- [x] Carry structured source metadata only from website-search and page-reader tool results through the existing assistant stream to the answer that used those tools. Keep it bounded, deduplicated, HTTP(S)-only, response-scoped and safe to render; do not persist it or expose provider identifiers.
+- [x] Add an accessible per-response Sources disclosure with compact source previews (title, website/host and excerpt) and an explicit safe external link. Keep the existing response toolbar and tool activity; improve expanded website-tool results so visitors can review source previews without a wall of raw URL text.
+- [x] Keep the new formatting and source-review UI readable and usable on desktop, tablet and phone, within SYNTH's existing dark-glass visual style.

@@ -1,4 +1,5 @@
 import { Check, Close, Wrench } from '../lib/icons';
+import { SourceCards } from './SourcePreview';
 
 const first = (input) => { const v = Object.values(input || {}).find((x) => typeof x === 'string' || typeof x === 'number'); return v === undefined ? '' : String(v); };
 
@@ -19,7 +20,7 @@ export default function ToolRuns({ tools, compact }) {
           <div className="tbody">
             <small>Input</small>
             <pre>{JSON.stringify(t.input || {}, null, 2)}</pre>
-            {t.state === 'done' && (<><small>{t.summary || 'Result'}</small><pre>{t.preview}</pre></>)}
+            {t.state === 'done' && (<><small>{t.summary || 'Result'}</small>{t.sources?.length ? <SourceCards sources={t.sources} /> : <pre>{t.preview}</pre>}</>)}
             {t.state === 'error' && <p className="terr">{t.error}</p>}
           </div>
         </details>

@@ -55,6 +55,8 @@ export async function POST(req) {
   const r = tools.length
     ? await agentResponse({ mode: m, task, hasImg, payload, tools, userText: textOf(lastUser?.content) })
     : await route({ mode: m, task, hasImg, payload, retry: retry === true });
+  // The agent's existing SSE stream carries tool events intact, including bounded website-source metadata.
+  // Sources stay in active response state and are not included in the separate activity-history text.
   if (r.ok) return new Response(r.stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', 'x-synth-tid': r.tid } });
   return new Response(
     hasImg && r.noTargets

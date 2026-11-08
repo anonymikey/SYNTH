@@ -1,16 +1,6 @@
 'use client';
 import { useState } from 'react';
-
-function inline(t) {
-  return t.split(/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g).map((p, i) => {
-    if (!p) return null;
-    if (p.length > 2 && p.startsWith('`') && p.endsWith('`')) return <code key={i}>{p.slice(1, -1)}</code>;
-    if (p.length > 4 && p.startsWith('**') && p.endsWith('**')) return <strong key={i}>{p.slice(2, -2)}</strong>;
-    const m = p.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
-    if (m) return <a key={i} href={m[2]} target="_blank" rel="noopener noreferrer">{m[1]}</a>;
-    return p;
-  });
-}
+import { parseMarkdown } from '../lib/markdown';
 
 function Code({ lang, code }) {
   const [ok, setOk] = useState(false);
@@ -23,27 +13,35 @@ function Code({ lang, code }) {
   );
 }
 
-export default function Markdown({ text }) {
-  const out = [];
-  let k = 0, last = 0, m;
-  const block = (s) => s.split(/\n{2,}/).forEach((par) => {
-    const lines = par.split('\n').filter((l) => l.trim());
-    if (!lines.length) return;
-    if (lines.every((l) => /^\s*[-*]\s+/.test(l))) out.push(<ul key={k++}>{lines.map((l, i) => <li key={i}>{inline(l.replace(/^\s*[-*]\s+/, ''))}</li>)}</ul>);
-    else if (lines.every((l) => /^\s*\d+[.)]\s+/.test(l))) out.push(<ol key={k++}>{lines.map((l, i) => <li key={i}>{inline(l.replace(/^\s*\d+[.)]\s+/, ''))}</li>)}</ol>);
-    else {
-      const h = lines.length === 1 && lines[0].match(/^#{1,4}\s+(.*)/);
-      if (h) out.push(<h4 key={k++}>{inline(h[1])}</h4>);
-      else out.push(<p key={k++}>{lines.map((l, i) => <span key={i}>{i > 0 && <br />}{inline(l)}</span>)}</p>);
-    }
+function Inline({ items }) {
+  return items.map((part, index) => {
+    const children = part.children ? <Inline items={part.children} /> : part.value;
+    if (part.type === 'code') return <code key={index}>{part.value}</code>;
+    if (part.type === 'strong') return <strong key={index}>{children}</strong>;
+    if (part.type === 'em') return <em key={index}>{children}</em>;
+    if (part.type === 'del') return <del key={index}>{children}</del>;
+    if (part.type === 'link') return <a key={index} href={part.href} target="_blank" rel="noopener noreferrer">{children}</a>;
+    return <span key={index}>{part.value}</span>;
   });
-  const re = /```(\w*)[^\n]*\n([\s\S]*?)(```|$)/g;
-  while ((m = re.exec(text))) {
-    block(text.slice(last, m.index));
-    out.push(<Code key={k++} lang={m[1]} code={m[2].replace(/\n$/, '')} />);
-    last = m.index + m[0].length;
-    if (m[3] === '') break;
-  }
-  block(text.slice(last));
-  return <div className="md">{out}</div>;
+}
+
+export default function Markdown({ text }) {
+  return (
+    <div className="md">
+      {parseMarkdown(text).map((block, index) => {
+        if (block.type === 'code') return <Code key={index} lang={block.language} code={block.value} />;
+        if (block.type === 'heading') {
+          const Tag = `h${block.level}`;
+          return <Tag key={index}><Inline items={block.content} /></Tag>;
+        }
+        if (block.type === 'list') {
+          const Tag = block.ordered ? 'ol' : 'ul';
+          return <Tag key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}><Inline items={item} /></li>)}</Tag>;
+        }
+        if (block.type === 'quote') return <blockquote key={index}>{block.lines.map((line, lineIndex) => <p key={lineIndex}><Inline items={line} /></p>)}</blockquote>;
+        if (block.type === 'hr') return <hr key={index} />;
+        return <p key={index}>{block.lines.map((line, lineIndex) => <span key={lineIndex}>{lineIndex > 0 && <br />}<Inline items={line} /></span>)}</p>;
+      })}
+    </div>
+  );
 }

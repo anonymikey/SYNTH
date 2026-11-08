@@ -57,6 +57,14 @@ Reuse `components/Chat.js` and the existing Assistant shell; do not add routes, 
 
 Keep SYNTH's dark atmospheric background, glass panels, cyan/blue/violet accents, logo, and overlay sidebar behavior. Refine spacing and microcopy without reproducing another product's complete visual identity or adding nonfunctional controls. Preserve attachments, paste/drop images, voice input, image generation, disclosure copy and seed-prompt handoff. At desktop, tablet and phone widths, let the empty view breathe while keeping its composer and prompt suggestions usable; permit internal vertical scrolling on short screens and prevent horizontal page overflow.
 
+## Assistant Markdown and website sources
+
+Make `components/Markdown.js` parse headings and list markers per line/block so valid Markdown such as `###` headings and `*`/`-` lists render as styled elements instead of literal punctuation. Preserve code fences, inline code, emphasis, links and safe plain-text rendering.
+
+Carry bounded, structured metadata from the existing public web-search and page-reader tools through their current tool events to the answer that used them. Show one per-response **Sources** disclosure with deduplicated source cards containing the page title, host, short excerpt and an explicit external link. Keep this response-scoped in client state; do not persist source results or add provider-specific APIs. Replace raw multi-line search text in expanded website tool rows with the same safe source-preview presentation when metadata is available. Reject unsafe/non-HTTP(S) links, escape untrusted titles/snippets, and do not load third-party favicons.
+
+UX reference research: [OpenAI ChatGPT Search help](https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt) describes clickable citations, desktop previews and a Sources panel below an answer; [OpenAI's search introduction](https://openai.com/index/introducing-chatgpt-search/) describes opening the Sources control to a sidebar; [Google Gemini source help](https://support.google.com/gemini/answer/14143489?hl=en) describes citations inline or a Sources control that opens a right-side panel. Adopt the discoverable per-answer source control, compact previews and explicit original links, while retaining SYNTH's own dark glass visual system.
+
 ## Safety and accuracy
 
 Never execute generated source or dependencies in the Next.js application, Vercel functions, or the browser preview. Do not describe source generation as compilation, testing, execution, hosting, or deployment. Python/Rust/Go/C++/Node.js backend exports include appropriate source/build/dependency files and local run instructions, but SYNTHCODE does not verify those instructions. TypeScript only transpiles a single `.ts` file for the existing browser preview; it does not type-check or resolve packages.
