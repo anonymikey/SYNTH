@@ -1,1 +1,36 @@
-{ "crons": [{ "path": "/api/cron/learn", "schedule": "0 3 * * *" }] }
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/learn",
+      "schedule": "0 3 * * *"
+    }
+  ],
+  "services": {
+    "synth_frontend": {
+      "root": ".",
+      "framework": "nextjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "agent_reach",
+          "format": "url",
+          "env": "AGENT_REACH_URL"
+        }
+      ]
+    },
+    "agent_reach": {
+      "root": "services/agent_reach",
+      "framework": "fastapi",
+      "entrypoint": "app:app"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "synth_frontend"
+      }
+    }
+  ]
+}

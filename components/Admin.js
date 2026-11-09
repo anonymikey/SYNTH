@@ -80,7 +80,7 @@ export default function Admin() {
         <button className="primary" disabled={busy} onClick={learn}>{busy ? 'Learning…' : 'Run learning now'}</button>
       </header>
       <div className="health">
-        {[['Storage', d.health.storage], ['Scheduled learning', d.health.cron]].map(([n, ok]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? 'OK' : 'Missing'}</span>)}
+        {[['Storage', d.health.storage, 'OK'], ['Cron authorization', d.health.cron, 'Configured']].map(([n, ok, ready]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? ready : 'Missing'}</span>)}
         <span className={'pill ' + d.providers.openrouter.tone}>{providerLabel('openrouter')}: {d.providers.openrouter.label}</span>
         <span className={'pill ' + d.providers.spark.tone}>{providerLabel('spark')}: {d.providers.spark.label}</span>
         <span className={'pill ' + d.providers.cloudflare.tone}>{providerLabel('cloudflare')}: {d.providers.cloudflare.label}</span>

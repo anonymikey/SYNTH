@@ -32,9 +32,23 @@
 - [x] Keep existing content and functionality: attachment/paste/drop, voice input, image generation, seed prompts, conversation history, response toolbar, tool runs, clear chat, errors and the connected-service privacy note must continue to work. The composer returns to the workspace footer once a conversation starts.
 - [x] Keep the welcome state and active conversation orderly on desktop, tablet and phone. Avoid horizontal page overflow; allow internal vertical scrolling when the prompt/composer/suggestions exceed a short viewport and keep controls touch-usable.
 
+- [x] Configure the pinned Agent-Reach v1.6.1 Python service behind a private Vercel Services binding from the existing Next.js frontend. Keep public routes on Next.js, preserve the existing cron schedule and leave the Python worker without a public route.
+- [x] Expose only unauthenticated public GitHub search/read and YouTube search/read/subtitle actions through SYNTH's existing shared tool registry, available to both Assistant and SYNTHCODE. Retain SYNTH's existing web search and page reader; do not enable Agent-Reach web, Whisper transcription, login-gated or experimental channels.
+- [x] Keep the integration read-only and credential-free: accept only the approved channel/action/parameter allowlist, use an empty temporary service home, never use or return account cookies/tokens, bound source text/results, enforce strict timeouts, and return generic failures for rate limits/challenges/unavailable services.
+- [x] Carry safe, bounded GitHub/YouTube title, host, excerpt and HTTP(S) link metadata through the existing tool events to the response Sources disclosure and compact tool activity preview, without persisting source content or displaying Agent-Reach/backend identifiers.
+- [ ] Before production release, verify a Vercel Preview builds both services, injects `AGENT_REACH_URL`, and preserves the existing `/api/cron/learn` behavior.
+
+- [x] Continue through configured learning providers/models on timeout, HTTP errors, malformed responses or failed output validation. If all attempts fail, save the failure and attempt details and retain the interaction evidence for a later run; do not add lessons from an invalid analysis.
+- [x] Honor rate-limit `Retry-After` values in delay-seconds and HTTP-date form with a bounded cooldown, and skip OpenRouter models already cooling when no healthy candidates remain so the next configured service gets the remaining budget.
+- [x] Label the Learning Studio status based on `CRON_SECRET` as cron authorization readiness, not successful scheduled training; keep the latest run's actual success/failure shown separately.
+- [x] Persist provider/model cooldown timestamps in shared storage with expiry so a fresh serverless instance does not immediately retry a rate-limited target; never store provider credentials or raw error bodies.
+- [x] Make `/api/cron/learn` return a non-2xx status when the analysis fails, while leaving the detailed result in Learning Studio; keep successful and no-op runs successful.
+- [x] Bound shared cooldown-storage reads/writes and keep them best-effort so a stalled Redis request cannot delay provider failover.
+- [x] Require complete `lessons` and `weak_areas` arrays and validate each retained model-generated entry before treating analysis as successful.
+
 ## Assistant response formatting and website sources
 
 - [x] Render valid Markdown headings, unordered/ordered lists, paragraphs, inline emphasis/code/links, blockquotes and fenced code as formatted content instead of showing heading hashes or list markers as raw characters; keep ordinary literal hash characters as content.
-- [x] Carry structured source metadata only from website-search and page-reader tool results through the existing assistant stream to the answer that used those tools. Keep it bounded, deduplicated, HTTP(S)-only, response-scoped and safe to render; do not persist it or expose provider identifiers.
+- [x] Carry structured source metadata from website-search/page-reader and approved public GitHub/YouTube results through the existing Assistant and SYNTHCODE tool events to the response that used them. Keep it bounded, deduplicated, HTTPS-only, response-scoped and safe to render; do not add it to server-side activity/training records or expose backend identifiers.
 - [x] Add an accessible per-response Sources disclosure with compact source previews (title, website/host and excerpt) and an explicit safe external link. Keep the existing response toolbar and tool activity; improve expanded website-tool results so visitors can review source previews without a wall of raw URL text.
 - [x] Keep the new formatting and source-review UI readable and usable on desktop, tablet and phone, within SYNTH's existing dark-glass visual style.

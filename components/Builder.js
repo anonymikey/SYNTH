@@ -12,12 +12,15 @@ import VoiceInput from './VoiceInput';
 import ResponseToolbar from './ResponseToolbar';
 import Markdown from './Markdown';
 import ToolRuns from './ToolRuns';
+import SourcesDisclosure from './SourcePreview';
 import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
 import BuilderLanguageSettings, { LanguageSettingsButton } from './BuilderLanguageSettings';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
+
+const sourcesFromTools = (toolRuns) => (Array.isArray(toolRuns) ? toolRuns : []).flatMap((tool) => Array.isArray(tool?.sources) ? tool.sources : []);
 
 const SYSTEM = `You are SYNTHCODE, a coding agent that builds small web apps as a project of files.
 Reply with one short sentence, then every file you create or change, each in its own fenced code block with the path on the opening line:
@@ -422,7 +425,7 @@ export default function Builder({ seed }) {
                 {history.slice(0, -1).map((h, i) => (
                   <div key={h.clientId || i} className="earlier-response">
                     <button className="eprev" onClick={() => pick(h.text)} title="Use this request as a starting point"><i className={'sdot ' + h.status} />{h.text}</button>
-                    {h.reply && <><BuildAnswer text={h.reply} /><ResponseToolbar key={h.id || h.clientId || i} id={h.id} response={h.reply} messageKey={h.clientId || h.id || i} initialRating={h.fb || 0} initialFeedback={h.feedback} disabled={busy} showRegenerate={false} onFeedbackSaved={saveBuildFeedback} /></>}
+                    {h.reply && <><BuildAnswer text={h.reply} /><SourcesDisclosure sources={sourcesFromTools(h.tools)} /><ResponseToolbar key={h.id || h.clientId || i} id={h.id} response={h.reply} messageKey={h.clientId || h.id || i} initialRating={h.fb || 0} initialFeedback={h.feedback} disabled={busy} showRegenerate={false} onFeedbackSaved={saveBuildFeedback} /></>}
                   </div>
                 ))}
               </details>
@@ -432,6 +435,7 @@ export default function Builder({ seed }) {
                 <small>Last request</small>
                 <p>{last.text}{last.n > 0 && ` (+${last.n} image${last.n > 1 ? 's' : ''})`}</p>
                 <ToolRuns tools={last.status === 'building' ? tools : last.tools} compact />
+                <SourcesDisclosure sources={sourcesFromTools(last.status === 'building' ? tools : last.tools)} />
                 {last.changed && last.changed.length > 0 && (
                   <div className="lr-files" aria-label="Files changed by this request">
                     {last.changed.slice(0, 8).map((c) => (

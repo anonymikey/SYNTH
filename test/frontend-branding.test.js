@@ -31,6 +31,13 @@ test('dynamic frontend diagnostics redact providers, model IDs, credentials and 
   assert.match(rendered, /credential hidden/);
 });
 
+test('Learning Studio describes cron authorization separately from the latest learning result', () => {
+  const adminUi = readFileSync(new URL('../components/Admin.js', import.meta.url), 'utf8');
+  assert.match(adminUi, /\['Cron authorization', d\.health\.cron, 'Configured'\]/);
+  assert.doesNotMatch(adminUi, /\['Scheduled learning', d\.health\.cron\]/);
+  assert.match(adminUi, /Latest learning run needs attention/);
+});
+
 test('public pages use SYNTH branding instead of exposing service names', () => {
   const files = [
     '../components/Chat.js',

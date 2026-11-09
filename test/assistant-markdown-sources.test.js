@@ -69,10 +69,12 @@ test('website sources flow through the existing SSE events into the answer discl
   const route = read('../app/api/chat/route.js');
   const css = read('../app/globals.css');
   assert.match(tools, /Array\.isArray\(out\.sources\)/);
-  assert.match(agent, /mode === 'chat' && \(c\.tool === 'web#search' \|\| c\.tool === 'web#read'\)/);
+  assert.match(tools, /id: 'github#search'/);
+  assert.match(agent, /const sources = sanitizeSources\(r\.sources, 8\)/);
   assert.match(agent, /\.\.\.\(sources\.length \? \{ sources \} : \{\}\)/);
   assert.match(stream, /onEvent\(j\.synth\)/);
   assert.match(chat, /<SourcesDisclosure sources=\{message\.tools/);
+  assert.match(chat, /tool\.sources\?\.length/);
   assert.match(toolRuns, /t\.sources\?\.length \? <SourceCards/);
   assert.match(route, /new Response\(r\.stream/);
   assert.match(chat, /reply: full/);

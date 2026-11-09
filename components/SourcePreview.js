@@ -30,7 +30,7 @@ export default function SourcesDisclosure({ sources }) {
         <svg className="sources-disclosure-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
       </summary>
       <div className="sources-disclosure-body">
-        <p className="sources-disclosure-note">Website sources used for this answer</p>
+        <p className="sources-disclosure-note">Sources used for this response</p>
         <SourceCards sources={items} />
       </div>
     </details>
