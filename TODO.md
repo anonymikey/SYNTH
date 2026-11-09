@@ -46,6 +46,14 @@
 - [x] Bound shared cooldown-storage reads/writes and keep them best-effort so a stalled Redis request cannot delay provider failover.
 - [x] Require complete `lessons` and `weak_areas` arrays and validate each retained model-generated entry before treating analysis as successful.
 
+## Settings tabs and notification preferences
+
+- [x] Keep the existing sidebar **Settings** button and dialog, organized into two accessible tabs named exactly **Personalization** and **Notification**. Preserve all current appearance choices and their existing local-storage behavior in Personalization.
+- [x] In Notification, let each user opt in through an explicit browser-permission button and choose whether to notify for completed Assistant tasks, completed SYNTHCODE builds, and (optionally) failed tasks. Let users separately control the favicon dot and notification sounds; save preferences in this browser and provide graceful guidance for unsupported or denied browser notifications.
+- [x] When an enabled task completes while the SYNTH workspace tab is hidden, show a generic browser notification only if permission has been granted. Do not expose prompts, responses, files, images or backend/model names in notification text. Clear the favicon dot when the user returns or acknowledges the notice; do not alter normal task behavior when notifications are unavailable.
+- [x] Provide distinct, previewable sound choices per task. Allow the authenticated Learning Studio admin to set safe workspace default sounds for Assistant and SYNTHCODE; users may override defaults in their own Notification settings. Validate sound IDs and use generated Web Audio tones rather than loading arbitrary audio files.
+- [x] Keep the notification settings and tab controls readable, keyboard-accessible and responsive on desktop, tablet and phone. Clearly explain that task notifications require the SYNTH page to remain loaded; do not imply browser-closed/Web Push delivery.
+
 ## Assistant response formatting and website sources
 
 - [x] Render valid Markdown headings, unordered/ordered lists, paragraphs, inline emphasis/code/links, blockquotes and fenced code as formatted content instead of showing heading hashes or list markers as raw characters; keep ordinary literal hash characters as content.

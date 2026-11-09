@@ -12,6 +12,7 @@ import SourcesDisclosure from './SourcePreview';
 import { useFollow } from '../lib/follow';
 import { Up, Stop, ArrowDown, Img } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
+import { reportTaskNotification } from '../lib/notifications';
 
 const SYSTEM = `You are SYNTH ASSISTANT: clear, concise and honest. Use Markdown (short paragraphs, lists, fenced code blocks with a language) when it helps.
 When the user shares images: look closely, describe what is actually visible, transcribe any text exactly, read charts and tables carefully, and say so when something is unclear or cut off instead of guessing.`;
@@ -56,6 +57,8 @@ export default function Chat({ seed }) {
     setBusy(true); setErr(''); follow.down(false);
     const runId = ++sequence.current;
     const clientId = newId();
+    let taskState = 'failed';
+    reportTaskNotification(clientId, 'assistant', 'started');
     const expectedClientId = original?.clientId;
     const meta = {};
     let tools = [], latest = '';
@@ -87,7 +90,9 @@ export default function Chat({ seed }) {
         conversationId: getConversationId(), ...(original?.id ? { regeneratedFrom: original.id } : {}),
       });
       patchTarget({ id: eventId, complete: true, regenerating: false, fb: 0, feedback: null, ...(original?.id ? { regeneratedFrom: original.id } : {}) });
+      taskState = 'completed';
     } catch (error) {
+      taskState = error.name === 'AbortError' ? 'stopped' : 'failed';
       if (runId === sequence.current) {
         if (error.name === 'AbortError') {
           if (replaceIndex != null && original) {
@@ -105,6 +110,7 @@ export default function Chat({ seed }) {
         }
       }
     } finally {
+      reportTaskNotification(clientId, 'assistant', taskState);
       if (runId === sequence.current) {
         busyRef.current = false; setBusy(false); ctl.current = null;
       }
@@ -138,6 +144,8 @@ export default function Chat({ seed }) {
     mediaBusyRef.current = true; setMediaBusy(true); setErr(''); setImageMode(false); follow.down(false);
     const runId = ++sequence.current;
     const clientId = newId();
+    let taskState = 'failed';
+    reportTaskNotification(clientId, 'assistant', 'started');
     const expectedClientId = original?.clientId;
     const transcript = next || msgs;
     const ctlr = new AbortController();
@@ -160,13 +168,16 @@ export default function Chat({ seed }) {
         if (current[replaceIndex]?.clientId !== clientId) return current;
         const updated = current.slice(); updated[replaceIndex] = done; return updated;
       });
+      taskState = 'completed';
     } catch (error) {
+      taskState = error.name === 'AbortError' ? 'stopped' : 'failed';
       if (runId === sequence.current) {
         if (replaceIndex != null && original) setMsgs((current) => current[replaceIndex]?.clientId === clientId ? current.map((item, index) => index === replaceIndex ? original : item) : current);
         else setMsgs(transcript);
         if (error.name !== 'AbortError') setErr(safeFrontendText((replaceIndex != null ? 'Image regeneration failed; the previous image is unchanged. ' : '') + error.message.slice(0, 350)));
       }
     } finally {
+      reportTaskNotification(clientId, 'assistant', taskState);
       if (runId === sequence.current) { mediaBusyRef.current = false; setMediaBusy(false); mediaCtl.current = null; }
     }
   }

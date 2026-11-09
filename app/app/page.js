@@ -5,6 +5,7 @@ import Builder from '../../components/Builder';
 import { Chat as ChatIcon, Build as BuildIcon, Pin, Menu, Close, Panel } from '../../lib/icons';
 import Personalization from '../../components/Personalization';
 import CapabilityBanner from '../../components/CapabilityBanner';
+import NotificationManager from '../../components/NotificationManager';
 
 const TABS = [['chat', 'SYNTH ASSISTANT', ChatIcon], ['build', 'SYNTHCODE', BuildIcon]];
 const PIN_KEY = 'synth-sidebar-pinned';
@@ -54,6 +55,7 @@ export default function Home() {
 
   return (
     <div className={'app' + (pinned ? ' is-pinned' : '')}>
+      <NotificationManager />
       <div className="edge" onMouseEnter={show} aria-hidden="true" />
       <div className={'scrim' + (drawer ? ' show' : '')} onClick={() => setDrawer(false)} aria-hidden="true" />
 

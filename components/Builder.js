@@ -19,6 +19,7 @@ import BuilderLanguageSettings, { LanguageSettingsButton } from './BuilderLangua
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
+import { reportTaskNotification } from '../lib/notifications';
 
 const sourcesFromTools = (toolRuns) => (Array.isArray(toolRuns) ? toolRuns : []).flatMap((tool) => Array.isArray(tool?.sources) ? tool.sources : []);
 
@@ -239,6 +240,12 @@ export default function Builder({ seed }) {
     };
     let logged = makeLog();
     const runKey = newId();
+    let notificationFinished = false;
+    const finishNotification = (state) => {
+      if (notificationFinished) return;
+      notificationFinished = true;
+      reportTaskNotification(runKey, 'build', state);
+    };
     const conversationId = projectConversation.current || (projectConversation.current = newId());
     latestBuild.current = runKey;
     skip.current = false; okRef.current = false;
@@ -249,6 +256,7 @@ export default function Builder({ seed }) {
       if (instant) { setEntering(true); later(() => setEntering(false), 800); }
       else { setLeaving(true); later(() => { setLeaving(false); setEntering(true); later(() => setEntering(false), 800); }, 380); }
     }
+    reportTaskNotification(runKey, 'build', 'started');
     ctl.current = new AbortController();
     const baseSystem = requestedLanguage === 'auto' ? autoProjectPrompt() : projectLanguage === 'typescript' ? TYPESCRIPT_SYSTEM : isSourceOnlyLanguage(projectLanguage) ? sourceProjectPrompt(projectLanguage) : SYSTEM;
     const system = baseSystem + (hasFiles ? `\n\nCurrent files:\n${filesForPrompt(files, selected)}` : '');
@@ -297,15 +305,17 @@ export default function Builder({ seed }) {
       setMarks(Object.fromEntries(merged.changed.filter((c) => c.kind !== 'del').map((c) => [c.path, c.kind])));
       setSelected((s) => (s && s in merged.files ? s : entryFor(merged.files, projectLanguage)));
       mark('done', merged.changed); okRef.current = true;
+      finishNotification('completed');
       setJustDone(true); later(() => setJustDone(false), 900);
       setBusy(false); // finished: stop the working animations right away, before the logging call returns
       const id = await track({ mode: 'build', prompt: logged, reply: `[files ${parsed.files.map((f) => f.path).join(', ')}] ` + (parsed.files[0]?.content || '').slice(0, 250), model: 'auto', tid, conversationId, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) });
       setHistory((current) => current.map((entry) => entry.clientId === runKey ? { ...entry, reply: stripProjectModeMarker(reply), id, fb: 0, feedback: null, ...(options.regeneratedFrom ? { regeneratedFrom: options.regeneratedFrom } : {}) } : entry));
       if (latestBuild.current === runKey) setLastBuildImages(imgs);
     } catch (e) {
-      if (skip.current) { setBusy(false); return; } // "New" was pressed while building
+      if (skip.current) { finishNotification('stopped'); setBusy(false); return; } // "New" was pressed while building
       setQueued('');
       const aborted = e.name === 'AbortError';
+      finishNotification(aborted ? 'stopped' : 'failed');
       if (!aborted) { setErr(safeFrontendText(e.message.slice(0, 400))); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
       if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setLanguage(languagePreference); setView(isSourceOnlyLanguage(languagePreference) ? 'code' : 'preview'); } // nothing built yet: back to the welcome screen
       else { mark(aborted ? 'stopped' : 'failed'); setLive(''); } // keep the last good project

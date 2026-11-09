@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DEFAULT_PERSONALIZATION, normalizePersonalization, applyPersonalization } from '../lib/personalization';
 import { Close, Settings as SettingsIcon } from '../lib/icons';
+import NotificationSettings from './NotificationSettings';
 
 const STORAGE_KEY = 'synth-personalization-v1';
 const THEME_CHOICES = [
@@ -37,6 +38,10 @@ const DENSITIES = [
   { id: 'comfortable', title: 'Comfortable' },
   { id: 'compact', title: 'Compact' },
 ];
+const TABS = [
+  { id: 'personalization', label: 'Personalization' },
+  { id: 'notification', label: 'Notification' },
+];
 
 function OptionGroup({ label, value, choices, onChange, className = '' }) {
   return (
@@ -56,9 +61,11 @@ function OptionGroup({ label, value, choices, onChange, className = '' }) {
 export default function Personalization() {
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [activeTab, setActiveTab] = useState('personalization');
   const [prefs, setPrefs] = useState(DEFAULT_PERSONALIZATION);
   const trigger = useRef(null);
   const dialog = useRef(null);
+  const tabButtons = useRef({});
 
   useEffect(() => {
     let saved = null;
@@ -78,7 +85,7 @@ export default function Personalization() {
   useEffect(() => {
     if (!open) return undefined;
     const previousFocus = document.activeElement;
-    const frame = requestAnimationFrame(() => dialog.current?.querySelector('button')?.focus());
+    const frame = requestAnimationFrame(() => tabButtons.current[activeTab]?.focus());
     const onKeyDown = (event) => {
       if (event.key === 'Escape') { event.preventDefault(); setOpen(false); return; }
       if (event.key !== 'Tab') return;
@@ -94,7 +101,7 @@ export default function Personalization() {
       document.removeEventListener('keydown', onKeyDown);
       if (previousFocus instanceof HTMLElement) previousFocus.focus();
     };
-  }, [open]);
+  }, [open, activeTab]);
 
   function update(key, value) {
     setPrefs((current) => ({ ...current, [key]: value }));
@@ -105,41 +112,72 @@ export default function Personalization() {
     setPrefs({ ...DEFAULT_PERSONALIZATION });
   }
 
+  function openSettings() {
+    setActiveTab('personalization');
+    setOpen(true);
+  }
+
+  function onTabKeyDown(event) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? TABS[0].id
+      : event.key === 'End' ? TABS[TABS.length - 1].id
+        : activeTab === 'personalization' ? 'notification' : 'personalization';
+    setActiveTab(next);
+    requestAnimationFrame(() => tabButtons.current[next]?.focus());
+  }
+
   return (
     <>
-      <button ref={trigger} type="button" className="navbtn settings-launch" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
+      <button ref={trigger} type="button" className="navbtn settings-launch" onClick={openSettings} aria-haspopup="dialog" aria-expanded={open}>
         <SettingsIcon /><span>Settings</span>
       </button>
       {open && ready && createPortal(
         <div className="settings-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title" ref={dialog}>
             <header className="settings-head">
-              <div><span className="settings-kicker">SYNTH WORKSPACE</span><h2 id="settings-title">Personalization</h2><p>Shape the workspace to feel right for you.</p></div>
+              <div><span className="settings-kicker">SYNTH WORKSPACE</span><h2 id="settings-title">Settings</h2><p>Personalize your workspace and task notifications.</p></div>
               <button type="button" className="iconbtn sm settings-close" onClick={() => setOpen(false)} aria-label="Close settings"><Close /></button>
             </header>
-            <div className="settings-content">
-              <section className="pref-section">
-                <div className="pref-heading"><div><h3>Platform theme</h3><p>Choose how the whole workspace looks.</p></div></div>
-                <OptionGroup label="Platform theme" value={prefs.theme} choices={THEME_CHOICES} onChange={(value) => update('theme', value)} className="theme-options" />
-              </section>
-              <section className="pref-section">
-                <div className="pref-heading"><div><h3>Accent color</h3><p>Updates highlights, buttons, focus rings and progress bars.</p></div></div>
-                <OptionGroup label="Accent color" value={prefs.accent} choices={ACCENTS} onChange={(value) => update('accent', value)} className="accent-options" />
-              </section>
-              <section className="pref-section">
-                <div className="pref-heading"><div><h3>Typography</h3><p>Current workspace default: Sora headings with Inter body text.</p></div></div>
-                <OptionGroup label="Workspace font" value={prefs.font} choices={FONTS} onChange={(value) => update('font', value)} className="font-options" />
-                <div className="pref-subheading"><b>Text size</b><span>Adjust reading size across the workspace.</span></div>
-                <OptionGroup label="Text size" value={prefs.textSize} choices={TEXT_SIZES} onChange={(value) => update('textSize', value)} className="seg-options" />
-              </section>
-              <section className="pref-section">
-                <div className="pref-heading"><div><h3>Conversation appearance</h3><p>Change how messages are presented in SYNTH Assistant.</p></div></div>
-                <OptionGroup label="Chat bubble style" value={prefs.chatStyle} choices={CHAT_STYLES} onChange={(value) => update('chatStyle', value)} className="theme-options" />
-                <div className="pref-subheading"><b>Message spacing</b><span>Choose the amount of space between turns.</span></div>
-                <OptionGroup label="Message spacing" value={prefs.density} choices={DENSITIES} onChange={(value) => update('density', value)} className="seg-options" />
-              </section>
+            <div className="settings-tabs" role="tablist" aria-label="Settings sections" onKeyDown={onTabKeyDown}>
+              {TABS.map((tab) => (
+                <button key={tab.id} ref={(node) => { tabButtons.current[tab.id] = node; }} type="button" role="tab"
+                  id={`settings-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls={`settings-panel-${tab.id}`}
+                  tabIndex={activeTab === tab.id ? 0 : -1} className={'settings-tab' + (activeTab === tab.id ? ' active' : '')}
+                  onClick={() => setActiveTab(tab.id)}>{tab.label}</button>
+              ))}
             </div>
-            <footer className="settings-foot"><span>Saved automatically on this device.</span><div><button type="button" className="settings-reset" onClick={reset}>Reset defaults</button><button type="button" className="primary settings-done" onClick={() => setOpen(false)}>Done</button></div></footer>
+            <div className="settings-content">
+              <div id="settings-panel-personalization" role="tabpanel" aria-labelledby="settings-tab-personalization" tabIndex={0} hidden={activeTab !== 'personalization'}>
+                  <section className="pref-section">
+                    <div className="pref-heading"><div><h3>Platform theme</h3><p>Choose how the whole workspace looks.</p></div></div>
+                    <OptionGroup label="Platform theme" value={prefs.theme} choices={THEME_CHOICES} onChange={(value) => update('theme', value)} className="theme-options" />
+                  </section>
+                  <section className="pref-section">
+                    <div className="pref-heading"><div><h3>Accent color</h3><p>Updates highlights, buttons, focus rings and progress bars.</p></div></div>
+                    <OptionGroup label="Accent color" value={prefs.accent} choices={ACCENTS} onChange={(value) => update('accent', value)} className="accent-options" />
+                  </section>
+                  <section className="pref-section">
+                    <div className="pref-heading"><div><h3>Typography</h3><p>Current workspace default: Sora headings with Inter body text.</p></div></div>
+                    <OptionGroup label="Workspace font" value={prefs.font} choices={FONTS} onChange={(value) => update('font', value)} className="font-options" />
+                    <div className="pref-subheading"><b>Text size</b><span>Adjust reading size across the workspace.</span></div>
+                    <OptionGroup label="Text size" value={prefs.textSize} choices={TEXT_SIZES} onChange={(value) => update('textSize', value)} className="seg-options" />
+                  </section>
+                  <section className="pref-section">
+                    <div className="pref-heading"><div><h3>Conversation appearance</h3><p>Change how messages are presented in SYNTH Assistant.</p></div></div>
+                    <OptionGroup label="Chat bubble style" value={prefs.chatStyle} choices={CHAT_STYLES} onChange={(value) => update('chatStyle', value)} className="theme-options" />
+                    <div className="pref-subheading"><b>Message spacing</b><span>Choose the amount of space between turns.</span></div>
+                    <OptionGroup label="Message spacing" value={prefs.density} choices={DENSITIES} onChange={(value) => update('density', value)} className="seg-options" />
+                  </section>
+              </div>
+              <div id="settings-panel-notification" role="tabpanel" aria-labelledby="settings-tab-notification" tabIndex={0} hidden={activeTab !== 'notification'}>
+                <NotificationSettings />
+              </div>
+            </div>
+            <footer className="settings-foot">
+              <span>{activeTab === 'personalization' ? 'Appearance saved automatically on this device.' : 'Notification choices saved on this device.'}</span>
+              <div>{activeTab === 'personalization' && <button type="button" className="settings-reset" onClick={reset}>Reset defaults</button>}<button type="button" className="primary settings-done" onClick={() => setOpen(false)}>Done</button></div>
+            </footer>
           </section>
         </div>,
         document.body,

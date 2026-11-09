@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { modelLabel, providerLabel, safeFrontendText, serviceNodeLabel } from '../lib/brand-view.js';
+import { DEFAULT_NOTIFICATION_SOUND_DEFAULTS, NOTIFICATION_SOUND_OPTIONS, normalizeNotificationSoundDefaults, playNotificationSound } from '../lib/notifications';
 
 const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
 const pc = (v) => (v == null ? '—' : v + '%');
@@ -17,6 +18,9 @@ export default function Admin() {
   const [busy, setBusy] = useState(false);
   const [tbusy, setTbusy] = useState('');
   const [nt, setNt] = useState({ topic: '', text: '' });
+  const [soundDraft, setSoundDraft] = useState({ ...DEFAULT_NOTIFICATION_SOUND_DEFAULTS });
+  const [soundBusy, setSoundBusy] = useState(false);
+  const [soundStatus, setSoundStatus] = useState('');
 
   const load = useCallback(async () => {
     const r = await fetch('/api/admin/data', { cache: 'no-store' });
@@ -24,6 +28,9 @@ export default function Admin() {
     setAuth(true); setD(await r.json());
   }, []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (d?.notificationSounds) setSoundDraft(normalizeNotificationSoundDefaults(d.notificationSounds));
+  }, [d?.notificationSounds]);
 
   async function login(e) {
     e.preventDefault();
@@ -55,6 +62,26 @@ export default function Admin() {
   async function add(e) {
     e.preventDefault();
     await post('/api/admin/lesson', { action: 'add', ...nt }); setNt({ topic: '', text: '' }); setFilter('approved'); load();
+  }
+  async function saveSoundDefaults(category, sound) {
+    const next = normalizeNotificationSoundDefaults({ ...soundDraft, [category]: sound });
+    setSoundDraft(next); setSoundBusy(true); setSoundStatus('');
+    try {
+      const response = await post('/api/admin/notification-sounds', next);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Could not save workspace sounds.');
+      const saved = normalizeNotificationSoundDefaults(result.sounds);
+      setSoundDraft(saved);
+      setD((current) => current ? { ...current, notificationSounds: saved } : current);
+      setSoundStatus('Workspace sound defaults saved.');
+    } catch {
+      setSoundDraft(normalizeNotificationSoundDefaults(d?.notificationSounds));
+      setSoundStatus('Could not save workspace sound defaults. Try again.');
+    } finally { setSoundBusy(false); }
+  }
+  async function previewSound(category) {
+    const played = await playNotificationSound(soundDraft[category]);
+    setSoundStatus(played ? 'Previewing the selected sound.' : soundDraft[category] === 'silent' ? 'This workspace default is Silent.' : 'Sound preview is unavailable in this browser.');
   }
 
   if (!auth) return (
@@ -101,6 +128,24 @@ export default function Admin() {
       {Object.keys(d.feedback?.byCategory || {}).length > 0 && <p className="muted">Recent response feedback: {Object.entries(d.feedback.byCategory).map(([key, value]) => `${FEEDBACK_LABEL[key] || key} (${value})`).join(' · ')}.</p>}
       <p className="muted">SYNTH ASSISTANT {s.chat}, SYNTHCODE {s.build}. Lessons by source: {Object.entries(d.bySource).map(([k, v]) => `${safeFrontendText(k)} (${v})`).join(', ') || 'none yet'}. {d.lastResult ? `Last learning run ${ago(d.lastResult.ts)}${d.lastResult.model ? `; completed by ${modelLabel(d.lastResult.model)}` : ''}${d.lastResult.attempts?.length ? ` after ${d.lastResult.attempts.length} failed attempt(s)` : ''}.` : 'Learning has not run yet.'}</p>
       {d.lastResult?.attempts?.length > 0 && <p className="note" aria-live="polite">Learning attempts: {d.lastResult.attempts.map((a) => `${serviceNodeLabel(a.target)} (${a.status ? `HTTP ${a.status}` : 'unavailable'}: ${safeFrontendText(a.error)})`).join(' → ')}{d.lastResult.model ? ` → succeeded with ${modelLabel(d.lastResult.model)}.` : ''}</p>}
+
+      <section className="admin-sound-settings">
+        <div className="admin-sound-heading"><div><h2>Workspace notification sounds</h2><p>Set the default tones for users who choose “Use Learning Studio default” in Settings → Notification. Users can still choose their own sounds.</p></div></div>
+        <div className="admin-sound-grid">
+          {[['assistant', 'Assistant'], ['build', 'SYNTHCODE']].map(([category, label]) => (
+            <div className="admin-sound-control" key={category}>
+              <label htmlFor={`admin-sound-${category}`}>{label} default</label>
+              <div className="admin-sound-select-row">
+                <select id={`admin-sound-${category}`} value={soundDraft[category]} disabled={soundBusy} onChange={(event) => saveSoundDefaults(category, event.target.value)}>
+                  {NOTIFICATION_SOUND_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                </select>
+                <button type="button" disabled={soundBusy} onClick={() => previewSound(category)}>Preview</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="admin-sound-status" role="status" aria-live="polite">{soundStatus}</p>
+      </section>
 
       <section>
         <h2>Where it needs work</h2>
