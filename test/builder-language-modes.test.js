@@ -48,7 +48,8 @@ test('Builder pane and project-view controls expose accessible selected states',
   assert.match(builder, /className="tabs" role="group" aria-label="Project view"/);
   assert.match(builder, /aria-pressed=\{view === 'preview'\}/);
   assert.match(builder, /aria-pressed=\{view === 'code'\}/);
-  assert.doesNotMatch(builder, /role="tablist"|role="tab"|aria-selected=/);
+  assert.match(builder, /className="bw-template-tabs" role="tablist"/);
+  assert.doesNotMatch(settings, /role="tablist"|role="tab"|aria-selected=/);
 });
 
 test('source-only projects never enter the browser preview and explain the boundary in both panes', () => {

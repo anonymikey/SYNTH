@@ -75,3 +75,7 @@
 - [x] Honor UnoRouter `Retry-After` in seconds or HTTP-date form on rate limits, bound cooldowns, persist model cooldown timestamps in shared storage with short timeouts, and skip UnoRouter if shared storage is missing or fails its atomic rate-limit reservation. Skip cooling models while continuing to the next eligible model/provider without delaying healthy fallbacks.
 - [x] Keep UnoRouter out of image generation, transcription, and Learning Studio model-generated training; report its protected Learning Studio health state using SYNTH's existing safe provider aliases, without displaying model IDs or credentials.
 - [x] Document the optional server environment settings and free-only restriction; retain generic user-facing failures, and verify free-model validation, provider order, rate-limit fallback/cooldown, complete tests, and production build.
+
+## SYNTHCODE template gallery
+
+- [x] Add a **Start with a template** section directly below the main prompt box on SYNTHCODE's home screen. Include category filter tabs named **Featured, All, Landing pages, Stores, Portfolio, Games, SaaS, Starters** and functional horizontal navigation arrows. Below the tabs, display a six-card grid with dark-themed thumbnail previews and titles. Clicking any template card must fill the existing prompt input with a detailed starter prompt for that template style and focus the input.

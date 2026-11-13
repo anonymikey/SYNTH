@@ -18,7 +18,9 @@ import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
 import BuilderLanguageSettings, { LanguageSettingsButton } from './BuilderLanguageSettings';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
-import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit } from '../lib/icons';
+import { BUILDER_TEMPLATE_CATEGORIES, BUILDER_TEMPLATES, getBuilderTemplatePage } from './builder-templates';
+import { BUILDER_TEMPLATE_EXTRAS } from './builder-template-extras';
+import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit, Chevron } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
 import { reportTaskNotification } from '../lib/notifications';
 
@@ -113,6 +115,8 @@ export default function Builder({ seed }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [lastBuildImages, setLastBuildImages] = useState([]);
+  const [templateCategory, setTemplateCategory] = useState('featured');
+  const [templatePageIndex, setTemplatePageIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);   // welcome screen fading out
   const [entering, setEntering] = useState(false); // build workspace fading in
   const [justDone, setJustDone] = useState(false); // real preview revealing after a build
@@ -154,6 +158,7 @@ export default function Builder({ seed }) {
   const hasFiles = Object.keys(files).length > 0;
   const sourceOnly = isSourceOnlyLanguage(language);
   const currentEntry = entryFor(files, language);
+  const templatePage = getBuilderTemplatePage(templateCategory, templatePageIndex, [...BUILDER_TEMPLATES, ...BUILDER_TEMPLATE_EXTRAS]);
   const tsFiles = useMemo(() => typescriptFiles(files), [files]);
   const tsxFiles = useMemo(() => Object.keys(files).filter((path) => /\.tsx$/i.test(path)), [files]);
   const tsEntry = useMemo(() => typescriptEntry(files), [files]);
@@ -371,12 +376,27 @@ export default function Builder({ seed }) {
     setPrompt(t);
     setTimeout(() => { const b = wbox.current; if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }, 0);
   };
+  const onTemplateTabKeyDown = (event) => {
+    const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (!keys.includes(event.key)) return;
+    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const current = tabs.indexOf(event.target);
+    if (current < 0 || !tabs.length) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0
+      : event.key === 'End' ? tabs.length - 1
+        : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const category = BUILDER_TEMPLATE_CATEGORIES[next];
+    setTemplateCategory(category.id);
+    setTemplatePageIndex(0);
+    tabs[next].focus();
+  };
   const last = history[history.length - 1];
   const using = tools.find((t) => t.state === 'running');
 
   if (welcome) {
     return (
-      <section className={'bw' + (leaving ? ' leaving' : '')} {...a.dropProps}>
+      <section className={'bw template-home' + (leaving ? ' leaving' : '')} {...a.dropProps}>
         <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
         <div className="bw-scroll">
           <div className="bw-hero">
@@ -389,7 +409,7 @@ export default function Builder({ seed }) {
           </div>
           <Workflow />
         </div>
-        <div className="bw-dock">
+        <div className="bw-dock templates-dock">
           {err && <p className="err" role="alert">{err}</p>}
           <Thumbs a={a} />
           <NotificationSetupBanner category="build" />
@@ -407,6 +427,56 @@ export default function Builder({ seed }) {
               <button className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{sourceOnly ? 'Generate' : 'Build'} <Arrow /></button>
             </div>
           </div>
+          <section className="bw-templates" aria-labelledby="bw-templates-title">
+            <div className="bw-templates-heading">
+              <h3 id="bw-templates-title">Start with a template</h3>
+              <div className="bw-template-controls">
+                <div className="bw-template-tabs" role="tablist" aria-label="Template categories" onKeyDown={onTemplateTabKeyDown}>
+                  {BUILDER_TEMPLATE_CATEGORIES.map((category) => (
+                    <button key={category.id} type="button" role="tab" id={`builder-template-tab-${category.id}`} aria-controls="builder-template-panel" aria-selected={templateCategory === category.id} tabIndex={templateCategory === category.id ? 0 : -1}
+                      className={'bw-template-tab' + (templateCategory === category.id ? ' selected' : '')}
+                      onClick={() => { setTemplateCategory(category.id); setTemplatePageIndex(0); }}>
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="bw-template-pager" aria-label="Template pages">
+                  <button type="button" className="bw-template-arrow" aria-label="Previous templates" disabled={templatePage.page === 0}
+                    onClick={() => setTemplatePageIndex((page) => Math.max(0, page - 1))}>
+                    <Chevron className="bw-template-chevron previous" />
+                  </button>
+                  <button type="button" className="bw-template-arrow" aria-label="Next templates" disabled={templatePage.page >= templatePage.pageCount - 1}
+                    onClick={() => setTemplatePageIndex((page) => Math.min(templatePage.pageCount - 1, page + 1))}>
+                    <Chevron className="bw-template-chevron" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="bw-template-page-status" role="status" aria-live="polite">
+              Page {templatePage.page + 1} of {templatePage.pageCount} · {templatePage.total} templates
+            </div>
+            <div className="bw-template-grid" role="tabpanel" id="builder-template-panel" aria-labelledby={`builder-template-tab-${templatePage.category}`}>
+              {templatePage.templates.map((item) => (
+                <button key={item.id} type="button" className="bw-template-card" onClick={() => pick(item.prompt)} aria-label={`Use ${item.title} template`}>
+                  <span className="bw-template-preview" data-category={item.category} style={{ '--template-accent': item.accent }} aria-hidden="true">
+                    <span className="bw-template-browser-bar"><i /><i /><i /><b>{item.eyebrow}</b><em /></span>
+                    <span className="bw-template-preview-body">
+                      <span className="bw-template-preview-copy">
+                        <span className="bw-template-preview-kicker">{item.eyebrow}</span>
+                        <strong>{item.headline}</strong>
+                        <small>{item.detail}</small>
+                        <i className="bw-template-preview-cta" />
+                      </span>
+                      <span className="bw-template-preview-art"><i /><i /><i /></span>
+                    </span>
+                    <span className="bw-template-preview-footer"><i /><i /><i /></span>
+                  </span>
+                  <span className="bw-template-card-title">{item.title}</span>
+                  <span className="bw-template-card-category">{BUILDER_TEMPLATE_CATEGORIES.find((category) => category.id === item.category)?.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
           <p className={'tools' + (sourceOnly ? ' source-only-tools' : '')}><span>{sourceOnly ? SOURCE_ONLY_NOTICE : 'Enter to build, Shift+Enter for a new line. You can also paste or drop an image.'}</span></p>
         </div>
       </section>
