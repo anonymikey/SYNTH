@@ -1,15 +1,19 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { DEFAULT_PERSONALIZATION, normalizePersonalization, applyPersonalization } from '../lib/personalization';
+import { DEFAULT_PERSONALIZATION, normalizePersonalization, applyPersonalization, prepareWorkspaceWallpaper } from '../lib/personalization';
 import { Close, Settings as SettingsIcon } from '../lib/icons';
 import NotificationSettings from './NotificationSettings';
 
 const STORAGE_KEY = 'synth-personalization-v1';
 const THEME_CHOICES = [
-  { id: 'midnight', title: 'Midnight', note: 'SYNTH’s deep original dark look' },
-  { id: 'light', title: 'Light', note: 'Bright surfaces and dark text' },
-  { id: 'system', title: 'System', note: 'Follow your device appearance' },
+  { id: 'midnight', title: 'Dark', note: 'SYNTH’s deep original palette', color: '#10162e', toast: 'Switching off the lights' },
+  { id: 'light', title: 'Light', note: 'Bright surfaces, calm contrast', color: '#edf2fb', toast: 'Bringing in the daylight' },
+  { id: 'system', title: 'System', note: 'Follow your device appearance', color: '#8896ae', toast: 'Matching your device’s appearance' },
+  { id: 'aurora', title: 'Aurora', note: 'Teal glow over deep blue', color: '#22c7b8', toast: 'Letting the aurora flow' },
+  { id: 'obsidian', title: 'Obsidian', note: 'Low-glare near-black surfaces', color: '#111318', toast: 'Going deeper into the dark' },
+  { id: 'ember', title: 'Ember', note: 'Warm charcoal and copper', color: '#d47a53', toast: 'Warming up your workspace' },
+  { id: 'forest', title: 'Forest', note: 'Deep green, soft mint glow', color: '#398d69', toast: 'Settling into the forest' },
 ];
 const ACCENTS = [
   { id: 'cyan', title: 'Ocean cyan', color: '#22d3ee' },
@@ -66,6 +70,11 @@ export default function Personalization() {
   const trigger = useRef(null);
   const dialog = useRef(null);
   const tabButtons = useRef({});
+  const wallpaperInput = useRef(null);
+  const toastTimers = useRef([]);
+  const [themeToast, setThemeToast] = useState(null);
+  const [wallpaperBusy, setWallpaperBusy] = useState(false);
+  const [wallpaperError, setWallpaperError] = useState('');
 
   useEffect(() => {
     let saved = null;
@@ -81,6 +90,8 @@ export default function Personalization() {
     applyPersonalization(prefs);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
   }, [prefs, ready]);
+
+  useEffect(() => () => toastTimers.current.forEach(clearTimeout), []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -105,6 +116,35 @@ export default function Personalization() {
 
   function update(key, value) {
     setPrefs((current) => ({ ...current, [key]: value }));
+  }
+
+  function selectTheme(theme) {
+    update('theme', theme);
+    const choice = THEME_CHOICES.find((item) => item.id === theme);
+    if (!choice) return;
+    toastTimers.current.forEach(clearTimeout);
+    setThemeToast({ message: choice.toast, leaving: false, id: Date.now() });
+    toastTimers.current = [
+      setTimeout(() => setThemeToast((current) => current ? { ...current, leaving: true } : current), 1650),
+      setTimeout(() => setThemeToast(null), 1980),
+    ];
+  }
+
+  async function chooseWallpaper(event) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    setWallpaperBusy(true);
+    setWallpaperError('');
+    try {
+      const wallpaper = await prepareWorkspaceWallpaper(file);
+      update('wallpaper', wallpaper);
+    } catch (error) {
+      setWallpaperError(error instanceof Error ? error.message : 'That image could not be prepared. Try another PNG, JPEG or WebP image.');
+    } finally {
+      setWallpaperBusy(false);
+      input.value = '';
+    }
   }
 
   function reset() {
@@ -150,8 +190,33 @@ export default function Personalization() {
             <div className="settings-content">
               <div id="settings-panel-personalization" role="tabpanel" aria-labelledby="settings-tab-personalization" tabIndex={0} hidden={activeTab !== 'personalization'}>
                   <section className="pref-section">
-                    <div className="pref-heading"><div><h3>Platform theme</h3><p>Choose how the whole workspace looks.</p></div></div>
-                    <OptionGroup label="Platform theme" value={prefs.theme} choices={THEME_CHOICES} onChange={(value) => update('theme', value)} className="theme-options" />
+                    <div className="pref-heading"><div><h3>Platform theme</h3><p>Choose a palette for SYNTH ASSISTANT and SYNTHCODE.</p></div></div>
+                    <OptionGroup label="Platform theme" value={prefs.theme} choices={THEME_CHOICES} onChange={selectTheme} className="theme-options" />
+                  </section>
+                  <section className="pref-section">
+                    <div className="pref-heading"><div><h3>Workspace background</h3><p>Use a favorite image behind the workspace panels.</p></div></div>
+                    <div className="settings-wallpaper-layout">
+                      <div className={'settings-wallpaper-preview' + (prefs.wallpaper ? ' has-image' : '')} role="img" aria-label={prefs.wallpaper ? 'Selected workspace background preview' : 'No custom background selected'}>
+                        {prefs.wallpaper ? <img src={prefs.wallpaper} alt="" /> : <span>Your background preview</span>}
+                        {prefs.wallpaper && <i className="settings-wallpaper-wash" style={{ opacity: prefs.wallpaperDim / 100 }} aria-hidden="true" />}
+                      </div>
+                      <div className="settings-wallpaper-actions">
+                        <input ref={wallpaperInput} type="file" accept="image/png,image/jpeg,image/webp" onChange={chooseWallpaper} hidden aria-label="Choose a workspace background image" />
+                        <div className="settings-wallpaper-buttons">
+                          <button type="button" className="settings-wallpaper-button" onClick={() => wallpaperInput.current?.click()} disabled={wallpaperBusy}>
+                            {wallpaperBusy ? 'Preparing image…' : prefs.wallpaper ? 'Change image' : 'Choose image'}
+                          </button>
+                          {prefs.wallpaper && <button type="button" className="settings-wallpaper-remove" onClick={() => { update('wallpaper', ''); setWallpaperError(''); }} disabled={wallpaperBusy}>Remove</button>}
+                        </div>
+                        <p>PNG, JPEG or WebP · resized on this device · never uploaded.</p>
+                      </div>
+                    </div>
+                    {prefs.wallpaper && <div className="settings-wallpaper-dim">
+                      <label htmlFor="settings-wallpaper-dim"><span>Readability overlay</span><b>{prefs.wallpaperDim}%</b></label>
+                      <input id="settings-wallpaper-dim" type="range" min="0" max="80" step="5" value={prefs.wallpaperDim} onChange={(event) => update('wallpaperDim', Number(event.target.value))} />
+                      <small>Increase the wash to keep text and glass panels easy to read.</small>
+                    </div>}
+                    {wallpaperError && <p className="settings-wallpaper-error" role="alert">{wallpaperError}</p>}
                   </section>
                   <section className="pref-section">
                     <div className="pref-heading"><div><h3>Accent color</h3><p>Updates highlights, buttons, focus rings and progress bars.</p></div></div>
@@ -179,6 +244,13 @@ export default function Personalization() {
               <div>{activeTab === 'personalization' && <button type="button" className="settings-reset" onClick={reset}>Reset defaults</button>}<button type="button" className="primary settings-done" onClick={() => setOpen(false)}>Done</button></div>
             </footer>
           </section>
+        </div>,
+        document.body,
+      )}
+      {themeToast && createPortal(
+        <div key={themeToast.id} className={'theme-transition-toast' + (themeToast.leaving ? ' leaving' : '')} role="status" aria-live="polite" aria-atomic="true">
+          <span className="theme-transition-mark" aria-hidden="true" />
+          <span>{themeToast.message}</span>
         </div>,
         document.body,
       )}

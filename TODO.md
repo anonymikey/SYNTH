@@ -79,3 +79,9 @@
 ## SYNTHCODE template gallery
 
 - [x] Add a **Start with a template** section directly below the main prompt box on SYNTHCODE's home screen. Include category filter tabs named **Featured, All, Landing pages, Stores, Portfolio, Games, SaaS, Starters** and functional horizontal navigation arrows. Below the tabs, display a six-card grid with dark-themed thumbnail previews and titles. Clicking any template card must fill the existing prompt input with a detailed starter prompt for that template style and focus the input.
+
+## Expanded workspace Personalization
+
+- [x] Add **Dark, Light, and System** theme choices plus distinct stylish palette options. Apply each theme consistently across the AI workspace, keep existing accent/font/chat/density settings, and have System follow the device's appearance.
+- [x] Let users choose a custom workspace background image, preview it, adjust a readability overlay, and remove it. Keep the image local to this browser; do not upload it or send it to an API. Validate and compress accepted raster images before saving them with the existing personalization preferences.
+- [x] When a user chooses a theme, show a brief animated message that enters and disappears, including “Switching off the lights” for Dark and a matching message for every other theme. Keep it accessible, respect reduced-motion settings, and preserve current Settings tabs and responsive behavior.

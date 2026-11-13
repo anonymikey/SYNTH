@@ -103,6 +103,12 @@ Add a small reusable `NotificationSetupBanner` immediately above each workspace 
 
 Place preference normalization and sound presets in `lib/notifications.js`; the shared listener and favicon/native notification logic in `components/NotificationManager.js`; notification controls in `components/NotificationSettings.js`; tab composition in `components/Personalization.js`; task signals in `components/Chat.js` and `components/Builder.js`; and safe sound-default endpoints/UI in `app/api/notifications/defaults/route.js`, `app/api/admin/notification-sounds/route.js`, and `components/Admin.js`. Keep settings mobile-responsive, keyboard-accessible and consistent with the existing dark-glass system.
 
+## Personalization themes and local workspace backgrounds
+
+Extend the existing Personalization preference record and root `data-theme` application rather than creating a second settings system. Retain saved dark/light/system choices and add distinct SYNTH palettes (Aurora, Obsidian, Ember and Forest); each choice recolors the shared Assistant/SYNTHCODE workspace while preserving the independently selected accent, typography, conversation style and density. System follows the live OS color-scheme preference. Theme selection shows a short, choice-specific animated `role=status` message (including “Switching off the lights” for Dark), with entry/exit motion suppressed under reduced-motion settings.
+
+Add an optional user-selected raster wallpaper for the workspace. Process it in the browser into a bounded, compressed data URL before saving it in the existing local preference record; do not upload the image or send it to an API. Provide a preview, adjustable dark overlay and remove action. Validate persisted image data and overlay values, keep text contrast adjustable, and preserve existing settings/tab behavior on desktop and mobile.
+
 ## Safety and accuracy
 
 Never execute generated source or dependencies in the Next.js application, Vercel functions, or the browser preview. Do not describe source generation as compilation, testing, execution, hosting, or deployment. Python/Rust/Go/C++/Node.js backend exports include appropriate source/build/dependency files and local run instructions, but SYNTHCODE does not verify those instructions. TypeScript only transpiles a single `.ts` file for the existing browser preview; it does not type-check or resolve packages.
