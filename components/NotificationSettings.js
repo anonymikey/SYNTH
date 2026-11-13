@@ -4,7 +4,7 @@ import {
   DEFAULT_NOTIFICATION_SOUND_DEFAULTS,
   NOTIFICATION_SOUND_OPTIONS,
   playNotificationSound,
-  prepareNotificationAudio,
+  requestNotificationPermission,
   readNotificationPreferences,
   normalizeNotificationSoundDefaults,
   resolveNotificationSound,
@@ -55,25 +55,15 @@ export default function NotificationSettings() {
 
   async function requestPermission() {
     setNotice('');
-    if (!window.isSecureContext || typeof window.Notification !== 'function') {
-      setPermission('unsupported');
-      setNotice('Browser notifications are not supported in this context.');
-      return;
-    }
-    try {
-      const permissionRequest = window.Notification.requestPermission();
-      void prepareNotificationAudio();
-      const result = await Promise.resolve(permissionRequest);
-      setPermission(result);
-      setNotice(result === 'granted'
-        ? 'Notifications enabled for this browser.'
-        : result === 'denied'
-          ? 'Notifications are blocked. Allow them in your browser site settings to enable delivery.'
+    const result = await requestNotificationPermission();
+    setPermission(result);
+    setNotice(result === 'granted'
+      ? 'Notifications enabled for this browser.'
+      : result === 'denied'
+        ? 'Notifications are blocked. Allow them in your browser site settings to enable delivery.'
+        : result === 'unsupported'
+          ? 'Browser notifications are not supported in this context.'
           : 'No permission was granted. You can try again when ready.');
-    } catch {
-      setPermission('unsupported');
-      setNotice('Could not request notification permission in this browser.');
-    }
   }
 
   async function preview(category) {

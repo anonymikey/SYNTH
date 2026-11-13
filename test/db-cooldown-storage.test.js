@@ -16,14 +16,16 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     assert.equal(init.headers.Authorization, 'Bearer test-token-not-a-secret');
     const command = JSON.parse(init.body);
     requests.push(command);
-    const result = command[0] === 'EVAL' ? 1700000000000 : ['1700000000000', null];
+    const result = command[0] === 'EVAL' ? 1700000000000 : command[0] === 'SET' ? 'OK' : ['1700000000000', null];
     return new Response(JSON.stringify({ result }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
 
   try {
     await db.putMaxTemp('learn:cooldown:model:example', 1700000000000, 600);
     const values = await db.getTemps(['learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
+    const claimed = await db.claimTemp('chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', 1700000060000, 60);
     assert.deepEqual(values, [1700000000000, null]);
+    assert.equal(claimed, true);
     assert.equal(requests[0][0], 'EVAL');
     assert.equal(requests[0][2], '1');
     assert.equal(requests[0][3], 'learn:cooldown:model:example');
@@ -32,6 +34,7 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     assert.match(requests[0][1], /redis\.call\('GET',KEYS\[1\]\)/);
     assert.match(requests[0][1], /redis\.call\('SET',KEYS\[1\].*'EX',ARGV\[2\]\)/);
     assert.deepEqual(requests[1], ['MGET', 'learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
+    assert.deepEqual(requests[2], ['SET', 'chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', '1700000060000', 'EX', '60', 'NX']);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;

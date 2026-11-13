@@ -17,6 +17,18 @@ test('admin health pill distinguishes configured Cloudflare from recent failures
   assert.equal(failed.cloudflare.failed, 3);
 });
 
+test('admin health reports UnoRouter as a free-text fallback and flags repeated failures', () => {
+  const unoCfg = { ...cfg, active: ['unorouter'], unorouter: 'enabled' };
+  const healthy = providerHealth(unoCfg, [{ provider: 'unorouter', status: 'Fallback', ts: 4321, fails: [] }]);
+  assert.equal(healthy.unorouter.state, 'enabled');
+  assert.equal(healthy.unorouter.label, 'Enabled · free text only');
+  assert.equal(healthy.unorouter.served, 1);
+
+  const failed = providerHealth(unoCfg, [1, 2, 3].map((ts) => ({ provider: 'other', status: 'Failed', ts, fails: [{ provider: 'unorouter' }] })));
+  assert.equal(failed.unorouter.state, 'warn');
+  assert.match(failed.notes.join(' '), /rate-limit cooldowns/);
+});
+
 test('image and voice tasks are included in SYNTHCORE task coverage', () => {
   assert.deepEqual(TASKS['image-generation'], ['Generating images', 'image']);
   assert.deepEqual(TASKS['speech-to-text'], ['Speech transcription', 'audio']);

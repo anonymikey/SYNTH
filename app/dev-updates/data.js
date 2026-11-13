@@ -2,6 +2,18 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'synth-connect-free-text-fallback',
+        date: '2026-11-13',
+        title: 'An optional free-text fallback joins SYNTH routing',
+        summary: 'SYNTH Connect can be enabled as a free-only text fallback, with shared rate-limit protection and clear privacy guidance.',
+        tags: ['Routing', 'Reliability', 'Privacy'],
+        content: [
+            'Workspace owners can optionally enable SYNTH Connect as a text-only fallback for Assistant and SYNTHCODE. It is off by default and does not replace the current primary services.',
+            'The workspace accepts only model IDs explicitly marked free. A shared per-model request reservation, bounded cooldowns and upstream Retry-After guidance help prevent repeated rate-limit hits; if shared storage is unavailable, the fallback is skipped. Free-model availability can still vary, so normal configured services remain the preferred route.',
+            'This fallback does not handle image input, image creation, voice transcription or Learning Studio analysis. Requests sent through it may be processed by an upstream model service with different data-retention and training policies. Avoid submitting sensitive information, and review current service terms before enabling it.',
+        ],
+    },
+    {
         slug: 'synthcode-multilanguage-projects',
         date: '2026-11-06',
         title: 'SYNTHCODE grows beyond browser projects',

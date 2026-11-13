@@ -13,6 +13,7 @@ import ResponseToolbar from './ResponseToolbar';
 import Markdown from './Markdown';
 import ToolRuns from './ToolRuns';
 import SourcesDisclosure from './SourcePreview';
+import NotificationSetupBanner from './NotificationSetupBanner';
 import Workflow from './Workflow';
 import FileExplorer from './FileExplorer';
 import BuilderLanguageSettings, { LanguageSettingsButton } from './BuilderLanguageSettings';
@@ -391,6 +392,7 @@ export default function Builder({ seed }) {
         <div className="bw-dock">
           {err && <p className="err" role="alert">{err}</p>}
           <Thumbs a={a} />
+          <NotificationSetupBanner category="build" />
           <div className="compose compose-stack">
             <textarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" aria-label="Describe what to build"
               onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
@@ -489,6 +491,7 @@ export default function Builder({ seed }) {
         {queued && <div className="queued"><span>Queued next: {queued}</span><button className="linkbtn" onClick={() => setQueued('')}>Cancel</button></div>}
         {hasFiles && <div className="editchips">{EDITS.map((t) => <button key={t} className="chip" onClick={() => pick(t)}>{t}</button>)}</div>}
         <Thumbs a={a} />
+        <NotificationSetupBanner category="build" />
         <div className="compose col compose-stack">
           <div className="pbar-head"><i />prompt<span className="grow" /><span>{busy ? 'new requests are queued' : languageStatus(language)}</span></div>
           <textarea ref={wbox} value={prompt} rows={3} aria-label="Describe what to build or change"

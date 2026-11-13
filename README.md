@@ -44,7 +44,7 @@ SYNTH's model weights do not change. What learns is its **memory**: a store of s
 
 **How it learns**
 1. Every chat and build is logged (emails and long numbers are stripped), and users can rate replies Helpful / Not helpful. Errors count as negative.
-2. Once a day (Vercel Cron, 03:00 UTC) and whenever you press *Run learning now*, an active model reads recent activity and writes (a) lessons and (b) weak areas with severity. The learning completion uses the same `PROVIDER_ORDER` as the app: it tries up to three eligible OpenRouter models, then moves through enabled, configured fallback providers. Rate-limited OpenRouter models are cooled down, time is reserved for later providers, and malformed JSON is treated as a failed attempt so another model can try. The Admin panel records the successful model and failed attempts.
+2. Once a day (Vercel Cron, 03:00 UTC) and whenever you press *Run learning now*, an active model reads recent activity and writes (a) lessons and (b) weak areas with severity. The learning completion tries up to three eligible OpenRouter models, then enabled, configured learning-capable providers; the optional UnoRouter free-model fallback is deliberately excluded from Learning Studio analysis. Rate-limited models are cooled down, time is reserved for later providers, and malformed JSON is treated as a failed attempt so another model can try. The Learning Studio records the successful model and failed attempts.
 3. **Only lessons you approve in /admin are injected into prompts.** Set `AUTO_APPROVE=true` to let its own lessons go live automatically. Lessons from other agents always wait for review.
 
 At least one fallback provider must be enabled, have valid server credentials, and appear in `PROVIDER_ORDER` for it to be used; disabled providers are never called. If every configured provider or persistent storage is unavailable, a run can still fail, and the Admin panel reports the attempted targets. SYNTHCORE currently learns prompt memory and readiness evidence—it does not fine-tune model weights. Using SYNTHCORE as the first inference model later requires an actual trained model/endpoint and a separate inference-routing integration; the readiness percentage alone does not activate one.
@@ -68,8 +68,8 @@ Add images in SYNTH ASSISTANT or SYNTHCODE with the **Add image** button, by pas
 ## Automatic model switching
 The model is chosen on the server; visitors never see or pick it. With an image attached, only vision-capable models are used; otherwise the top-ranked free models. If a model errors (rate limit, rejected key, empty or broken stream, or no first token within 14 s), SYNTH silently moves to the next one, up to 3 retries, before showing a friendly message. Failures are recorded in the admin panel under "Model switching log". `/api/models` is admin-only.
 
-## Providers: OpenRouter by default, SPARK and Cloudflare optional
-**OpenRouter is the default and the recommended stable setup.** Set `AI_API_KEY` and SYNTH works out of the box. The FreeLLMAPI gateway ("SPARK", github.com/tashfeenahmed/freellmapi) and Cloudflare Workers AI are optional providers, **disabled by default**. A missing or broken provider never blocks the others.
+## Providers: OpenRouter by default; SPARK, Cloudflare and UnoRouter optional
+**OpenRouter is the default and the recommended stable setup.** Set `AI_API_KEY` and SYNTH works out of the box. SPARK, Cloudflare Workers AI and UnoRouter are optional providers, **disabled by default**. A missing or broken provider never blocks the others.
 
 | Variable | Meaning |
 |---|---|
@@ -78,13 +78,21 @@ The model is chosen on the server; visitors never see or pick it. With an image 
 | `SPARK_VISION_MODEL`, `SPARK_CODE_MODEL` | Optional gateway profiles (for example `auto:vision`, `auto:coding`) used as the first route. |
 | `ENABLE_CLOUDFLARE=false` | Default. Cloudflare Workers AI is not called unless enabled. |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Cloudflare account ID and API token, used only on the server. Never expose the token in browser code. |
-| `PROVIDER_ORDER=openrouter,spark,cloudflare` | Provider priority. For example `cloudflare,openrouter,spark` puts Cloudflare first. Unavailable providers are skipped. |
-| `GATEWAY_MODE` | Legacy SPARK shortcut: `disabled`, `fallback` or `primary`. Cloudflare remains in the provider order when enabled. |
+| `ENABLE_UNOROUTER=false` | Default. The optional free-model text fallback is skipped unless explicitly enabled. |
+| `UNOROUTER_API_KEY` | Server-only UnoRouter key. Set an account spending limit and model allowlist there; SYNTH still independently rejects every configured model ID not ending in `:free`. |
+| `UNOROUTER_FREE_MODELS` | Optional comma-separated free model IDs, e.g. `deepseek/deepseek-v4.1-flash-1017:free`. Defaults use two catalog IDs. |
+| `PROVIDER_ORDER=openrouter,spark,cloudflare,unorouter` | Provider priority. For example `cloudflare,openrouter,spark,unorouter` puts Cloudflare first. Disabled or unavailable providers are skipped. |
+| `GATEWAY_MODE` | Legacy SPARK shortcut: `disabled`, `fallback` or `primary`. It retains the optional providers in its configured order. |
 
 **Turning SPARK on later**
 1. Run FreeLLMAPI on a server you control (it is a long-running server, so not Vercel). Add free provider keys in its dashboard and copy the unified key.
 2. In Vercel set `SPARK_BASE_URL`, `SPARK_API_KEY` and `ENABLE_SPARK=true`, then redeploy.
-3. Leave `PROVIDER_ORDER=openrouter,spark,cloudflare` to use SPARK and Cloudflare as later fallbacks, or move a provider to the start of the list.
+3. Leave `PROVIDER_ORDER=openrouter,spark,cloudflare,unorouter` to use optional services as later fallbacks, or move a provider to the start of the list.
+
+### UnoRouter free-model fallback
+UnoRouter is an optional OpenAI-compatible **text-only** fallback. To enable it, set `ENABLE_UNOROUTER=true`, add `UNOROUTER_API_KEY` as a server-only secret and include `unorouter` in `PROVIDER_ORDER`, then redeploy. SYNTH will only call model identifiers whose full ID ends exactly in `:free`; paid IDs are dropped before routing. Free catalog availability and upstream limits can change. SYNTH enforces a conservative shared one-request-per-model-per-minute reservation across its users, honors bounded `Retry-After` values, stores cooldown timestamps in connected Upstash Redis, and quickly moves to the next configured service on rate limit or failure. If shared storage is unavailable, it skips UnoRouter rather than risk duplicate calls. It is not used for image input, image generation, transcription or Learning Studio analysis.
+
+When enabled, Assistant/SYNTHCODE prompts routed through this option pass through UnoRouter to whichever upstream free-model operator serves the request. Those operators may have different data retention or training practices, and some model routes may require additional consent. Do not enable this fallback for sensitive prompts unless you have reviewed the current UnoRouter and upstream terms/privacy policies. Its free model IDs do not use UnoRouter account balance, but free capacity is variable and does not provide reliable service availability.
 
 ### Cloudflare Workers AI, image generation and voice input
 Enable Cloudflare by setting `ENABLE_CLOUDFLARE=true`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_API_TOKEN` in the server environment. Create a least-privilege token for Workers AI; the token is used only on the server. Add `cloudflare` to `PROVIDER_ORDER` where you want it tried. SYNTH uses Cloudflare's OpenAI-compatible chat endpoint with the same streaming, task, tool, image-input, failover and attribution path as the other providers. Image messages are routed to a vision-capable model.

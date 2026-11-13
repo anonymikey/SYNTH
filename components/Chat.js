@@ -9,6 +9,7 @@ import Markdown from './Markdown';
 import ResponseToolbar from './ResponseToolbar';
 import ToolRuns from './ToolRuns';
 import SourcesDisclosure from './SourcePreview';
+import NotificationSetupBanner from './NotificationSetupBanner';
 import { useFollow } from '../lib/follow';
 import { Up, Stop, ArrowDown, Img } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
@@ -219,6 +220,7 @@ export default function Chat({ seed }) {
       <>
         {err && <p className="err" role="alert">{err}</p>}
         {!imageMode && <Thumbs a={a} />}
+        <NotificationSetupBanner category="assistant" />
         <div className="compose compose-stack">
           <textarea ref={box} value={input} placeholder={imageMode ? 'Describe the image to create' : 'Message SYNTH'} rows={1} aria-label={imageMode ? 'Describe an image to generate' : 'Message'}
             onChange={(event) => setInput(event.target.value)} onPaste={!imageMode ? a.onPaste : undefined}

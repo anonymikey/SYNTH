@@ -111,6 +111,7 @@ export default function Admin() {
         <span className={'pill ' + d.providers.openrouter.tone}>{providerLabel('openrouter')}: {d.providers.openrouter.label}</span>
         <span className={'pill ' + d.providers.spark.tone}>{providerLabel('spark')}: {d.providers.spark.label}</span>
         <span className={'pill ' + d.providers.cloudflare.tone}>{providerLabel('cloudflare')}: {d.providers.cloudflare.label}</span>
+        <span className={'pill ' + d.providers.unorouter.tone}>{providerLabel('unorouter')}: {d.providers.unorouter.label}</span>
       </div>
       {!d.health.storage && <p className="err">Persistent storage is not connected, so activity and lessons may reset. Configure workspace storage, then redeploy.</p>}
       {d.providers.active.length === 0 && <p className="err">No SYNTH service is ready right now. Review the workspace service settings and try again.</p>}
@@ -184,7 +185,7 @@ export default function Admin() {
         {d.providers.notes.map((n, i) => <p key={i} className="note">{safeFrontendText(n)}</p>)}
         <div className="scroll"><table>
           <thead><tr><th>SYNTH service</th><th>State</th><th>Served (recent)</th><th>Failed attempts</th><th>Last success</th></tr></thead>
-          <tbody>{[[providerLabel('openrouter'), d.providers.openrouter], [providerLabel('spark'), d.providers.spark], [providerLabel('cloudflare'), d.providers.cloudflare]].map(([n, p]) => (
+          <tbody>{[[providerLabel('openrouter'), d.providers.openrouter], [providerLabel('spark'), d.providers.spark], [providerLabel('cloudflare'), d.providers.cloudflare], [providerLabel('unorouter'), d.providers.unorouter]].map(([n, p]) => (
             <tr key={n}><td>{n}</td><td><span className={'pill ' + p.tone}>{p.label}</span></td><td>{p.served}</td><td>{p.failed}</td><td>{p.lastOk ? ago(p.lastOk) : '—'}</td></tr>
           ))}</tbody>
         </table></div>

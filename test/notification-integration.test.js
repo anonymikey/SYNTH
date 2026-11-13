@@ -69,3 +69,21 @@ test('notification settings explain the loaded-page limit and CSS covers narrow 
   assert.match(css, /@media\(max-width:640px\)/);
   assert.match(css, /\.admin-sound-grid\{grid-template-columns:1fr\}/);
 });
+
+test('workspace setup suggestion is reusable, opt-in, session-dismissible and responsive', () => {
+  const banner = read('../components/NotificationSetupBanner.js');
+  const chat = read('../components/Chat.js');
+  const builder = read('../components/Builder.js');
+  const css = read('../app/globals.css');
+  assert.match(banner, /requestNotificationPermission\(\)/);
+  assert.match(banner, /saveNotificationPreferences\(\{ \.\.\.current, \[category\]: true \}\)/);
+  assert.match(banner, /sessionStorage\.setItem\(SNOOZE_PREFIX \+ category, '1'\)/);
+  assert.match(banner, /sessionStorage\.removeItem\(SNOOZE_PREFIX \+ category\)/);
+  assert.match(banner, /aria-label=\{`Dismiss \$\{label\} notification suggestion`\}/);
+  assert.equal((chat.match(/<NotificationSetupBanner category="assistant" \/>/g) || []).length, 1);
+  assert.equal((builder.match(/<NotificationSetupBanner category="build" \/>/g) || []).length, 2);
+  assert.match(css, /\.notification-nudge/);
+  assert.match(css, /\.notification-nudge\{[^}]*flex-wrap:wrap/);
+  assert.match(css, /\.notification-nudge-help\{[^}]*flex:1 1 100%/);
+  assert.match(css, /@media\(max-width:380px\)\{\.notification-nudge/);
+});

@@ -1176,6 +1176,24 @@ html[data-theme="light"] .build-answer,html[data-theme="system"] .build-answer{b
   .notification-action{width:100%}
   .admin-sound-grid{grid-template-columns:1fr}
 }
+
+/* Compact opt-in suggestion above workspace composers */
+.notification-nudge{display:flex;align-items:center;flex-wrap:wrap;gap:9px;min-width:0;margin:0 0 10px;padding:8px 9px;border:1px solid rgba(34,211,238,.18);border-radius:13px;background:linear-gradient(115deg,rgba(34,211,238,.065),rgba(139,92,246,.075)),var(--panel2);box-shadow:0 7px 22px rgba(0,0,0,.08)}
+.notification-nudge-icon{display:grid;place-items:center;flex:none;width:31px;height:31px;border:1px solid rgba(34,211,238,.19);border-radius:10px;background:rgba(34,211,238,.08);color:var(--cyan)}
+.notification-nudge-copy{display:grid;gap:2px;flex:1;min-width:0}
+.notification-nudge-copy strong{overflow-wrap:anywhere;color:var(--ink);font-size:11.5px;font-weight:650;line-height:1.35}
+.notification-nudge-copy small{color:var(--muted);font-size:10px;line-height:1.35}
+.notification-nudge-actions{display:flex;align-items:center;gap:5px;flex:none}
+.notification-nudge-enable{min-height:31px;padding:5px 10px;border:1px solid rgba(34,211,238,.3);border-radius:9px;background:linear-gradient(115deg,rgba(8,145,178,.22),rgba(124,58,237,.2));color:var(--ink);font:600 10.5px var(--font-body);white-space:nowrap;transition:border-color .16s,transform .16s,background .16s}
+.notification-nudge-enable:hover:not(:disabled){transform:translateY(-1px);border-color:rgba(34,211,238,.58);background:linear-gradient(115deg,rgba(8,145,178,.32),rgba(124,58,237,.27))}
+.notification-nudge-enable:disabled{opacity:.62;cursor:wait}
+.notification-nudge-dismiss{display:grid;place-items:center;flex:none;width:29px;height:29px;padding:0;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--muted);transition:background .16s,color .16s,border-color .16s}
+.notification-nudge-dismiss:hover{border-color:var(--line);background:rgba(255,255,255,.05);color:var(--ink)}
+.notification-nudge-enable:focus-visible,.notification-nudge-dismiss:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.notification-nudge-help{flex:1 1 100%;min-width:0;margin:0;padding:7px 9px;border-left:2px solid #f5b942;border-radius:0 8px 8px 0;background:rgba(245,185,66,.055);color:var(--muted);font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+@media(max-width:640px){.notification-nudge{gap:7px;padding:8px}.notification-nudge-copy small{font-size:9.5px}.notification-nudge-enable{padding:5px 8px}}
+@media(max-width:380px){.notification-nudge{gap:6px}.notification-nudge-copy strong{font-size:10.5px}.notification-nudge-copy small{font-size:9px}.notification-nudge-icon{width:28px;height:28px}.notification-nudge-enable{padding:5px 7px;font-size:10px}.notification-nudge-dismiss{width:26px;height:26px}}
+
 @media(max-width:560px){
   .notification-sound-row{grid-template-columns:minmax(0,1fr) auto;gap:7px}
   .notification-sound-row label{grid-column:1/-1}

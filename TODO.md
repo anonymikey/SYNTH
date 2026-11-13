@@ -54,9 +54,24 @@
 - [x] Provide distinct, previewable sound choices per task. Allow the authenticated Learning Studio admin to set safe workspace default sounds for Assistant and SYNTHCODE; users may override defaults in their own Notification settings. Validate sound IDs and use generated Web Audio tones rather than loading arbitrary audio files.
 - [x] Keep the notification settings and tab controls readable, keyboard-accessible and responsive on desktop, tablet and phone. Clearly explain that task notifications require the SYNTH page to remain loaded; do not imply browser-closed/Web Push delivery.
 
+## Notification setup suggestion
+
+- [x] Show a small, non-blocking notification suggestion above the composer in both SYNTH ASSISTANT and SYNTHCODE whenever that workspace's task notification is not set up.
+- [x] Provide an **Enable** action that requests browser permission only on the user's click and enables that workspace's notification category. If browser permission is denied, explain how to change site permission rather than repeatedly prompting; hide the suggestion where browser notifications are unsupported.
+- [x] Provide a close control that snoozes the suggestion only for the current tab session while setup remains incomplete. Re-show it in a later session until that workspace is configured, and keep it hidden after setup.
+- [x] Keep the suggestion compact, accessible and responsive, and never block the task composer or normal workspace behavior.
+
 ## Assistant response formatting and website sources
 
 - [x] Render valid Markdown headings, unordered/ordered lists, paragraphs, inline emphasis/code/links, blockquotes and fenced code as formatted content instead of showing heading hashes or list markers as raw characters; keep ordinary literal hash characters as content.
 - [x] Carry structured source metadata from website-search/page-reader and approved public GitHub/YouTube results through the existing Assistant and SYNTHCODE tool events to the response that used them. Keep it bounded, deduplicated, HTTPS-only, response-scoped and safe to render; do not add it to server-side activity/training records or expose backend identifiers.
 - [x] Add an accessible per-response Sources disclosure with compact source previews (title, website/host and excerpt) and an explicit safe external link. Keep the existing response toolbar and tool activity; improve expanded website-tool results so visitors can review source previews without a wall of raw URL text.
 - [x] Keep the new formatting and source-review UI readable and usable on desktop, tablet and phone, within SYNTH's existing dark-glass visual style.
+
+## Optional UnoRouter fallback
+
+- [x] Add UnoRouter as a disabled-by-default server-side fallback in the existing Assistant and SYNTHCODE routing chain. Keep its API key out of client bundles and logs; skip it when disabled, unconfigured, or misconfigured, and preserve the existing provider order and normal behavior.
+- [x] Restrict every UnoRouter request to configured model IDs ending exactly in `:free`; never route to paid model IDs or spend UnoRouter balance. Keep the optional route text-only unless a specific free model is verified for image input; the initial implementation must skip image tasks.
+- [x] Honor UnoRouter `Retry-After` in seconds or HTTP-date form on rate limits, bound cooldowns, persist model cooldown timestamps in shared storage with short timeouts, and skip UnoRouter if shared storage is missing or fails its atomic rate-limit reservation. Skip cooling models while continuing to the next eligible model/provider without delaying healthy fallbacks.
+- [x] Keep UnoRouter out of image generation, transcription, and Learning Studio model-generated training; report its protected Learning Studio health state using SYNTH's existing safe provider aliases, without displaying model IDs or credentials.
+- [x] Document the optional server environment settings and free-only restriction; retain generic user-facing failures, and verify free-model validation, provider order, rate-limit fallback/cooldown, complete tests, and production build.

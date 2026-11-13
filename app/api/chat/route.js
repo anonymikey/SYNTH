@@ -1,5 +1,5 @@
 import { approved } from '../../../lib/db';
-import { cloudflareAccountProblem, keyProblem, providerConfig } from '../../../lib/env';
+import { providerConfig } from '../../../lib/env';
 import { classify } from '../../../lib/core';
 import { route } from '../../../lib/spark';
 import { agentResponse } from '../../../lib/agent';
@@ -22,11 +22,10 @@ function clean(c) {
 const textOf = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.filter((p) => p.type === 'text').map((p) => p.text).join(' ') : '');
 
 export async function POST(req) {
-  // Needs at least one usable provider (OpenRouter by default; the SPARK gateway only when enabled and configured).
+  // Needs at least one usable configured chat provider.
   const providers = providerConfig();
   if (!providers.active.length) {
-    const message = providers.wantedCloudflare ? cloudflareAccountProblem() : keyProblem();
-    return new Response(message || 'No AI provider is configured.', { status: 500 });
+    return new Response('SYNTH is temporarily unavailable. Please try again later.', { status: 503 });
   }
 
   const { messages, system, mode, retry, tools: toolsAllowed } = await req.json().catch(() => ({}));

@@ -9,6 +9,7 @@ import {
   normalizeNotificationSoundDefaults,
   playNotificationSound,
   readNotificationPreferences,
+  requestNotificationPermission,
   reportTaskNotification,
   resetNotificationPreferences,
   resolveNotificationSound,
@@ -56,6 +57,31 @@ test('preferences save and reset locally without changing browser permission', (
   assert.deepEqual(readNotificationPreferences(storage), saved);
   assert.deepEqual(resetNotificationPreferences(storage), { ...DEFAULT_NOTIFICATION_PREFERENCES });
   assert.equal(storage.getItem(NOTIFICATION_PREFERENCES_KEY), JSON.stringify(DEFAULT_NOTIFICATION_PREFERENCES));
+});
+
+test('browser permission helper prompts only in a supported secure context and normalizes failures', async () => {
+  const originalWindow = globalThis.window;
+  let requests = 0;
+  function FakeNotification() {}
+  FakeNotification.permission = 'default';
+  FakeNotification.requestPermission = () => { requests += 1; return Promise.resolve('granted'); };
+  try {
+    globalThis.window = {
+      isSecureContext: true,
+      Notification: FakeNotification,
+    };
+    assert.equal(await requestNotificationPermission(), 'granted');
+    assert.equal(requests, 1);
+    globalThis.window.isSecureContext = false;
+    assert.equal(await requestNotificationPermission(), 'unsupported');
+    assert.equal(requests, 1);
+    globalThis.window.isSecureContext = true;
+    globalThis.window.Notification.requestPermission = () => { throw new Error('blocked'); };
+    assert.equal(await requestNotificationPermission(), 'unsupported');
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
 });
 
 test('workspace sound defaults and user overrides are restricted to generated presets', async () => {
