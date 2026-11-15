@@ -29,6 +29,18 @@ test('admin health reports UnoRouter as a free-text fallback and flags repeated 
   assert.match(failed.notes.join(' '), /rate-limit cooldowns/);
 });
 
+test('admin health reports APInex as a free-text fallback and flags repeated failures', () => {
+  const apinexCfg = { ...cfg, active: ['apinex'], apinex: 'enabled' };
+  const healthy = providerHealth(apinexCfg, [{ provider: 'apinex', status: 'Fallback', ts: 9876, fails: [] }]);
+  assert.equal(healthy.apinex.state, 'enabled');
+  assert.equal(healthy.apinex.label, 'Enabled · free text only');
+  assert.equal(healthy.apinex.served, 1);
+
+  const failed = providerHealth(apinexCfg, [1, 2, 3].map((ts) => ({ provider: 'other', status: 'Failed', ts, fails: [{ provider: 'apinex' }] })));
+  assert.equal(failed.apinex.state, 'warn');
+  assert.match(failed.notes.join(' '), /account-wide rate and quota cooldowns/);
+});
+
 test('image and voice tasks are included in SYNTHCORE task coverage', () => {
   assert.deepEqual(TASKS['image-generation'], ['Generating images', 'image']);
   assert.deepEqual(TASKS['speech-to-text'], ['Speech transcription', 'audio']);

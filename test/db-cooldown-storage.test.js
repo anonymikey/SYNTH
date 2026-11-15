@@ -24,8 +24,10 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     await db.putMaxTemp('learn:cooldown:model:example', 1700000000000, 600);
     const values = await db.getTemps(['learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
     const claimed = await db.claimTemp('chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', 1700000060000, 60);
+    const accountClaimed = await db.claimTempMs('chat:cooldown:apinex:account', 1700000004200, 4200);
     assert.deepEqual(values, [1700000000000, null]);
     assert.equal(claimed, true);
+    assert.equal(accountClaimed, true);
     assert.equal(requests[0][0], 'EVAL');
     assert.equal(requests[0][2], '1');
     assert.equal(requests[0][3], 'learn:cooldown:model:example');
@@ -35,6 +37,7 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     assert.match(requests[0][1], /redis\.call\('SET',KEYS\[1\].*'EX',ARGV\[2\]\)/);
     assert.deepEqual(requests[1], ['MGET', 'learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
     assert.deepEqual(requests[2], ['SET', 'chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', '1700000060000', 'EX', '60', 'NX']);
+    assert.deepEqual(requests[3], ['SET', 'chat:cooldown:apinex:account', '1700000004200', 'PX', '4200', 'NX']);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;

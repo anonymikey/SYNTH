@@ -2,6 +2,18 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'synth-bridge-free-text-routing',
+        date: '2026-11-14',
+        title: 'An additional guarded text fallback is available',
+        summary: 'SYNTH Bridge can be enabled as a last-resort text route with live free-price checks and a shared account-level rate guard.',
+        tags: ['Routing', 'Reliability', 'Privacy'],
+        content: [
+            'Workspace owners can optionally enable SYNTH Bridge for text responses in SYNTH ASSISTANT and SYNTHCODE. It is disabled by default and is only tried in the order configured for the workspace.',
+            'Before a request is sent, SYNTH checks that a candidate is currently marked free, healthy and zero-priced for input and output. A shared account-wide request reservation and persistent cooldowns help keep traffic within free-tier limits; if shared storage or live price verification is unavailable, SYNTH skips the route.',
+            'Free allowances and availability may change. Text and code routed through this option may be processed by an upstream model operator whose retention and training practices differ. This route is not used for images, transcription or Learning Studio analysis. Avoid sending sensitive information and review current service terms before enabling it.',
+        ],
+    },
+    {
         slug: 'synth-connect-free-text-fallback',
         date: '2026-11-13',
         title: 'An optional free-text fallback joins SYNTH routing',

@@ -20,12 +20,12 @@ const NAV = [['Features', '#features'], ['How it works', '#how'], ['Evolve', '#e
 const FAQ = [
   ['Is SYNTH really free?', 'There is no SYNTH subscription required to start. SYNTH uses services configured for the workspace; availability, limits and any charges depend on the connected account. Optional SYNTH Image Master and voice tools follow the same account-specific limits.'],
   ['How does SYNTH learn?', 'SYNTHCORE builds a memory of short lessons from ratings and sessions, plus lessons shared by other agents. The SYNTH Learning Studio reviews lessons before they are added to prompts, so you stay in control.'],
-  ['Are my prompts private?', 'Assistant and SYNTHCODE requests are processed by the external AI services configured for this workspace. If the workspace owner enables an optional free-model fallback, text may also pass through an upstream model service whose retention and training policies vary. Avoid sharing sensitive information.'],
+  ['Are my prompts private?', 'Assistant and SYNTHCODE requests are processed by the external AI services configured for this workspace. If the workspace owner enables the optional SYNTH Bridge free-text fallback, text and code may also be processed by an upstream model operator with different retention and training practices. Avoid sharing sensitive information.'],
   ['Are my images stored?', 'Images may be processed by an external AI service to answer your request and are not stored by SYNTH. Logs only record that an image was attached. Avoid sharing confidential information.'],
   ['What can I build?', 'Use Web for multi-file browser pages and apps, or TypeScript for a browser preview that transpiles one plain .ts file without full type-checking or package imports. Python, Rust, Go, C++ and Node.js backend modes generate downloadable source projects and local run instructions only; SYNTHCODE does not compile, test, run, host or deploy those projects.'],
   ['Do I need an account?', 'No. Open the workspace and start.'],
   ['What are the new image and voice features?', 'SYNTH Image Master provides optional image creation and voice transcription when enabled in workspace settings. These features use a connected external service and are subject to that account’s limits and terms.'],
-  ['Will SYNTH remember my appearance settings?', 'Yes. Theme, accent, typography, text size and chat appearance preferences are saved in local storage in this browser.'],
+  ['Will SYNTH remember my appearance settings?', 'Yes. Theme, accent, typography, text size, chat appearance and any custom workspace background image are saved in local storage in this browser only. Images are resized locally and are not uploaded.'],
 ];
 
 export default function Landing() {
