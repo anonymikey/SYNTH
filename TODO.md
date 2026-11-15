@@ -102,3 +102,11 @@
 - [x] Add **Dark, Light, and System** theme choices plus distinct stylish palette options. Apply each theme consistently across the AI workspace, keep existing accent/font/chat/density settings, and have System follow the device's appearance.
 - [x] Let users choose a custom workspace background image, preview it, adjust a readability overlay, and remove it. Keep the image local to this browser; do not upload it or send it to an API. Validate and compress accepted raster images before saving them with the existing personalization preferences.
 - [x] When a user chooses a theme, show a brief animated message that enters and disappears, including “Switching off the lights” for Dark and a matching message for every other theme. Keep it accessible, respect reduced-motion settings, and preserve current Settings tabs and responsive behavior.
+
+
+## Public SYNTH status dashboard
+
+- [x] Add a public `/status` page with an overall live status summary and distinct rows for SYNTH ASSISTANT, SYNTHCODE, image generation and voice transcription. Show each service's current observed state, recent routed-request count, successful routed-response ratio, appropriately labelled response-time metric and update time; do not imply these measurements guarantee end-to-end completion.
+- [x] Show 90 daily color-coded history bars per service in a familiar public status-page pattern. Bars must summarize retained real SYNTH request-routing outcomes only; a period with no recorded requests is visibly neutral and must not be presented as healthy uptime. Explain the latest-500-record coverage limit and do not send synthetic provider probes.
+- [x] Refresh the public snapshot every 15 seconds only while the page is visible, refresh immediately when it becomes visible again, offer manual refresh, and retain the last good snapshot with clear stale/error feedback if an update fails. Prevent duplicate in-flight refreshes.
+- [x] Keep the page SYNTH-branded, animated and responsive. Make every history bar's date/result understandable on hover and keyboard focus, provide mobile-safe horizontal history navigation, respect reduced-motion preferences, and never expose raw provider/model IDs, provider errors, secrets, prompts, response text, or private activity records.
