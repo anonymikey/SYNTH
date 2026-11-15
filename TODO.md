@@ -92,6 +92,11 @@
 
 - [x] Add a **Start with a template** section directly below the main prompt box on SYNTHCODE's home screen. Include category filter tabs named **Featured, All, Landing pages, Stores, Portfolio, Games, SaaS, Starters** and functional horizontal navigation arrows. Below the tabs, display a six-card grid with dark-themed thumbnail previews and titles. Clicking any template card must fill the existing prompt input with a detailed starter prompt for that template style and focus the input.
 
+## SYNTHCODE unified welcome page
+
+- [x] Present the SYNTHCODE logo, headline, guidance, quick prompt ideas, existing composer, and template gallery as one cohesive welcome page. Keep the template gallery directly below the composer; preserve attachments, language settings, voice input, notification setup, template filters/cards and prompt-to-composer focus behavior. Keep the animated workflow explanation in the same page.
+- [x] Use one page-level vertical scroll surface instead of separate nested welcome/dock scroll areas. Preserve SYNTH's visual style and welcome-to-build animations; make template tabs and pager comfortable touch targets and signpost horizontal category overflow. Keep the page tidy and free of horizontal overflow on desktop, tablet, phone and short viewports.
+
 ## Expanded workspace Personalization
 
 - [x] Add **Dark, Light, and System** theme choices plus distinct stylish palette options. Apply each theme consistently across the AI workspace, keep existing accent/font/chat/density settings, and have System follow the device's appearance.

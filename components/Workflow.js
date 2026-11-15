@@ -3,13 +3,13 @@ const STEPS = [
   { t: 'Describe', d: 'Type an idea, or add a screenshot or sketch.', v: (
     <div className="wfv"><span className="wf-bub">A habit tracker with streaks</span><div className="wf-att"><i className="wf-img" /><em>screenshot.png</em></div></div>
   ) },
-  { t: 'Generate', d: 'SYNTHCODE writes a complete, working page, live.', v: (
+  { t: 'Generate', d: 'SYNTHCODE creates project files for the selected mode.', v: (
     <div className="wfv">{[80, 54, 92, 46, 68].map((w, i) => <i key={i} className="wf-line" style={{ width: w + '%', animationDelay: i * 0.18 + 's' }} />)}</div>
   ) },
-  { t: 'Preview', d: 'Check it on desktop, tablet and phone.', v: (
+  { t: 'Preview', d: 'Preview browser projects or export source projects.', v: (
     <div className="wfv wf-dev"><b className="d1"><i /><i /></b><b className="d2"><i /></b><b className="d3"><i /></b></div>
   ) },
-  { t: 'Refine', d: 'Ask for changes in plain words, then download.', v: (
+  { t: 'Refine', d: 'Request changes, then download or export your files.', v: (
     <div className="wfv"><span className="wf-bub">Make the buttons blue</span><span className="wf-bub ok">Done. Updated the page.</span></div>
   ) },
 ];

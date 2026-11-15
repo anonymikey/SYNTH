@@ -396,88 +396,92 @@ export default function Builder({ seed }) {
 
   if (welcome) {
     return (
-      <section className={'bw template-home' + (leaving ? ' leaving' : '')} {...a.dropProps}>
+      <section className={'bw template-home' + (leaving ? ' leaving' : '')} aria-label="SYNTHCODE welcome" {...a.dropProps}>
         <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
-        <div className="bw-scroll">
-          <div className="bw-hero">
-            <img className="bw-mark" src="/logo-mark.png" alt="" />
-            <h2>Build or export with SYNTHCODE</h2>
-            <p>Describe what you want and SYNTHCODE will choose a suitable project mode. Open Settings to set a preference; browser projects can be previewed and source projects exported.</p>
-            <div className="bw-pills">
-              {IDEAS.map((t, i) => <button key={t} className="bw-pill" style={{ '--i': i }} onClick={() => pick(t)}>{t}</button>)}
-            </div>
-          </div>
-          <Workflow />
-        </div>
-        <div className="bw-dock templates-dock">
-          {err && <p className="err" role="alert">{err}</p>}
-          <Thumbs a={a} />
-          <NotificationSetupBanner category="build" />
-          <div className="compose compose-stack">
-            <textarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" aria-label="Describe what to build"
-              onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
-            <div className="compose-toolbar builder-toolbar">
-              <div className="toolbar-cluster">
-                <AttachButton a={a} />
-                <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} />
+        <div className="bw-scroll bw-home-scroll">
+          <div className="bw-home-layout">
+            <div className="bw-hero">
+              <img className="bw-mark" src="/logo-mark.png" alt="" />
+              <span className="bw-eyebrow">SYNTHCODE · BUILD STUDIO</span>
+              <h2>Build or export with SYNTHCODE</h2>
+              <p>Describe an idea or start with a template. SYNTHCODE chooses a suitable mode—web projects preview here, while other languages export as source. Set a language preference in Settings.</p>
+              <div className="bw-pills">
+                {IDEAS.map((t, i) => <button key={t} className="bw-pill" style={{ '--i': i }} onClick={() => pick(t)}>{t}</button>)}
               </div>
-              <span className="toolbar-spacer" />
-              <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
-              <button className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{sourceOnly ? 'Generate' : 'Build'} <Arrow /></button>
             </div>
-          </div>
-          <section className="bw-templates" aria-labelledby="bw-templates-title">
-            <div className="bw-templates-heading">
-              <h3 id="bw-templates-title">Start with a template</h3>
-              <div className="bw-template-controls">
-                <div className="bw-template-tabs" role="tablist" aria-label="Template categories" onKeyDown={onTemplateTabKeyDown}>
-                  {BUILDER_TEMPLATE_CATEGORIES.map((category) => (
-                    <button key={category.id} type="button" role="tab" id={`builder-template-tab-${category.id}`} aria-controls="builder-template-panel" aria-selected={templateCategory === category.id} tabIndex={templateCategory === category.id ? 0 : -1}
-                      className={'bw-template-tab' + (templateCategory === category.id ? ' selected' : '')}
-                      onClick={() => { setTemplateCategory(category.id); setTemplatePageIndex(0); }}>
-                      {category.label}
+            <div className="bw-dock templates-dock">
+              {err && <p className="err" role="alert">{err}</p>}
+              <Thumbs a={a} />
+              <NotificationSetupBanner category="build" />
+              <div className="compose compose-stack">
+                <textarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" aria-label="Describe what to build"
+                  onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
+                <div className="compose-toolbar builder-toolbar">
+                  <div className="toolbar-cluster">
+                    <AttachButton a={a} />
+                    <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} />
+                  </div>
+                  <span className="toolbar-spacer" />
+                  <VoiceInput onText={(t) => setPrompt((v) => v ? `${v} ${t}` : t)} />
+                  <button className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{sourceOnly ? 'Generate' : 'Build'} <Arrow /></button>
+                </div>
+              </div>
+              <section className="bw-templates" aria-labelledby="bw-templates-title">
+                <div className="bw-templates-heading">
+                  <h3 id="bw-templates-title">Start with a template</h3>
+                  <div className="bw-template-controls">
+                    <div className="bw-template-tabs" role="tablist" aria-label="Template categories" onKeyDown={onTemplateTabKeyDown}>
+                      {BUILDER_TEMPLATE_CATEGORIES.map((category) => (
+                        <button key={category.id} type="button" role="tab" id={`builder-template-tab-${category.id}`} aria-controls="builder-template-panel" aria-selected={templateCategory === category.id} tabIndex={templateCategory === category.id ? 0 : -1}
+                          className={'bw-template-tab' + (templateCategory === category.id ? ' selected' : '')}
+                          onClick={() => { setTemplateCategory(category.id); setTemplatePageIndex(0); }}>
+                          {category.label}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="bw-template-scrollhint" aria-hidden="true">Swipe for more categories</span>
+                    <div className="bw-template-pager" aria-label="Template pages">
+                      <button type="button" className="bw-template-arrow" aria-label="Previous templates" disabled={templatePage.page === 0}
+                        onClick={() => setTemplatePageIndex((page) => Math.max(0, page - 1))}>
+                        <Chevron className="bw-template-chevron previous" />
+                      </button>
+                      <button type="button" className="bw-template-arrow" aria-label="Next templates" disabled={templatePage.page >= templatePage.pageCount - 1}
+                        onClick={() => setTemplatePageIndex((page) => Math.min(templatePage.pageCount - 1, page + 1))}>
+                        <Chevron className="bw-template-chevron" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="bw-template-page-status" role="status" aria-live="polite">
+                  Page {templatePage.page + 1} of {templatePage.pageCount} · {templatePage.total} templates
+                </div>
+                <div className="bw-template-grid" role="tabpanel" id="builder-template-panel" aria-labelledby={`builder-template-tab-${templatePage.category}`}>
+                  {templatePage.templates.map((item) => (
+                    <button key={item.id} type="button" className="bw-template-card" onClick={() => pick(item.prompt)} aria-label={`Use ${item.title} template`}>
+                      <span className="bw-template-preview" data-category={item.category} style={{ '--template-accent': item.accent }} aria-hidden="true">
+                        <span className="bw-template-browser-bar"><i /><i /><i /><b>{item.eyebrow}</b><em /></span>
+                        <span className="bw-template-preview-body">
+                          <span className="bw-template-preview-copy">
+                            <span className="bw-template-preview-kicker">{item.eyebrow}</span>
+                            <strong>{item.headline}</strong>
+                            <small>{item.detail}</small>
+                            <i className="bw-template-preview-cta" />
+                          </span>
+                          <span className="bw-template-preview-art"><i /><i /><i /></span>
+                        </span>
+                        <span className="bw-template-preview-footer"><i /><i /><i /></span>
+                      </span>
+                      <span className="bw-template-card-title">{item.title}</span>
+                      <span className="bw-template-card-category">{BUILDER_TEMPLATE_CATEGORIES.find((category) => category.id === item.category)?.label}</span>
                     </button>
                   ))}
                 </div>
-                <div className="bw-template-pager" aria-label="Template pages">
-                  <button type="button" className="bw-template-arrow" aria-label="Previous templates" disabled={templatePage.page === 0}
-                    onClick={() => setTemplatePageIndex((page) => Math.max(0, page - 1))}>
-                    <Chevron className="bw-template-chevron previous" />
-                  </button>
-                  <button type="button" className="bw-template-arrow" aria-label="Next templates" disabled={templatePage.page >= templatePage.pageCount - 1}
-                    onClick={() => setTemplatePageIndex((page) => Math.min(templatePage.pageCount - 1, page + 1))}>
-                    <Chevron className="bw-template-chevron" />
-                  </button>
-                </div>
-              </div>
+              </section>
+              <p className={'tools' + (sourceOnly ? ' source-only-tools' : '')}><span>{sourceOnly ? SOURCE_ONLY_NOTICE : 'Enter to build, Shift+Enter for a new line. You can also paste or drop an image.'}</span></p>
             </div>
-            <div className="bw-template-page-status" role="status" aria-live="polite">
-              Page {templatePage.page + 1} of {templatePage.pageCount} · {templatePage.total} templates
-            </div>
-            <div className="bw-template-grid" role="tabpanel" id="builder-template-panel" aria-labelledby={`builder-template-tab-${templatePage.category}`}>
-              {templatePage.templates.map((item) => (
-                <button key={item.id} type="button" className="bw-template-card" onClick={() => pick(item.prompt)} aria-label={`Use ${item.title} template`}>
-                  <span className="bw-template-preview" data-category={item.category} style={{ '--template-accent': item.accent }} aria-hidden="true">
-                    <span className="bw-template-browser-bar"><i /><i /><i /><b>{item.eyebrow}</b><em /></span>
-                    <span className="bw-template-preview-body">
-                      <span className="bw-template-preview-copy">
-                        <span className="bw-template-preview-kicker">{item.eyebrow}</span>
-                        <strong>{item.headline}</strong>
-                        <small>{item.detail}</small>
-                        <i className="bw-template-preview-cta" />
-                      </span>
-                      <span className="bw-template-preview-art"><i /><i /><i /></span>
-                    </span>
-                    <span className="bw-template-preview-footer"><i /><i /><i /></span>
-                  </span>
-                  <span className="bw-template-card-title">{item.title}</span>
-                  <span className="bw-template-card-category">{BUILDER_TEMPLATE_CATEGORIES.find((category) => category.id === item.category)?.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-          <p className={'tools' + (sourceOnly ? ' source-only-tools' : '')}><span>{sourceOnly ? SOURCE_ONLY_NOTICE : 'Enter to build, Shift+Enter for a new line. You can also paste or drop an image.'}</span></p>
+            <Workflow />
+          </div>
         </div>
       </section>
     );

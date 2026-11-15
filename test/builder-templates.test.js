@@ -61,10 +61,41 @@ test('welcome screen places accessible template filters and cards directly after
   assert.match(builder, /ArrowLeft[\s\S]*?ArrowRight[\s\S]*?Home[\s\S]*?End/);
 });
 
+test('welcome content is one scroll flow with the composer, gallery and animated workflow in order', () => {
+  const welcome = builder.split('if (welcome) {')[1]?.split("\n  return (\n    <section className={'build'")[0] || '';
+  const scroll = welcome.indexOf('className="bw-scroll bw-home-scroll"');
+  const hero = welcome.indexOf('className="bw-hero"');
+  const composer = welcome.indexOf('<div className="compose compose-stack">');
+  const templates = welcome.indexOf('className="bw-templates"');
+  const workflow = welcome.indexOf('<Workflow />');
+  assert.equal((welcome.match(/className="bw-scroll/g) || []).length, 1);
+  assert.ok(scroll >= 0 && hero > scroll && composer > hero && templates > composer && workflow > templates);
+  assert.match(welcome, /className="bw-dock templates-dock"[\s\S]*?<Workflow \/>/);
+  assert.match(css, /\.bw-dock\.templates-dock\{width:100%;max-width:none;max-height:none;overflow:visible/);
+});
+
 test('gallery includes dark local previews and responsive six-to-three-to-two column layouts', () => {
   assert.match(css, /\.bw-template-grid\{display:grid;grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(max-width:1000px\)\{\.bw-template-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(max-width:560px\).*?\.bw-template-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);
   assert.match(css, /\.bw-template-preview\{[^}]*#070a13/);
-  assert.match(css, /prefers-reduced-motion:reduce\).*?\.bw-template-card/);
+  assert.match(css, /prefers-reduced-motion:reduce\).*?\.bw-template-card/s);
+});
+
+test('welcome layout has short-screen spacing, touch-sized category controls, overflow cues and reduced motion', () => {
+  const layout = css.slice(css.lastIndexOf('/* One continuous SYNTHCODE welcome page */'));
+  assert.match(layout, /\.bw-template-tab\{min-height:40px/);
+  assert.match(layout, /\.bw-template-arrow\{width:40px;min-height:40px/);
+  assert.match(layout, /\.bw-template-tabs\{scrollbar-width:thin/);
+  assert.match(layout, /@media\(max-height:680px\)/);
+  assert.match(layout, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(builder, /className="bw-template-scrollhint" aria-hidden="true">Swipe for more categories/);
+  assert.match(css, /\.bw-template-scrollhint\{display:block;order:2/);
+});
+
+test('welcome explainer copy distinguishes preview projects from source exports', () => {
+  const workflow = readFileSync(new URL('../components/Workflow.js', import.meta.url), 'utf8');
+  assert.match(workflow, /creates project files for the selected mode/);
+  assert.match(workflow, /Preview browser projects or export source projects/);
+  assert.doesNotMatch(workflow, /complete, working page, live/);
 });
