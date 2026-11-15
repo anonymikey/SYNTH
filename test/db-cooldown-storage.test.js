@@ -56,6 +56,7 @@ test('cooldown storage commands abort when the shared REST service stalls', asyn
   try {
     await assert.rejects(db.getTemps(['learn:cooldown:provider:cloudflare'], { timeoutMs: 20 }), { name: 'TimeoutError' });
     await assert.rejects(db.putMaxTemp('learn:cooldown:provider:cloudflare', 1700000000000, 60, { timeoutMs: 20 }), { name: 'TimeoutError' });
+    await assert.rejects(db.listJSON('spark', 500, { timeoutMs: 20, throwOnError: true }), { name: 'TimeoutError' });
   } finally {
     clearTimeout(keepAlive);
     globalThis.fetch = originalFetch;

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { modelLabel, providerLabel, safeFrontendText, serviceNodeLabel } from '../lib/brand-view.js';
 import { DEFAULT_NOTIFICATION_SOUND_DEFAULTS, NOTIFICATION_SOUND_OPTIONS, normalizeNotificationSoundDefaults, playNotificationSound } from '../lib/notifications';
 
@@ -8,6 +8,8 @@ const pc = (v) => (v == null ? '—' : v + '%');
 const TSTATE = { healthy: ['ok', 'Healthy'], degraded: ['warn', 'Degraded'], down: ['bad', 'Down'], disabled: ['neutral', 'Off'], unknown: ['neutral', 'Not used yet'] };
 const FEEDBACK_LABEL = { inaccurate: 'Inaccurate information', 'poor-explanation': 'Poor explanation', irrelevant: 'Irrelevant response', incomplete: 'Incomplete answer', other: 'Other' };
 const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+const PROVIDER_REFRESH_MS = 15_000;
+const clock = (t) => t ? new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
 
 export default function Admin() {
   const [d, setD] = useState(null);
@@ -21,6 +23,11 @@ export default function Admin() {
   const [soundDraft, setSoundDraft] = useState({ ...DEFAULT_NOTIFICATION_SOUND_DEFAULTS });
   const [soundBusy, setSoundBusy] = useState(false);
   const [soundStatus, setSoundStatus] = useState('');
+  const [liveProviders, setLiveProviders] = useState(null);
+  const [providerUpdatedAt, setProviderUpdatedAt] = useState(0);
+  const [providerRefreshing, setProviderRefreshing] = useState(false);
+  const [providerRefreshError, setProviderRefreshError] = useState('');
+  const providerRequest = useRef(false);
 
   const load = useCallback(async () => {
     const r = await fetch('/api/admin/data', { cache: 'no-store' });
@@ -28,6 +35,39 @@ export default function Admin() {
     setAuth(true); setD(await r.json());
   }, []);
   useEffect(() => { load(); }, [load]);
+  const loadProviderHealth = useCallback(async (quiet = false) => {
+    if (providerRequest.current) return;
+    providerRequest.current = true;
+    if (!quiet) setProviderRefreshing(true);
+    try {
+      const response = await fetch('/api/admin/providers', { cache: 'no-store' });
+      if (response.status === 401) { setAuth(false); return; }
+      if (!response.ok) throw new Error('Provider health is unavailable.');
+      const snapshot = await response.json();
+      if (!snapshot.providers || !Number.isFinite(Number(snapshot.refreshedAt))) throw new Error('Invalid health snapshot.');
+      setLiveProviders(snapshot.providers);
+      setProviderUpdatedAt(Number(snapshot.refreshedAt));
+      setProviderRefreshError('');
+    } catch {
+      setProviderRefreshError('Refresh failed. Showing the latest available snapshot.');
+    } finally {
+      providerRequest.current = false;
+      if (!quiet) setProviderRefreshing(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (!d || !auth) return;
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') loadProviderHealth(true);
+    };
+    refreshIfVisible();
+    const timer = window.setInterval(refreshIfVisible, PROVIDER_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshIfVisible);
+    };
+  }, [d, auth, loadProviderHealth]);
   useEffect(() => {
     if (d?.notificationSounds) setSoundDraft(normalizeNotificationSoundDefaults(d.notificationSounds));
   }, [d?.notificationSounds]);
@@ -99,6 +139,14 @@ export default function Admin() {
   const tcalls = d.tools.rows.reduce((a, t) => a + t.calls, 0), tok = d.tools.rows.reduce((a, t) => a + t.ok, 0);
   const counts = (st) => d.lessons.filter((l) => l.status === st).length;
   const list = d.lessons.filter((l) => l.status === filter);
+  const providers = liveProviders || d.providers;
+  const providerRows = [
+    ['openrouter', providerLabel('openrouter')],
+    ['spark', providerLabel('spark')],
+    ['cloudflare', providerLabel('cloudflare')],
+    ['unorouter', providerLabel('unorouter')],
+    ['apinex', providerLabel('apinex')],
+  ];
 
   return (
     <div className="adm">
@@ -108,16 +156,55 @@ export default function Admin() {
       </header>
       <div className="health">
         {[['Storage', d.health.storage, 'OK'], ['Cron authorization', d.health.cron, 'Configured']].map(([n, ok, ready]) => <span key={n} className={'pill ' + (ok ? 'ok' : 'bad')}>{n}: {ok ? ready : 'Missing'}</span>)}
-        <span className={'pill ' + d.providers.openrouter.tone}>{providerLabel('openrouter')}: {d.providers.openrouter.label}</span>
-        <span className={'pill ' + d.providers.spark.tone}>{providerLabel('spark')}: {d.providers.spark.label}</span>
-        <span className={'pill ' + d.providers.cloudflare.tone}>{providerLabel('cloudflare')}: {d.providers.cloudflare.label}</span>
-        <span className={'pill ' + d.providers.unorouter.tone}>{providerLabel('unorouter')}: {d.providers.unorouter.label}</span>
-        <span className={'pill ' + d.providers.apinex.tone}>{providerLabel('apinex')}: {d.providers.apinex.label}</span>
+        <span className={'pill ' + providers.openrouter.tone}>{providerLabel('openrouter')}: {providers.openrouter.label}</span>
+        <span className={'pill ' + providers.spark.tone}>{providerLabel('spark')}: {providers.spark.label}</span>
+        <span className={'pill ' + providers.cloudflare.tone}>{providerLabel('cloudflare')}: {providers.cloudflare.label}</span>
+        <span className={'pill ' + providers.unorouter.tone}>{providerLabel('unorouter')}: {providers.unorouter.label}</span>
+        <span className={'pill ' + providers.apinex.tone}>{providerLabel('apinex')}: {providers.apinex.label}</span>
       </div>
       {!d.health.storage && <p className="err">Persistent storage is not connected, so activity and lessons may reset. Configure workspace storage, then redeploy.</p>}
-      {d.providers.active.length === 0 && <p className="err">No SYNTH service is ready right now. Review the workspace service settings and try again.</p>}
+      {providers.active.length === 0 && <p className="err">No SYNTH service is ready right now. Review the workspace service settings and try again.</p>}
       {msg && <p className="note">{msg}</p>}
       {d.lastResult?.error && !msg && <p className="err" role="status">Latest learning run needs attention: {safeFrontendText(d.lastResult.error)}</p>}
+
+      <section className="admin-provider-health" aria-labelledby="admin-provider-health-title">
+        <div className="admin-provider-health-head">
+          <div>
+            <h2 id="admin-provider-health-title">Real-time Providers Health</h2>
+            <p>Live configuration and real task outcomes from the last 15 minutes. No test prompts are sent or provider quota consumed.</p>
+          </div>
+          <div className="admin-provider-health-actions">
+            <span className="admin-provider-refresh-meta" role="status" aria-live="polite">
+              {providerRefreshing ? 'Refreshing provider snapshot…' : (providerUpdatedAt ? `Updated ${clock(providerUpdatedAt)} · auto-refreshes every 15 sec` : 'Loading live health…')}
+            </span>
+            <button type="button" className="admin-provider-refresh" onClick={() => loadProviderHealth(false)} disabled={providerRefreshing}>
+              {providerRefreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+        {providerRefreshError && <p className="admin-provider-refresh-error" role="status">{providerRefreshError}</p>}
+        <div className="admin-provider-grid">
+          {providerRows.map(([id, label]) => {
+            const provider = providers[id];
+            const live = provider.realtime || { state: 'unknown', label: 'Not used yet', tone: 'neutral' };
+            return (
+              <article key={id} className={'admin-provider-card is-' + live.state}>
+                <div className="admin-provider-card-head">
+                  <div><h3>{label}</h3><span className="admin-provider-route-label">{providers.active.includes(id) ? 'In provider order' : 'Not currently routed'}</span></div>
+                  <span className={'pill ' + live.tone}>{live.label}</span>
+                </div>
+                <div className="admin-provider-counts">
+                  <div><b>{provider.recentServed || 0}</b><span>served · 15m</span></div>
+                  <div><b>{provider.recentFailed || 0}</b><span>failed · 15m</span></div>
+                </div>
+                <div className="admin-provider-last"><span>Last success</span><b>{provider.lastOk ? ago(provider.lastOk) : '—'}</b></div>
+                {provider.lastError && <p className="admin-provider-issue"><span>Last issue{provider.lastFailAt ? ` · ${ago(provider.lastFailAt)}` : ''}</span>{safeFrontendText(provider.lastError)}</p>}
+              </article>
+            );
+          })}
+        </div>
+        {providers.notes.map((n, i) => <p key={i} className="note">{safeFrontendText(n)}</p>)}
+      </section>
 
       <div className="stats">
         <div><b>{s.total}</b>interactions logged</div>
@@ -181,18 +268,6 @@ export default function Admin() {
       </section>
 
       <section>
-        <h2>Service health</h2>
-        <p className="muted">Order: {d.providers.order.map(providerLabel).join(' → ')}. In use now: {d.providers.active.length ? d.providers.active.map(providerLabel).join(' → ') : 'none'}. Unavailable services are skipped; failures move to the next configured option.</p>
-        {d.providers.notes.map((n, i) => <p key={i} className="note">{safeFrontendText(n)}</p>)}
-        <div className="scroll"><table>
-          <thead><tr><th>SYNTH service</th><th>State</th><th>Served (recent)</th><th>Failed attempts</th><th>Last success</th></tr></thead>
-          <tbody>{[[providerLabel('openrouter'), d.providers.openrouter], [providerLabel('spark'), d.providers.spark], [providerLabel('cloudflare'), d.providers.cloudflare], [providerLabel('unorouter'), d.providers.unorouter], [providerLabel('apinex'), d.providers.apinex]].map(([n, p]) => (
-            <tr key={n}><td>{n}</td><td><span className={'pill ' + p.tone}>{p.label}</span></td><td>{p.served}</td><td>{p.failed}</td><td>{p.lastOk ? ago(p.lastOk) : '—'}</td></tr>
-          ))}</tbody>
-        </table></div>
-      </section>
-
-      <section>
         <h2>Agent tools</h2>
         <p className="muted">Built-in tools SYNTH ASSISTANT and SYNTHCODE can call while answering. Availability and limits can vary by tool. A tool that keeps failing turns red here, and you can switch any tool off without redeploying.</p>
         {!d.tools.enabled && <p className="note">Tools are switched off for this workspace.</p>}
@@ -243,7 +318,7 @@ export default function Admin() {
 
       <section>
         <h2>SYNTH Routing Diagnostics</h2>
-        <p className="muted">Routing: {d.providers.active.length ? d.providers.active.map(providerLabel).join(' → ') : 'no service ready'}. Every request is logged for reliability insights.</p>
+        <p className="muted">Routing: {providers.active.length ? providers.active.map(providerLabel).join(' → ') : 'no service ready'}. Every request is logged for reliability insights.</p>
         <div className="stats">
           <div><b>{d.spark.metrics.total}</b>requests logged</div>
           <div><b>{d.spark.metrics.total ? Math.round((d.spark.metrics.success / d.spark.metrics.total) * 100) + '%' : 'n/a'}</b>clean success</div>

@@ -41,6 +41,32 @@ test('admin health reports APInex as a free-text fallback and flags repeated fai
   assert.match(failed.notes.join(' '), /account-wide rate and quota cooldowns/);
 });
 
+test('realtime health reflects only actual provider outcomes within the rolling 15-minute window', () => {
+  const now = 1_000_000_000;
+  const recentSuccess = providerHealth(cfg, [{ provider: 'cloudflare', status: 'Fallback', ts: now - 2_000, fails: [] }], now);
+  assert.equal(recentSuccess.cloudflare.realtime.state, 'healthy');
+  assert.equal(recentSuccess.cloudflare.recentServed, 1);
+
+  const recentFailure = providerHealth(cfg, [{ provider: 'other', status: 'Failed', ts: now - 1_000, fails: [{ provider: 'cloudflare', status: 429, msg: 'rate limited' }] }], now);
+  assert.equal(recentFailure.cloudflare.realtime.state, 'degraded');
+  assert.equal(recentFailure.cloudflare.recentFailed, 1);
+  assert.equal(recentFailure.cloudflare.lastError, 'rate limited');
+
+  const down = providerHealth(cfg, [1, 2, 3].map((offset) => ({ provider: 'other', status: 'Failed', ts: now - offset * 1_000, fails: [{ provider: 'cloudflare', status: 503, msg: 'unavailable' }] })), now);
+  assert.equal(down.cloudflare.realtime.state, 'down');
+
+  const idle = providerHealth(cfg, [{ provider: 'cloudflare', status: 'Success', ts: now - 16 * 60 * 1_000, fails: [] }], now);
+  assert.equal(idle.cloudflare.realtime.state, 'idle');
+  assert.equal(idle.cloudflare.lastOk, now - 16 * 60 * 1_000);
+
+  const disabled = providerHealth({ ...cfg, active: [], cloudflare: 'disabled' }, [], now);
+  assert.equal(disabled.cloudflare.realtime.state, 'disabled');
+  const unrouted = providerHealth({ ...cfg, active: [] }, [], now);
+  assert.equal(unrouted.cloudflare.realtime.state, 'unrouted');
+  const missing = providerHealth({ ...cfg, active: [], cloudflare: 'missing' }, [], now);
+  assert.equal(missing.cloudflare.realtime.state, 'missing');
+});
+
 test('image and voice tasks are included in SYNTHCORE task coverage', () => {
   assert.deepEqual(TASKS['image-generation'], ['Generating images', 'image']);
   assert.deepEqual(TASKS['speech-to-text'], ['Speech transcription', 'audio']);

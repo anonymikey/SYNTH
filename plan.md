@@ -99,6 +99,12 @@ APInex's free inference limit is 15 requests per account per fixed 60-second win
 
 Place APInex helpers in `lib/apinex.js`; integrate readiness/order in `lib/env.js`, targets, shared reservation and failover in `lib/spark.js`, and protected status/brand aliases in `lib/health.js`, `components/Admin.js`, and `lib/brand-view.js`. Document the exact optional Vercel variables and account-wide quota in `.env.example` and `README.md`. Retain a visitor-facing generic warning that chat text and submitted code can pass through external/upstream model services with their own data policies; do not disclose vendor/model identifiers in visitor copy. Keep APInex disabled until the workspace owner adds its key privately and explicitly enables it.
 
+## Real-time provider health in Learning Studio
+
+Add an admin-authenticated `/api/admin/providers` snapshot route that reuses `providerConfig()` and the existing shared task-diagnostics list; do not probe model APIs or send synthetic prompts, so the health view itself cannot consume provider quota. Derive a clear live state from active routing configuration and actual provider outcomes within a rolling 15-minute window, distinguishing Healthy, Degraded, Down, Ready/idle, Off and not-in-route states. Include recent success/failure counts, last success, last issue and a server refresh timestamp. Keep provider labels and any error details behind the existing safe Learning Studio presentation.
+
+In `components/Admin.js`, present the snapshot as a responsive Learning Studio health panel, refresh it on initial load and every 15 seconds only while visible, refresh immediately when the tab becomes visible again, and provide a manual refresh button with a last-updated/error indicator. Keep the existing summary and routing diagnostics consistent with the polled snapshot; make refresh failure non-destructive and continue showing the most recent usable data. Use the existing dark-glass Admin style and no additional provider credentials, service dependencies or paid health checks.
+
 ## Settings tabs and task notifications
 
 Keep the current sidebar Settings entry and existing appearance controls, but present the dialog as two accessible tabs named exactly **Personalization** and **Notification**. Preserve the existing personalization storage and behavior. Add a separate validated, versioned local notification preference record for browser-notification permission state, task categories, hidden-tab favicon indicator, sound enablement, and per-workspace sound overrides.
