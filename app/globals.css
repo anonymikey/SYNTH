@@ -40,7 +40,7 @@ select{padding:9px 10px;max-width:100%}option{background:#0e1530;color:var(--ink
 .muted{color:var(--muted);font-size:13px}
 
 /* shell: sidebar is an overlay (hover on desktop, drawer on mobile) unless pinned */
-.app{--side-w:248px;position:relative;height:100dvh;overflow:hidden}
+.app{--side-w:248px;position:relative;height:100dvh;overflow:hidden;isolation:isolate}
 .side{position:fixed;top:0;left:0;bottom:0;width:var(--side-w);z-index:40;display:flex;flex-direction:column;gap:14px;padding:16px 12px 14px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(14,21,48,.97),rgba(7,11,26,.97));backdrop-filter:blur(16px);transform:translateX(-100%);transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s}
 .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .brand{display:flex;align-items:center;gap:10px;font:700 19px var(--head);letter-spacing:.06em}
@@ -2063,6 +2063,14 @@ html[data-theme="light"]{
 }
 
 .builder-topbar-actions>button.iconbtn.sm{width:40px;height:40px;min-width:40px;min-height:40px}
-
 .build .notification-nudge-actions>button{min-height:40px}
 .build .notification-nudge-actions>.notification-nudge-dismiss{width:40px;height:40px;min-width:40px;min-height:40px}
+
+.workspace-background{position:absolute;inset:0;z-index:-1;width:100%;height:100%;overflow:hidden;pointer-events:none}
+.workspace-background .antigravity{width:100%;height:100%}
+
+.workspace-background{opacity:.32}
+
+.workspace-background{opacity:.32}
+.settings-background-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:560px){.settings-background-options{grid-template-columns:1fr}}

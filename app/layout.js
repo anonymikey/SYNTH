@@ -1,4 +1,5 @@
 import './globals.css';
+import '../components/Antigravity.css';
 import { Sora, Inter } from 'next/font/google';
 
 const head = Sora({ subsets: ['latin'], variable: '--font-head', display: 'swap' });

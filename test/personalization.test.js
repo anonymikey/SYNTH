@@ -8,7 +8,7 @@ const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8')
 
 test('personalization accepts valid settings and safely defaults unknown or malformed values', () => {
   assert.deepEqual(normalizePersonalization({ theme: 'light', accent: 'rose', font: 'serif', textSize: 'large', chatStyle: 'minimal', density: 'compact', extra: 'ignored' }), {
-    theme: 'light', accent: 'rose', font: 'serif', textSize: 'large', chatStyle: 'minimal', density: 'compact', wallpaper: '', wallpaperDim: 45,
+    theme: 'light', accent: 'rose', font: 'serif', textSize: 'large', chatStyle: 'minimal', density: 'compact', backgroundEffect: 'antigravity', wallpaper: '', wallpaperDim: 45,
   });
   assert.deepEqual(normalizePersonalization({ theme: 'made-up', accent: null, font: 23 }), DEFAULT_PERSONALIZATION);
   assert.deepEqual(normalizePersonalization(null), DEFAULT_PERSONALIZATION);
@@ -17,7 +17,7 @@ test('personalization accepts valid settings and safely defaults unknown or malf
 test('selected personalization is reflected in root data attributes for CSS behavior', () => {
   const root = { dataset: {} };
   applyPersonalization({ theme: 'system', accent: 'emerald', font: 'mono', textSize: 'small', chatStyle: 'solid', density: 'compact' }, root);
-  assert.deepEqual(root.dataset, { theme: 'system', accent: 'emerald', font: 'mono', textSize: 'small', chatStyle: 'solid', density: 'compact', wallpaper: 'none' });
+  assert.deepEqual(root.dataset, { theme: 'system', accent: 'emerald', font: 'mono', textSize: 'small', chatStyle: 'solid', density: 'compact', backgroundEffect: 'antigravity', wallpaper: 'none' });
 });
 
 test('theme preferences include Dark, Light, System and the expanded SYNTH palette choices', () => {
@@ -42,6 +42,18 @@ test('wallpaper normalization accepts only bounded raster data and clamps its re
   assert.deepEqual(normalizePersonalization({ wallpaper: safe, wallpaperDim: 87 }), { ...DEFAULT_PERSONALIZATION, wallpaper: safe, wallpaperDim: 80 });
   assert.deepEqual(normalizePersonalization({ wallpaper: 'https://example.com/wallpaper.jpg', wallpaperDim: -4 }), { ...DEFAULT_PERSONALIZATION, wallpaperDim: 0 });
   assert.equal(normalizePersonalization({ wallpaperDim: '60' }).wallpaperDim, DEFAULT_PERSONALIZATION.wallpaperDim);
+});
+
+test('background-effect preference is additive and does not overwrite an existing user appearance or wallpaper', () => {
+  const wallpaper = 'data:image/webp;base64,U0FGRQ==';
+  const saved = normalizePersonalization({ theme: 'forest', accent: 'rose', font: 'mono', textSize: 'large', chatStyle: 'minimal', density: 'compact', wallpaper, wallpaperDim: 65 });
+  assert.deepEqual(saved, {
+    ...DEFAULT_PERSONALIZATION,
+    theme: 'forest', accent: 'rose', font: 'mono', textSize: 'large', chatStyle: 'minimal', density: 'compact',
+    backgroundEffect: 'antigravity', wallpaper, wallpaperDim: 65,
+  });
+  assert.equal(normalizePersonalization({ backgroundEffect: 'static' }).backgroundEffect, 'static');
+  assert.equal(normalizePersonalization({ backgroundEffect: 'unsupported' }).backgroundEffect, 'antigravity');
 });
 
 test('wallpaper is applied only to the local document root and never changes API or notification settings', () => {

@@ -44,6 +44,10 @@ const DENSITIES = [
   { id: 'comfortable', title: 'Comfortable' },
   { id: 'compact', title: 'Compact' },
 ];
+const BACKGROUND_EFFECTS = [
+  { id: 'antigravity', title: 'Antigravity', note: 'Animated particles', color: '#8057ff' },
+  { id: 'static', title: 'Original', note: 'Static gradient', color: '#73819f' },
+];
 const TABS = [
   { id: 'personalization', label: 'Personalization' },
   { id: 'notification', label: 'Notification' },
@@ -66,7 +70,7 @@ function OptionGroup({ label, value, choices, onChange, className = '' }) {
   );
 }
 
-export default function Personalization() {
+export default function Personalization({ onBackgroundEffectChange }) {
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState('personalization');
@@ -88,6 +92,7 @@ export default function Personalization() {
     const next = normalizePersonalization(saved);
     setPrefs(next);
     applyPersonalization(next);
+    onBackgroundEffectChange?.(next.backgroundEffect);
     try { setIntegrationsNew(localStorage.getItem(INTEGRATIONS_SEEN_KEY) !== '1'); } catch { setIntegrationsNew(true); }
     setReady(true);
   }, []);
@@ -107,8 +112,9 @@ export default function Personalization() {
   useEffect(() => {
     if (!ready) return;
     applyPersonalization(prefs);
+    onBackgroundEffectChange?.(prefs.backgroundEffect);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
-  }, [prefs, ready]);
+  }, [prefs, ready, onBackgroundEffectChange]);
 
   useEffect(() => () => toastTimers.current.forEach(clearTimeout), []);
 
@@ -222,7 +228,8 @@ export default function Personalization() {
                     <OptionGroup label="Platform theme" value={prefs.theme} choices={THEME_CHOICES} onChange={selectTheme} className="theme-options" />
                   </section>
                   <section className="pref-section">
-                    <div className="pref-heading"><div><h3>Workspace background</h3><p>Use a favorite image behind the workspace panels.</p></div></div>
+                    <div className="pref-heading"><div><h3>Workspace background</h3><p>Choose an effect and, optionally, keep a favorite image behind the workspace panels.</p></div></div>
+                    <OptionGroup label="Workspace background effect" value={prefs.backgroundEffect} choices={BACKGROUND_EFFECTS} onChange={(value) => update('backgroundEffect', value)} className="theme-options settings-background-options" />
                     <div className="settings-wallpaper-layout">
                       <div className={'settings-wallpaper-preview' + (prefs.wallpaper ? ' has-image' : '')} role="img" aria-label={prefs.wallpaper ? 'Selected workspace background preview' : 'No custom background selected'}>
                         {prefs.wallpaper ? <img src={prefs.wallpaper} alt="" /> : <span>Your background preview</span>}

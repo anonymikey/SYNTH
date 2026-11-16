@@ -6,6 +6,7 @@ import { Chat as ChatIcon, Build as BuildIcon, Pin, Menu, Close, Panel } from '.
 import Personalization from '../../components/Personalization';
 import CapabilityBanner from '../../components/CapabilityBanner';
 import NotificationManager from '../../components/NotificationManager';
+import WorkspaceBackground from '../../components/WorkspaceBackground';
 
 const TABS = [['chat', 'SYNTH ASSISTANT', ChatIcon], ['build', 'SYNTHCODE', BuildIcon]];
 const PIN_KEY = 'synth-sidebar-pinned';
@@ -17,6 +18,7 @@ export default function Home() {
   const [peek, setPeek] = useState(false);       // desktop: sidebar visible (hover or button)
   const [manual, setManual] = useState(false);   // desktop: opened with the top-bar button, stays until closed
   const [drawer, setDrawer] = useState(false);   // mobile: slide-in menu
+  const [backgroundEffect, setBackgroundEffect] = useState(null);
   const timer = useRef(null);
 
   // Landing prompt hand-off: /app?tab=build&q=...
@@ -60,6 +62,7 @@ export default function Home() {
 
   return (
     <div className={'app' + (pinned ? ' is-pinned' : '')}>
+      {backgroundEffect === 'antigravity' && <WorkspaceBackground />}
       <NotificationManager />
       <div className="edge" onMouseEnter={show} aria-hidden="true" />
       <div className={'scrim' + (drawer ? ' show' : '')} onClick={() => setDrawer(false)} aria-hidden="true" />
@@ -77,7 +80,7 @@ export default function Home() {
             <button key={k} className={'navbtn' + (tab === k ? ' on' : '')} onClick={() => choose(k)}><Icon />{label}</button>
           ))}
         </nav>
-        <div className="sidefoot"><Personalization /><p className="meta"><i className="dot" />SYNTH Ready to Rock and Roll</p></div>
+        <div className="sidefoot"><Personalization onBackgroundEffectChange={setBackgroundEffect} /><p className="meta"><i className="dot" />SYNTH Ready to Rock and Roll</p></div>
       </aside>
 
       <main className="main" onMouseDown={(e) => { if (manual && !e.target.closest('.panelbtn')) closeSidebar(); }}>
