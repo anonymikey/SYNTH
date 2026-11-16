@@ -77,3 +77,14 @@ test('Dev Updates announces SYNTH Bridge without exposing the upstream provider 
   assert.match(data, /account-wide/);
   assert.doesNotMatch(data, /APInex|apinex\.bond|free\/(?:deepseek|qwen|gemini)/i);
 });
+
+test('Dev Updates covers Antigravity personalization and polished self-contained Web output', () => {
+  const data = readFileSync(new URL('../app/dev-updates/data.js', import.meta.url), 'utf8');
+  assert.match(data, /personalized-antigravity-and-polished-web-projects/);
+  assert.match(data, /Antigravity animated-particle background/);
+  assert.match(data, /original static background/);
+  assert.match(data, /reduced-motion preferences/);
+  assert.match(data, /complete, self-contained HTML pages with embedded CSS/);
+  assert.match(data, /accessible contrast/);
+  assert.match(data, /existing design system and stylesheet structure/);
+});

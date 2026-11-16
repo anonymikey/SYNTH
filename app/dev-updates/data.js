@@ -2,6 +2,18 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'personalized-antigravity-and-polished-web-projects',
+        date: '2026-11-16',
+        title: 'A more personal workspace and polished web projects',
+        summary: 'Choose SYNTH’s animated Antigravity background, while new SYNTHCODE web projects start as complete, styled, responsive pages.',
+        tags: ['New', 'Personalization', 'SYNTHCODE', 'Design'],
+        content: [
+            'SYNTH ASSISTANT and SYNTHCODE now share the Antigravity animated-particle background across the full workspace. In Settings → Personalization → Workspace background, choose Antigravity or the original static background. Your choice is saved on this device, and existing themes, accents, fonts, text size, chat style, density and uploaded wallpaper preferences remain in place.',
+            'The background stays behind the workspace controls. If WebGL2 is unavailable, SYNTH keeps its original static backdrop. Animation also respects reduced-motion preferences and pauses when the page is hidden or the effect is off screen.',
+            'New SYNTHCODE Web projects are now generated as complete, self-contained HTML pages with embedded CSS, a viewport setting, a modern font stack, a cohesive color palette, responsive layout, sensible spacing, styled headings, buttons and cards, and accessible contrast. SYNTHCODE should not leave default unstyled HTML. When editing an imported repository, it continues to respect that project’s existing design system and stylesheet structure.',
+        ],
+    },
+    {
         slug: 'synthcode-github-repository-workflow',
         date: '2026-11-16',
         title: 'New: bring a GitHub project into SYNTHCODE',
