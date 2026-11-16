@@ -16,7 +16,11 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     assert.equal(init.headers.Authorization, 'Bearer test-token-not-a-secret');
     const command = JSON.parse(init.body);
     requests.push(command);
-    const result = command[0] === 'EVAL' ? 1700000000000 : command[0] === 'SET' ? 'OK' : ['1700000000000', null];
+    const result = command[0] === 'EVAL' && command[3] === 'github:oauth:state:test' ? '{"verifier":"single-use"}'
+      : command[0] === 'EVAL' && command[3] === 'github:refresh:lock:test' ? 1
+        : command[0] === 'EVAL' ? 1700000000000
+        : command[0] === 'SET' ? 'OK'
+          : command[0] === 'DEL' ? 1 : ['1700000000000', null];
     return new Response(JSON.stringify({ result }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
 
@@ -25,9 +29,14 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     const values = await db.getTemps(['learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
     const claimed = await db.claimTemp('chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', 1700000060000, 60);
     const accountClaimed = await db.claimTempMs('chat:cooldown:apinex:account', 1700000004200, 4200);
+    const consumedState = await db.takeTemp('github:oauth:state:test');
+    const releasedLock = await db.releaseTemp('github:refresh:lock:test', 'owner-token');
+    await db.delTemp('github:session:test');
     assert.deepEqual(values, [1700000000000, null]);
     assert.equal(claimed, true);
     assert.equal(accountClaimed, true);
+    assert.deepEqual(consumedState, { verifier: 'single-use' });
+    assert.equal(releasedLock, true);
     assert.equal(requests[0][0], 'EVAL');
     assert.equal(requests[0][2], '1');
     assert.equal(requests[0][3], 'learn:cooldown:model:example');
@@ -38,6 +47,11 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
     assert.deepEqual(requests[1], ['MGET', 'learn:cooldown:model:example', 'learn:cooldown:provider:cloudflare']);
     assert.deepEqual(requests[2], ['SET', 'chat:cooldown:unorouter:model:gpt-oss-120b%3Afree', '1700000060000', 'EX', '60', 'NX']);
     assert.deepEqual(requests[3], ['SET', 'chat:cooldown:apinex:account', '1700000004200', 'PX', '4200', 'NX']);
+    assert.equal(requests[4][0], 'EVAL');
+    assert.match(requests[4][1], /redis\.call\('GET',KEYS\[1\]\).*redis\.call\('DEL',KEYS\[1\]\)/);
+    assert.equal(requests[4][3], 'github:oauth:state:test');
+    assert.deepEqual(requests[5], ['EVAL', "if redis.call('GET',KEYS[1]) == ARGV[1] then return redis.call('DEL',KEYS[1]); end; return 0", '1', 'github:refresh:lock:test', 'owner-token']);
+    assert.deepEqual(requests[6], ['DEL', 'github:session:test']);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;
@@ -48,7 +62,7 @@ test('cooldown storage uses atomic Upstash EVAL and batched MGET REST commands',
 });
 
 test('cooldown storage commands abort when the shared REST service stalls', async () => {
-  const keepAlive = setTimeout(() => {}, 100);
+  const keepAlive = setTimeout(() => {}, 500);
   globalThis.fetch = async (_url, init) => new Promise((resolve, reject) => {
     if (!init.signal) return reject(new Error('Expected an abort signal.'));
     init.signal.addEventListener('abort', () => reject(init.signal.reason), { once: true });
@@ -57,6 +71,9 @@ test('cooldown storage commands abort when the shared REST service stalls', asyn
     await assert.rejects(db.getTemps(['learn:cooldown:provider:cloudflare'], { timeoutMs: 20 }), { name: 'TimeoutError' });
     await assert.rejects(db.putMaxTemp('learn:cooldown:provider:cloudflare', 1700000000000, 60, { timeoutMs: 20 }), { name: 'TimeoutError' });
     await assert.rejects(db.listJSON('spark', 500, { timeoutMs: 20, throwOnError: true }), { name: 'TimeoutError' });
+    await assert.rejects(db.takeTemp('github:oauth:state:slow', { timeoutMs: 20 }), { name: 'TimeoutError' });
+    await assert.rejects(db.delTemp('github:session:slow', { timeoutMs: 20 }), { name: 'TimeoutError' });
+    await assert.rejects(db.releaseTemp('github:refresh:lock:slow', 'owner-token', { timeoutMs: 20 }), { name: 'TimeoutError' });
   } finally {
     clearTimeout(keepAlive);
     globalThis.fetch = originalFetch;

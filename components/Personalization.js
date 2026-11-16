@@ -4,8 +4,10 @@ import { createPortal } from 'react-dom';
 import { DEFAULT_PERSONALIZATION, normalizePersonalization, applyPersonalization, prepareWorkspaceWallpaper } from '../lib/personalization';
 import { Close, Settings as SettingsIcon } from '../lib/icons';
 import NotificationSettings from './NotificationSettings';
+import GitHubIntegrationSettings from './GitHubIntegrationSettings';
 
 const STORAGE_KEY = 'synth-personalization-v1';
+const INTEGRATIONS_SEEN_KEY = 'synth-integrations-seen-v1';
 const THEME_CHOICES = [
   { id: 'midnight', title: 'Dark', note: 'SYNTH’s deep original palette', color: '#10162e', toast: 'Switching off the lights' },
   { id: 'light', title: 'Light', note: 'Bright surfaces, calm contrast', color: '#edf2fb', toast: 'Bringing in the daylight' },
@@ -45,7 +47,9 @@ const DENSITIES = [
 const TABS = [
   { id: 'personalization', label: 'Personalization' },
   { id: 'notification', label: 'Notification' },
+  { id: 'integrations', label: 'Integrations' },
 ];
+const INTEGRATION_NOTICES = new Set(['connected', 'installed', 'cancelled', 'expired', 'unavailable', 'invalid']);
 
 function OptionGroup({ label, value, choices, onChange, className = '' }) {
   return (
@@ -66,6 +70,8 @@ export default function Personalization() {
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState('personalization');
+  const [integrationsNew, setIntegrationsNew] = useState(false);
+  const [integrationNotice, setIntegrationNotice] = useState('');
   const [prefs, setPrefs] = useState(DEFAULT_PERSONALIZATION);
   const trigger = useRef(null);
   const dialog = useRef(null);
@@ -82,7 +88,20 @@ export default function Personalization() {
     const next = normalizePersonalization(saved);
     setPrefs(next);
     applyPersonalization(next);
+    try { setIntegrationsNew(localStorage.getItem(INTEGRATIONS_SEEN_KEY) !== '1'); } catch { setIntegrationsNew(true); }
     setReady(true);
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const notice = url.searchParams.get('integration') || '';
+    if (!INTEGRATION_NOTICES.has(notice)) return;
+    setIntegrationNotice(notice);
+    setActiveTab('integrations');
+    setOpen(true);
+    markIntegrationsSeen();
+    url.searchParams.delete('integration');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
   }, []);
 
   useEffect(() => {
@@ -160,11 +179,18 @@ export default function Personalization() {
   function onTabKeyDown(event) {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
-    const next = event.key === 'Home' ? TABS[0].id
-      : event.key === 'End' ? TABS[TABS.length - 1].id
-        : activeTab === 'personalization' ? 'notification' : 'personalization';
+    const index = TABS.findIndex((tab) => tab.id === activeTab);
+    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? TABS.length - 1
+      : (index + (event.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length;
+    const next = TABS[nextIndex].id;
     setActiveTab(next);
+    if (next === 'integrations') markIntegrationsSeen();
     requestAnimationFrame(() => tabButtons.current[next]?.focus());
+  }
+
+  function markIntegrationsSeen() {
+    setIntegrationsNew(false);
+    try { localStorage.setItem(INTEGRATIONS_SEEN_KEY, '1'); } catch {}
   }
 
   return (
@@ -176,7 +202,7 @@ export default function Personalization() {
         <div className="settings-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title" ref={dialog}>
             <header className="settings-head">
-              <div><span className="settings-kicker">SYNTH WORKSPACE</span><h2 id="settings-title">Settings</h2><p>Personalize your workspace and task notifications.</p></div>
+              <div><span className="settings-kicker">SYNTH WORKSPACE</span><h2 id="settings-title">Settings</h2><p>Personalize your workspace, notifications and connected services.</p></div>
               <button type="button" className="iconbtn sm settings-close" onClick={() => setOpen(false)} aria-label="Close settings"><Close /></button>
             </header>
             <div className="settings-tabs" role="tablist" aria-label="Settings sections" onKeyDown={onTabKeyDown}>
@@ -184,7 +210,9 @@ export default function Personalization() {
                 <button key={tab.id} ref={(node) => { tabButtons.current[tab.id] = node; }} type="button" role="tab"
                   id={`settings-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls={`settings-panel-${tab.id}`}
                   tabIndex={activeTab === tab.id ? 0 : -1} className={'settings-tab' + (activeTab === tab.id ? ' active' : '')}
-                  onClick={() => setActiveTab(tab.id)}>{tab.label}</button>
+                  onClick={() => { setActiveTab(tab.id); if (tab.id === 'integrations') markIntegrationsSeen(); }}>
+                  {tab.label}{tab.id === 'integrations' && integrationsNew && <span className="settings-new-badge">New</span>}
+                </button>
               ))}
             </div>
             <div className="settings-content">
@@ -238,9 +266,12 @@ export default function Personalization() {
               <div id="settings-panel-notification" role="tabpanel" aria-labelledby="settings-tab-notification" tabIndex={0} hidden={activeTab !== 'notification'}>
                 <NotificationSettings />
               </div>
+              <div id="settings-panel-integrations" role="tabpanel" aria-labelledby="settings-tab-integrations" tabIndex={0} hidden={activeTab !== 'integrations'}>
+                <GitHubIntegrationSettings notice={integrationNotice} />
+              </div>
             </div>
             <footer className="settings-foot">
-              <span>{activeTab === 'personalization' ? 'Appearance saved automatically on this device.' : 'Notification choices saved on this device.'}</span>
+              <span>{activeTab === 'personalization' ? 'Appearance saved automatically on this device.' : activeTab === 'notification' ? 'Notification choices saved on this device.' : 'GitHub access is scoped to your connected account.'}</span>
               <div>{activeTab === 'personalization' && <button type="button" className="settings-reset" onClick={reset}>Reset defaults</button>}<button type="button" className="primary settings-done" onClick={() => setOpen(false)}>Done</button></div>
             </footer>
           </section>

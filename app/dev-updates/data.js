@@ -2,6 +2,20 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'synthcode-github-repository-workflow',
+        date: '2026-11-16',
+        title: 'New: bring a GitHub project into SYNTHCODE',
+        summary: 'Connect a GitHub account, import selected project files, edit them in SYNTHCODE, and review changes in a new pull request branch.',
+        tags: ['New', 'Integrations', 'GitHub', 'SYNTHCODE'],
+        content: [
+            'SYNTH now has a GitHub integration in the workspace sidebar under Settings → Integrations. The workspace owner must configure a GitHub App and shared Upstash storage first. Each user connects their own GitHub account and selects the repositories the app may access; SYNTH never asks for a personal access token.',
+            'In SYNTHCODE, choose an authorized repository and branch, then select only the text files you want to import. Credential-like files, GitHub workflow files, unsafe paths, binaries, and oversized files are excluded or rejected. Imported files join the current SYNTHCODE project and can be edited using the repository’s existing file structure and language. They are sent to SYNTH’s configured AI services when you ask for an edit, so do not import secrets or confidential files you do not want processed by those services. Each request includes up to 40,000 source characters and prefers the open file when it fits, so not every imported file may fit; open the relevant file before asking for a change.',
+            'Repository code is not run when it is imported. A browser project requires a separate approval before its source is loaded in SYNTHCODE’s isolated preview. Imported TypeScript, Python, Rust, Go, C++, and backend projects remain source-only; SYNTHCODE does not compile, test, or run them.',
+            'Review the changed file list before submitting. SYNTH creates a separate branch and opens a pull request only after you authorize that action. It does not change the base branch, merge the pull request, deploy the project, or guarantee that GitHub checks will pass. The working copy lives only in the current page and can be lost on refresh; download it or submit your changes before leaving. If the connection is unavailable or a path conflicts with a newer GitHub change, the current-page working copy remains available.',
+            'GitHub is the first direct platform connector. A project created with Claude, Replit, GitHub Copilot, or v0 can use this workflow when it is available in a GitHub repository and the user independently authorizes that repository. SYNTH does not connect to those products’ accounts or obtain their private project/deployment context.',
+        ],
+    },
+    {
         slug: 'synth-bridge-free-text-routing',
         date: '2026-11-14',
         title: 'An additional guarded text fallback is available',

@@ -54,7 +54,7 @@ test('Builder pane and project-view controls expose accessible selected states',
 
 test('source-only projects never enter the browser preview and explain the boundary in both panes', () => {
   assert.match(builder, /if \(sourceOnly\) return ''/);
-  assert.match(builder, /setView\(isSourceOnlyLanguage\(projectLanguage\) \? 'code' : 'preview'\)/);
+  assert.match(builder, /setView\(isSourceOnlyLanguage\(projectLanguage\) \|\| \(githubRepository && !githubPreviewApproved\) \? 'code' : 'preview'\)/);
   assert.match(builder, /source-only-preview/);
   assert.match(builder, /source-export-note/);
   assert.match(builder, /SYNTHCODE is generating text files; it is not compiling or running this project/);
