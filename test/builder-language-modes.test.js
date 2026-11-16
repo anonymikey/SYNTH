@@ -19,6 +19,14 @@ test('Auto is the default and the same SYNTHCODE generation pipeline resolves th
   assert.match(builder, /setLanguage\(projectLanguage\)/);
 });
 
+test('every fresh project receives the shared browser-page standard and format retries retain it', () => {
+  assert.match(builder, /withWebProjectVisualGuidance\(baseSystem, \{ existingRepository: isGitHubProject \}\)/);
+  assert.match(builder, /streamChat\(\{ messages: user, system, mode: 'build' \}/);
+  assert.match(builder, /streamChat\(\{ messages: user, system: system \+ reminder, mode: 'build', retry: true \}/);
+  assert.match(builder, /complete index\.html with CSS embedded in a <style> block/);
+  assert.match(builder, /When adding browser-facing UI, make it fully styled, responsive, and accessible using the repository's existing design system/);
+});
+
 test('language preference is saved locally in SYNTHCODE and appears in a side settings dialog', () => {
   assert.match(builder, /LANGUAGE_PREFERENCE_KEY = 'synthcode-language-preference-v1'/);
   assert.match(builder, /window\.localStorage\.getItem\(LANGUAGE_PREFERENCE_KEY\)/);

@@ -5,6 +5,7 @@ import {
   LANGUAGE_OPTIONS,
   SOURCE_ONLY_NOTICE,
   SOURCE_PROJECTS,
+  WEB_PROJECT_VISUAL_GUIDANCE,
   autoProjectPrompt,
   autoProjectRetry,
   inferProjectMode,
@@ -20,6 +21,7 @@ import {
   sourceProjectPrompt,
   sourceProjectRetry,
   stripProjectModeMarker,
+  withWebProjectVisualGuidance,
 } from '../lib/project-languages.js';
 
 const validProjects = {
@@ -51,8 +53,32 @@ test('Auto prompt selects one mode in the existing generation request and clearl
   assert.match(prompt, /SYNTHCODE_MODE: <mode>/);
   for (const mode of ['web', 'typescript', 'python', 'rust', 'go', 'cpp', 'backend']) assert.match(prompt, new RegExp(`- ${mode}:`));
   assert.match(prompt, /does not install dependencies, compile, type-check, test, execute, host, or deploy/i);
+  assert.match(prompt, /complete index\.html and its CSS embedded in a <style> block/);
+  assert.match(autoProjectRetry('web'), /CSS embedded in a <style> block/);
+  assert.match(autoProjectRetry('typescript'), /CSS embedded in a <style> block/);
+  assert.match(sourceProjectPrompt('backend'), /browser UI.*embedded CSS/);
+  assert.match(sourceProjectRetry('backend'), /browser UI.*embedded in a <style> block/);
   assert.match(autoProjectRetry('go'), /SYNTHCODE_MODE: go/);
   assert.match(autoProjectRetry(''), /Choose exactly one supported mode/);
+});
+
+test('fresh generated browser pages receive the complete design standard but GitHub edits preserve repository styling', () => {
+  const prompt = withWebProjectVisualGuidance('Base generation system');
+  assert.match(prompt, /Base generation system/);
+  assert.match(prompt, /<!doctype html>/);
+  assert.match(prompt, /<html lang=/);
+  assert.match(prompt, /<meta charset="utf-8">/);
+  assert.match(prompt, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
+  assert.match(prompt, /Embed the page's CSS in a <style> block/);
+  assert.match(prompt, /system-ui/);
+  assert.match(prompt, /cohesive palette expressed as CSS custom properties/);
+  assert.match(prompt, /responsive mobile-first layout/);
+  assert.match(prompt, /sensible consistent spacing/);
+  assert.match(prompt, /Deliberately style headings and every button, card/);
+  assert.match(prompt, /4\.5:1 for normal text and 3:1 for large text/);
+  assert.match(prompt, /Never output unstyled or browser-default HTML/);
+  assert.match(WEB_PROJECT_VISUAL_GUIDANCE, /Do not invent a browser UI for a server-only/);
+  assert.equal(withWebProjectVisualGuidance('GitHub system', { existingRepository: true }), 'GitHub system');
 });
 
 test('Auto mode marker parsing and file inference resolve one mode conservatively', () => {
