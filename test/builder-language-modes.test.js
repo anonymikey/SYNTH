@@ -44,19 +44,24 @@ test('New resets the project and starts from the saved language preference', () 
 });
 
 test('Builder pane and project-view controls expose accessible selected states', () => {
-  assert.match(builder, /className="seg" role="group" aria-label="Workspace pane selection"/);
-  assert.match(builder, /aria-pressed=\{pane === 'prompt'\}/);
-  assert.match(builder, /aria-pressed=\{pane === 'preview'\}/);
-  assert.match(builder, /className="tabs" role="group" aria-label="Project view"/);
+  assert.match(builder, /className="workspace-splitter" role="separator" aria-orientation="vertical"/);
+  assert.match(builder, /aria-valuemin="340" aria-valuemax="520" aria-valuenow=\{assistantWidth\}/);
+  assert.match(builder, /className="builder-view-tabs" role="group" aria-label="Project view"/);
   assert.match(builder, /aria-pressed=\{view === 'preview'\}/);
   assert.match(builder, /aria-pressed=\{view === 'code'\}/);
+  assert.match(builder, /aria-pressed=\{view === 'files'\}/);
+  assert.match(builder, /className="builder-mobile-nav" aria-label="SYNTHCODE workspace views"/);
+  assert.match(builder, /activateMobileTab\('chat'\)/);
+  assert.match(builder, /activateMobileTab\('preview'\)/);
+  assert.match(builder, /activateMobileTab\('code'\)/);
   assert.match(builder, /className="bw-template-tabs" role="tablist"/);
   assert.doesNotMatch(settings, /role="tablist"|role="tab"|aria-selected=/);
 });
 
 test('source-only projects never enter the browser preview and explain the boundary in both panes', () => {
   assert.match(builder, /if \(sourceOnly\) return ''/);
-  assert.match(builder, /setView\(isSourceOnlyLanguage\(projectLanguage\) \|\| \(githubRepository && !githubPreviewApproved\) \? 'code' : 'preview'\)/);
+  assert.match(builder, /const resultView = isSourceOnlyLanguage\(projectLanguage\) \|\| \(githubRepository && !githubPreviewApproved\) \? 'code' : 'preview'/);
+  assert.match(builder, /setView\(resultView\); setPane\('preview'\); setMobileTab\(resultView === 'code' \? 'code' : 'preview'\)/);
   assert.match(builder, /source-only-preview/);
   assert.match(builder, /source-export-note/);
   assert.match(builder, /SYNTHCODE is generating text files; it is not compiling or running this project/);
@@ -73,24 +78,35 @@ test('mobile keeps the pre-generation source-only notice visible', () => {
 });
 
 test('Assistant and SYNTHCODE workspace controls wrap safely on small screens', () => {
-  assert.match(css, /\.build\{grid-template-columns:minmax\(285px,min\(355px,27vw\)\) minmax\(0,1fr\)\}/);
-  assert.match(builder, /className="builder-stage-settings"/);
-  assert.match(css, /@media\(max-width:1100px\)\{\.builder-stage-settings\{display:flex\}\}/);
+  assert.match(css, /\.build\{position:relative;display:grid!important;grid-template-columns:minmax\(0,var\(--assistant-width,400px\)\) 12px minmax\(0,1fr\)/);
+  assert.match(builder, /className="builder-topbar"/);
+  assert.match(builder, /className="builder-menu-button" onClick=\{onOpenMenu\}/);
+  assert.match(css, /@media\(max-width:900px\)\{[\s\S]*?\.build\{grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.builder-mobile-nav\{grid-column:1;grid-row:4;display:grid/);
   assert.match(css, /\.chat \.tools>span\{display:block/);
-  assert.match(css, /@media\(max-width:640px\)[\s\S]*?\.build \.stagebar\{flex-wrap:wrap/);
-  assert.match(css, /padding:0 12px calc\(10px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(css, /padding:6px 12px calc\(6px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(css, /\.builder-settings-panel\{[\s\S]*?border-radius:22px 22px 0 0/);
   assert.match(css, /@media\(max-width:380px\)/);
+  assert.match(css, /\.builder-topbar\{grid-template-columns:40px minmax\(92px,1fr\) minmax\(104px,1\.1fr\) 80px;column-gap:4px\}/);
+  assert.match(css, /\.builder-topbar-actions>button\.iconbtn\.sm\{width:40px;height:40px;min-width:40px;min-height:40px\}/);
+  assert.match(css, /\.compose-toolbar\.builder-toolbar button\{height:40px;min-height:40px\}/);
+  assert.match(css, /\.build \.notification-nudge-actions>\.notification-nudge-dismiss\{width:40px;height:40px;min-width:40px;min-height:40px\}/);
 });
 
 test('Code view collapses file navigation by default but keeps accessible browse and hide controls', () => {
   assert.match(explorer, /useState\(false\);\s+const \[editing/);
-  assert.match(explorer, /useState\('view'\);\s+\/\/ narrow screens/);
   assert.match(explorer, /className="ftree" hidden=\{!treeOpen\}/);
-  assert.match(explorer, /aria-label="Hide file navigation"/);
+  assert.match(explorer, /filesOnly \? 'Return to Code' : 'Hide file navigation'/);
   assert.match(explorer, /aria-label="Browse project files"/);
   assert.match(explorer, /onClick=\{showFiles\}/);
   assert.match(css, /\.ftree\[hidden\]\{display:none!important\}/);
+});
+
+test('closed-tree editor remains visible and phone controls wrap without page-width overflow', () => {
+  assert.match(css, /\.exin:not\(\.files-only\)>\.fview\{grid-column:2\}/);
+  assert.match(css, /\.compose-toolbar\.builder-toolbar>\.toolbar-cluster\{display:flex;flex:1 0 100%/);
+  assert.match(css, /@media\(max-width:900px\)\{\.device-option span\{display:none\}\}/);
+  assert.match(css, /\.builder-view-tabs>button,\.builder-next-step,\.build \.linkbtn\{min-height:40px\}/);
 });
 
 test('SYNTHCODE asks before sensitive work, reviews unexpected sensitive paths and gives useful next steps', () => {

@@ -50,6 +50,11 @@ export default function Home() {
     if (peek) { setPeek(false); setManual(false); } else { setPeek(true); setManual(true); }
   };
   const closeSidebar = () => { setDrawer(false); setManual(false); setPeek(false); };
+  const openBuilderMenu = () => {
+    clearTimeout(timer.current);
+    if (window.matchMedia('(max-width:900px)').matches || window.matchMedia('(hover:none)').matches) setDrawer(true);
+    else { setPeek(true); setManual(true); }
+  };
   const choose = (k) => { setTab(k); setDrawer(false); };
   const title = TABS.find((t) => t[0] === tab)[1];
 
@@ -76,15 +81,15 @@ export default function Home() {
       </aside>
 
       <main className="main" onMouseDown={(e) => { if (manual && !e.target.closest('.panelbtn')) closeSidebar(); }}>
-        <header className={'top' + (tab === 'build' ? ' xl' : '')}>
+        <header className={'top' + (tab === 'build' ? ' xl' : '')} hidden={tab === 'build'}>
           <button className={'iconbtn panelbtn' + (peek ? ' on' : '')} onClick={togglePanel} aria-label={peek ? 'Close sidebar' : 'Open sidebar'} title={peek ? 'Close sidebar' : 'Open sidebar'} aria-expanded={peek} aria-controls="sidebar"><Panel /></button>
           <button className="iconbtn menubtn" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer} aria-controls="sidebar"><Menu /></button>
           <img className="topmark" src="/logo-mark.png" alt="" />
           <div className="topttl"><h1 className="toptitle">{title}</h1>{tab === 'build' && <span className="topsub">Think. Build. Evolve.</span>}</div>
         </header>
-        <CapabilityBanner variant={tab === 'build' ? 'builder' : 'assistant'} />
-        <div hidden={tab !== 'chat'}><Chat seed={seed.tab === 'chat' ? seed.q : ''} /></div>
-        <div hidden={tab !== 'build'}><Builder seed={seed.tab === 'build' ? seed.q : ''} /></div>
+        {tab === 'chat' && <CapabilityBanner variant="assistant" />}
+        <div className="workspace-view chat-workspace" hidden={tab !== 'chat'}><Chat seed={seed.tab === 'chat' ? seed.q : ''} /></div>
+        <div className="workspace-view builder-workspace" hidden={tab !== 'build'}><Builder seed={seed.tab === 'build' ? seed.q : ''} onOpenMenu={openBuilderMenu} banner={<CapabilityBanner variant="builder" />} /></div>
       </main>
     </div>
   );

@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"SYNTH"},{"path":"/app","title":"SYNTH workspace"},{"path":"/admin","title":"SYNTH admin"},{"path":"/learning-studio","title":"Learning Studio"},{"path":"/status","title":"SYNTH Status"},{"path":"/dev-updates","title":"Developer Updates"},{"path":"/dev-updates/:slug","title":"Developer Update"},{"path":"/share/:token","title":"Shared Response"}]}

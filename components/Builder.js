@@ -23,7 +23,7 @@ import BuilderApprovalDialog from './BuilderApprovalDialog';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { BUILDER_TEMPLATE_CATEGORIES, BUILDER_TEMPLATES, getBuilderTemplatePage } from './builder-templates';
 import { BUILDER_TEMPLATE_EXTRAS } from './builder-template-extras';
-import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit, Chevron, GitHubMark } from '../lib/icons';
+import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit, Chevron, GitHubMark, Menu, Chat as ChatIcon, FileIcon } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
 import { reportTaskNotification } from '../lib/notifications';
 import { diffGitHubProject } from '../lib/github-repo';
@@ -124,7 +124,29 @@ function BuildAnswer({ text }) {
   );
 }
 
-export default function Builder({ seed }) {
+function BuilderTopbar({ projectName, busy, preference, onOpenMenu, onOpenSettings }) {
+  return (
+    <header className="builder-topbar">
+      <button type="button" className="builder-menu-button" onClick={onOpenMenu} aria-label="Open SYNTHCODE workspace menu" title="Open workspace menu"><Menu width="19" height="19" /></button>
+      <div className="builder-brand">
+        <img src="/logo-mark.png" alt="" />
+        <span>SYNTHCODE</span>
+        <small>Think. Build. Evolve.</small>
+      </div>
+      <div className="builder-project-meta">
+        <span className="builder-project-caption">PROJECT</span>
+        <strong title={projectName}>{projectName}</strong>
+        <span className={'builder-status-pill' + (busy ? ' building' : ' ready')} role="status" aria-live="polite"><i />{busy ? 'Building…' : 'Ready'}</span>
+      </div>
+      <div className="builder-topbar-actions">
+        <LanguageSettingsButton preference={preference} onClick={onOpenSettings} iconOnly />
+        <span className="builder-avatar" role="img" aria-label="SYNTH workspace identity" title="SYNTH workspace"><img src="/logo-mark.png" alt="" /></span>
+      </div>
+    </header>
+  );
+}
+
+export default function Builder({ seed, onOpenMenu, banner }) {
   const [prompt, setPrompt] = useState('');
   const [language, setLanguage] = useState('auto');
   const [languagePreference, setLanguagePreference] = useState('auto');
@@ -140,6 +162,10 @@ export default function Builder({ seed }) {
   const [view, setView] = useState('preview');
   const [pane, setPane] = useState('prompt');
   const [dev, setDev] = useState('desktop');
+  const [mobileTab, setMobileTab] = useState('chat');
+  const [assistantWidth, setAssistantWidth] = useState(400);
+  const [assistantCollapsed, setAssistantCollapsed] = useState(false);
+  const [resizing, setResizing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [lastBuildImages, setLastBuildImages] = useState([]);
@@ -162,6 +188,8 @@ export default function Builder({ seed }) {
   const [githubPreviewApproved, setGitHubPreviewApproved] = useState(false);
   const [githubPreviewConsentOpen, setGitHubPreviewConsentOpen] = useState(false);
   const githubPreviewConsentDialog = useRef(null);
+  const buildRoot = useRef(null);
+  const resizePointer = useRef(null);
   const a = useAttach();
   const ctl = useRef(null);
   const wbox = useRef(null);
@@ -230,7 +258,48 @@ export default function Builder({ seed }) {
 
   function requestPreview() {
     if (githubRepository && !githubPreviewApproved && !sourceOnly && html) { setGitHubPreviewConsentOpen(true); return; }
-    setView('preview');
+    setView('preview'); setPane('preview'); setMobileTab('preview');
+  }
+
+  function activateCodeView() {
+    setView('code'); setPane('preview'); setMobileTab('code');
+  }
+
+  function activateFilesView() {
+    setView('files'); setPane('preview'); setMobileTab('code');
+  }
+
+  function activateMobileTab(next) {
+    if (next === 'chat') { setMobileTab('chat'); setPane('prompt'); return; }
+    if (next === 'preview') { requestPreview(); return; }
+    activateCodeView();
+  }
+
+  function startPaneResize(event) {
+    if (event.button !== 0 && event.pointerType === 'mouse') return;
+    event.preventDefault();
+    resizePointer.current = event.pointerId;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setResizing(true);
+  }
+
+  function movePaneResize(event) {
+    if (resizePointer.current !== event.pointerId || !buildRoot.current) return;
+    const bounds = buildRoot.current.getBoundingClientRect();
+    setAssistantWidth(Math.max(340, Math.min(520, Math.round(event.clientX - bounds.left))));
+  }
+
+  function stopPaneResize(event) {
+    if (resizePointer.current !== event.pointerId) return;
+    resizePointer.current = null;
+    setResizing(false);
+  }
+
+  function keyPaneResize(event) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 340 : event.key === 'End' ? 520 : assistantWidth + (event.key === 'ArrowRight' ? 16 : -16);
+    setAssistantWidth(Math.max(340, Math.min(520, next)));
   }
 
   function importGitHubProject(data) {
@@ -263,6 +332,7 @@ export default function Builder({ seed }) {
     setFull(false);
     setPane('preview');
     setView('code');
+    setMobileTab('code');
     setPrompt('');
     setErr('');
     flash(`Imported ${importedPaths.length} files from ${data.repository}`);
@@ -484,7 +554,8 @@ export default function Builder({ seed }) {
         return;
       }
       setLanguage(projectLanguage);
-      setView(isSourceOnlyLanguage(projectLanguage) || (githubRepository && !githubPreviewApproved) ? 'code' : 'preview');
+      const resultView = isSourceOnlyLanguage(projectLanguage) || (githubRepository && !githubPreviewApproved) ? 'code' : 'preview';
+      setView(resultView); setPane('preview'); setMobileTab(resultView === 'code' ? 'code' : 'preview');
       setFiles(merged.files);
       setMarks(Object.fromEntries(merged.changed.filter((c) => c.kind !== 'del').map((c) => [c.path, c.kind])));
       setSelected((s) => (s && s in merged.files ? s : entryFor(merged.files, projectLanguage)));
@@ -500,8 +571,8 @@ export default function Builder({ seed }) {
       setQueued(''); setQueuedOptions(null);
       const aborted = e.name === 'AbortError';
       finishNotification(aborted ? 'stopped' : 'failed');
-      if (!aborted) { setErr(safeFrontendText(e.message.slice(0, 400))); setPane('prompt'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
-      if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setLanguage(languagePreference); setView(isSourceOnlyLanguage(languagePreference) ? 'code' : 'preview'); } // nothing built yet: back to the welcome screen
+      if (!aborted) { setErr(safeFrontendText(e.message.slice(0, 400))); setPane('prompt'); setMobileTab('chat'); track({ mode: 'build', prompt: logged, reply: '[ERROR] ' + e.message, model: 'auto', error: true, conversationId }); }
+      if (!hasFiles) { setHistory([]); setLive(''); setPrompt(text); setLanguage(languagePreference); const failedView = isSourceOnlyLanguage(languagePreference) ? 'code' : 'preview'; setView(failedView); setMobileTab(failedView); } // nothing built yet: back to the welcome screen
       else { mark(aborted ? 'stopped' : 'failed'); setLive(''); } // keep the last good project
     }
     setBusy(false);
@@ -619,10 +690,15 @@ export default function Builder({ seed }) {
   const last = history[history.length - 1];
   const nextSteps = nextStepPrompts(last, language);
   const using = tools.find((t) => t.state === 'running');
+  const projectName = githubRepository
+    ? `${githubRepository.repository} · ${githubRepository.branch}`
+    : String(history[0]?.text || '').replace(/\s+/g, ' ').trim().slice(0, 72) || 'New project';
 
   if (welcome) {
     return (
-      <section className={'bw template-home' + (leaving ? ' leaving' : '')} aria-label="SYNTHCODE welcome" {...a.dropProps}>
+      <section className={'bw template-home builder-welcome' + (leaving ? ' leaving' : '')} aria-label="SYNTHCODE welcome" {...a.dropProps}>
+        <BuilderTopbar projectName={projectName} busy={busy} preference={languagePreference} onOpenMenu={onOpenMenu} onOpenSettings={() => setSettingsOpen(true)} />
+        {banner && <div className="builder-capability">{banner}</div>}
         <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
         <GitHubImportDialog open={githubImportOpen} existingFiles={files} onClose={() => setGitHubImportOpen(false)} onImport={importGitHubProject} />
         <BuilderApprovalDialog request={criticalRequest} onCancelRequest={cancelCriticalRequest} onProceed={proceedCriticalRequest} />
@@ -718,23 +794,24 @@ export default function Builder({ seed }) {
   }
 
   return (
-    <section className={'build' + (entering ? ' enter' : '')} data-pane={pane} {...a.dropProps}>
+    <section ref={buildRoot} className={'build' + (entering ? ' enter' : '') + (resizing ? ' is-resizing' : '')} data-pane={pane} data-mobile-tab={mobileTab} style={{ '--assistant-width': assistantCollapsed ? '58px' : `${assistantWidth}px` }} {...a.dropProps}>
       <BuilderLanguageSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} preference={languagePreference} onChange={changeLanguagePreference} busy={busy} preferenceReady={preferenceReady} projectStarted={history.length > 0 || hasFiles} currentLanguage={language} />
       <GitHubImportDialog open={githubImportOpen} existingFiles={files} onClose={() => setGitHubImportOpen(false)} onImport={importGitHubProject} />
       <GitHubPullRequestDialog open={githubPullRequestOpen} repository={githubRepository} changes={githubChanges} onClose={() => setGitHubPullRequestOpen(false)} onCreated={(pullRequest) => setGitHubRepository((current) => current ? { ...current, submittedPullRequest: pullRequest } : current)} />
       <BuilderApprovalDialog request={criticalRequest} review={criticalReview} onCancelRequest={cancelCriticalRequest} onProceed={proceedCriticalRequest} onDiscard={discardCriticalReview} onApply={applyCriticalReview} />
-      {githubPreviewConsentOpen && <div className="github-import-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setGitHubPreviewConsentOpen(false); }}><section className="github-preview-consent" ref={githubPreviewConsentDialog} role="dialog" aria-modal="true" aria-labelledby="github-preview-title"><span className="integration-kicker">CODE EXECUTION CHECK</span><h2 id="github-preview-title">Run this repository in preview?</h2><p>Preview loads the repository’s HTML and JavaScript in SYNTHCODE’s isolated browser frame. It may still make network requests or display untrusted content. Review the source first and continue only if you trust it.</p><div className="github-preview-actions"><button type="button" className="integration-link-button" onClick={() => setGitHubPreviewConsentOpen(false)}>Keep reviewing code</button><button type="button" className="integration-action primary" onClick={() => { setGitHubPreviewApproved(true); setGitHubPreviewConsentOpen(false); setView('preview'); }}>I trust this code · Open preview</button></div></section></div>}
-      <div className="seg" role="group" aria-label="Workspace pane selection">
-        <button type="button" aria-pressed={pane === 'prompt'} className={pane === 'prompt' ? 'on' : ''} onClick={() => setPane('prompt')}>Describe</button>
-        <button type="button" aria-pressed={pane === 'preview'} className={pane === 'preview' ? 'on' : ''} onClick={() => setPane('preview')}>Preview</button>
-      </div>
+      {githubPreviewConsentOpen && <div className="github-import-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setGitHubPreviewConsentOpen(false); }}><section className="github-preview-consent" ref={githubPreviewConsentDialog} role="dialog" aria-modal="true" aria-labelledby="github-preview-title"><span className="integration-kicker">CODE EXECUTION CHECK</span><h2 id="github-preview-title">Run this repository in preview?</h2><p>Preview loads the repository’s HTML and JavaScript in SYNTHCODE’s isolated browser frame. It may still make network requests or display untrusted content. Review the source first and continue only if you trust it.</p><div className="github-preview-actions"><button type="button" className="integration-link-button" onClick={() => setGitHubPreviewConsentOpen(false)}>Keep reviewing code</button><button type="button" className="integration-action primary" onClick={() => { setGitHubPreviewApproved(true); setGitHubPreviewConsentOpen(false); setView('preview'); setPane('preview'); setMobileTab('preview'); }}>I trust this code · Open preview</button></div></section></div>}
+      <BuilderTopbar projectName={projectName} busy={busy} preference={languagePreference} onOpenMenu={onOpenMenu} onOpenSettings={() => setSettingsOpen(true)} />
+      {banner && <div className="builder-capability">{banner}</div>}
 
-      <aside className="panel">
+      <aside className={'panel assistant-panel' + (assistantCollapsed ? ' collapsed' : '')}>
+        {assistantCollapsed ? (
+          <button type="button" className="assistant-restore" onClick={() => setAssistantCollapsed(false)} aria-label="Expand Assistant pane" title="Expand Assistant pane"><ChatIcon width="19" height="19" /><span>Chat</span><Chevron width="17" height="17" /></button>
+        ) : <>
         <div className="phead">
-          <div className="phead-title"><small>Project · {languageLabel(language)}</small><b title={githubRepository?.repository || history[0]?.text}>{githubRepository ? `${githubRepository.repository} · ${githubRepository.branch}` : history[0]?.text || 'Untitled'}</b></div>
+          <div className="phead-title"><small>SYNTHCODE · {languageLabel(language)}</small><b>Assistant</b></div>
           <div className="phead-tools">
             <span className={'status' + (busy ? ' busy' : hasFiles ? ' done' : '')}><i />{busy ? 'Building…' : hasFiles ? 'Ready' : 'Idle'}</span>
-            <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} iconOnly />
+            <button type="button" className="iconbtn sm assistant-collapse" onClick={() => setAssistantCollapsed(true)} aria-label="Collapse Assistant pane" title="Collapse Assistant pane"><Chevron width="17" height="17" /></button>
           </div>
         </div>
         {githubRepository && <p className="github-local-copy-note" role="note">Temporary working copy: download it or submit a pull request before leaving; a refresh may discard edits. Each AI request includes up to 40,000 source characters and prefers the open file when it fits, so open the most relevant file first.</p>}
@@ -802,7 +879,7 @@ export default function Builder({ seed }) {
         </div>
         {err && <p className="err" role="alert">{err}</p>}
         {queued && <div className="queued"><span>Queued next: {queued}</span><button className="linkbtn" onClick={() => { setQueued(''); setQueuedOptions(null); }}>Cancel</button></div>}
-        {nextSteps.length > 0 && <section className="builder-next-steps" aria-label="Suggested next steps"><div><b>Good next steps</b><span>Pick one to keep building</span></div><div className="builder-next-step-list">{nextSteps.map((text) => <button key={text} className="builder-next-step" onClick={() => pick(text)} disabled={busy}>{text}</button>)}</div></section>}
+        {nextSteps.length > 0 && <details className="builder-next-steps"><summary><span><b>Good next steps</b><small>Relevant ideas to keep building</small></span><Chevron width="16" height="16" /></summary><div className="builder-next-step-list">{nextSteps.map((text) => <button key={text} className="builder-next-step" onClick={() => pick(text)} disabled={busy}>{text}</button>)}</div></details>}
         <Thumbs a={a} />
         <NotificationSetupBanner category="build" />
         <div className="compose col compose-stack">
@@ -822,70 +899,71 @@ export default function Builder({ seed }) {
             <button type="button" className="primary glow buildbtn" onClick={() => build()} disabled={!preferenceReady || (!prompt.trim() && !a.images.length)}>{busy ? 'Queue' : sourceOnly ? 'Generate' : 'Build'} <Arrow width="16" height="16" /></button>
           </div>
         </div>
+        </>}
       </aside>
+
+      <div className="workspace-splitter" role="separator" aria-orientation="vertical" aria-label="Resize Assistant and preview panes" aria-valuemin="340" aria-valuemax="520" aria-valuenow={assistantWidth} aria-valuetext={`${assistantWidth} pixels`} tabIndex={0}
+        onPointerDown={startPaneResize} onPointerMove={movePaneResize} onPointerUp={stopPaneResize} onPointerCancel={stopPaneResize} onLostPointerCapture={stopPaneResize} onKeyDown={keyPaneResize} />
 
       <div className="stage panel">
         <div className="stagebar">
-          <div className="tabs" role="group" aria-label="Project view">
+          <div className="builder-view-tabs" role="group" aria-label="Project view">
             <button type="button" aria-pressed={view === 'preview'} className={view === 'preview' ? 'on' : ''} onClick={requestPreview}><Globe width="16" height="16" />Preview{githubRepository && !githubPreviewApproved && <span className="github-preview-lock">Review first</span>}</button>
-            <button type="button" aria-pressed={view === 'code'} className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}><Build width="16" height="16" />Code</button>
-            {busy && <span className="busytag"><i />{using ? 'using ' + using.label : <WordCycle />}…</span>}
+            <button type="button" aria-pressed={view === 'code'} className={view === 'code' ? 'on' : ''} onClick={activateCodeView}><Build width="16" height="16" />Code</button>
+            {githubRepository && <button type="button" aria-pressed={view === 'files'} className={view === 'files' ? 'on' : ''} onClick={activateFilesView}><FileIcon width="16" height="16" />Files</button>}
           </div>
-          <div className="actions" role="toolbar" aria-label="Page actions">
-            <div className="builder-stage-settings"><LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} iconOnly /></div>
-            {githubRepository && (githubRepository.submittedPullRequest?.url
-              ? <a className="github-pr-toolbar-link" href={githubRepository.submittedPullRequest.url} target="_blank" rel="noreferrer">Review PR #{githubRepository.submittedPullRequest.number}</a>
-              : <button type="button" className="github-pr-toolbar-button" onClick={() => setGitHubPullRequestOpen(true)} disabled={busy || githubChanges.length === 0} title={githubChanges.length ? `Review ${githubChanges.length} changed files` : 'No imported or new files have changed'}>Review changes · {githubChanges.length}</button>)}
-            {hasFiles && !githubRepository && <button type="button" className="github-import-toolbar-button" onClick={() => setGitHubImportOpen(true)}>Import from GitHub</button>}
-            {!sourceOnly && <div className="devs">
-              {[['desktop', Monitor], ['tablet', Tablet], ['phone', Phone]].map(([k, Ic]) => (
-                <button key={k} className={'iconbtn sm' + (dev === k ? ' on' : '')} onClick={() => setDev(k)} aria-label={k + ' width'} title={k}><Ic /></button>
-              ))}
-            </div>}
-            {!sourceOnly && <span className="sep" />}
-            {!sourceOnly && <button className="iconbtn sm act-opt" disabled={!html} onClick={() => setFrame((n) => n + 1)} aria-label="Refresh preview" title="Refresh preview"><Refresh /></button>}
-            {!sourceOnly && <button className="iconbtn sm" disabled={!html || !previewAllowed} onClick={() => setFull(true)} aria-label="Open full screen" title="Open full screen"><Open /></button>}
-            <button className="iconbtn sm act-opt" disabled={!hasFiles} onClick={() => copyText(files[selected] ?? files[currentEntry] ?? files[Object.keys(files).sort()[0]] ?? '')} aria-label="Copy open file" title="Copy open file"><Copy /></button>
-            <button className="iconbtn sm" disabled={!hasFiles || busy || tsCompiling} onClick={download} aria-label="Download project" title={sourceOnly ? 'Download source project' : 'Download project'}><Download /></button>
-            <button className="iconbtn sm" disabled={!hasFiles || busy || tsCompiling} onClick={send} aria-label="Share project" title="Share project"><Send /></button>
+          <div className="stagebar-right">
+            {busy && <span className="busytag"><i />{using ? 'using ' + using.label : <WordCycle />}…</span>}
+            <div className={'stagebar-controls' + (githubRepository ? ' has-repository' : '')}>
+              {!githubRepository && <button type="button" className="github-import-toolbar-button" onClick={() => setGitHubImportOpen(true)}><GitHubMark size={17} /><span>Import from GitHub</span></button>}
+              {githubRepository?.submittedPullRequest?.url && <a className="github-pr-toolbar-link" href={githubRepository.submittedPullRequest.url} target="_blank" rel="noreferrer">Review PR #{githubRepository.submittedPullRequest.number}</a>}
+              {!sourceOnly && <div className="device-switch" role="group" aria-label="Preview width">
+                {[["desktop", Monitor, "Desktop"], ["tablet", Tablet, "Tablet"], ["phone", Phone, "Phone"]].map(([k, Ic, label]) => (
+                  <button key={k} type="button" className={'device-option' + (dev === k ? ' on' : '')} onClick={() => setDev(k)} aria-label={`${label} preview width`} aria-pressed={dev === k} title={label}><Ic width="16" height="16" /><span>{label}</span></button>
+                ))}
+              </div>}
+              <div className="actions" role="toolbar" aria-label="Preview actions">
+                {!sourceOnly && <button type="button" className="iconbtn sm" disabled={!html} onClick={() => setFrame((n) => n + 1)} aria-label="Refresh preview" title="Refresh preview"><Refresh /></button>}
+                {!sourceOnly && <button type="button" className="iconbtn sm" disabled={!html || !previewAllowed} onClick={() => setFull(true)} aria-label="Open full screen" title="Open full screen"><Open /></button>}
+                <button type="button" className="iconbtn sm" disabled={!hasFiles} onClick={() => copyText(files[selected] ?? files[currentEntry] ?? files[Object.keys(files).sort()[0]] ?? '')} aria-label="Copy open file" title="Copy open file"><Copy /></button>
+                <button type="button" className="iconbtn sm" disabled={!hasFiles || busy || tsCompiling} onClick={download} aria-label="Download project" title={sourceOnly ? 'Download source project' : 'Download project'}><Download /></button>
+                <button type="button" className="iconbtn sm" disabled={!hasFiles || busy || tsCompiling} onClick={send} aria-label="Share project" title="Share project"><Send /></button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Both tabs stay mounted so the preview keeps its state when you look at the files and back. */}
         <div className="pane" hidden={view !== 'preview'}>
-          {html && previewAllowed
-            ? (
-              <div className={'canvas' + (justDone ? ' reveal' : '') + (busy ? ' updating' : '')}>
-                <iframe key={frame} title="Preview" style={{ width: WIDTH[dev] }} sandbox="allow-scripts allow-forms allow-modals" srcDoc={html} />
-                {busy && <AssemblingOverlay />}
-              </div>
-            )
-              : githubRepository && !githubPreviewApproved && !sourceOnly
-                ? <div className="github-preview-guard" role="note"><span className="github-preview-guard-mark" aria-hidden="true">!</span><div><b>Repository preview is paused</b><p>Imported code is not run automatically. Review the files, then choose Preview to approve it.</p></div></div>
-              : sourceOnly
-              ? <div className="source-only-preview" role="status">
-                  <span className="source-only-eyebrow">SOURCE EXPORT ONLY</span>
-                  <h3>{busy ? `Generating ${languageLabel(language)} files…` : `${languageLabel(language)} project files`}</h3>
-                  <p>{busy ? 'SYNTHCODE is generating text files; it is not compiling or running this project.' : SOURCE_ONLY_NOTICE}</p>
-                  <div className="source-only-actions">
-                    <button type="button" className="primary" onClick={() => setView('code')} disabled={!hasFiles}>Open source files</button>
-                    <button type="button" onClick={download} disabled={!hasFiles || busy}>Download project ZIP</button>
-                  </div>
-                </div>
-              : busy
-              ? <AssemblingPreview lines={live ? live.split('\n').length : 0} width={WIDTH[dev]} />
-              : tsCompiling
-                ? <div className="ts-compile-status" role="status">Preparing the TypeScript preview…</div>
-                : tsCompileError
-                  ? <div className="ts-compile-error" role="alert"><b>TypeScript preview could not compile.</b>{'\n'}{tsCompileError}</div>
-                  : <p className="empty">Your app appears here.</p>}
+          <div className="preview-browser-frame" style={{ width: WIDTH[dev] }}>
+            <div className="preview-addressbar" aria-label="Preview address bar"><span className="preview-window-dots"><i /><i /><i /></span><span className="preview-address-lock" aria-hidden="true">●</span><span className="preview-host">synth.preview</span><span className="preview-address-path">/{selected || currentEntry || 'index.html'}</span><span className="preview-address-state">{busy ? 'Building' : 'Local'}</span></div>
+            <div className="preview-browser-content">
+              {html && previewAllowed
+                ? <div className={'canvas' + (justDone ? ' reveal' : '') + (busy ? ' updating' : '')}><iframe key={frame} title="Preview" sandbox="allow-scripts allow-forms allow-modals" srcDoc={html} />{busy && <AssemblingOverlay />}</div>
+                : githubRepository && !githubPreviewApproved && !sourceOnly
+                  ? <div className="github-preview-guard" role="note"><span className="github-preview-guard-mark" aria-hidden="true">!</span><div><b>Repository preview is paused</b><p>Imported code is not run automatically. Review the files, then choose Preview to approve it.</p></div></div>
+                  : sourceOnly
+                    ? <div className="source-only-preview" role="status"><span className="source-only-eyebrow">SOURCE EXPORT ONLY</span><h3>{busy ? `Generating ${languageLabel(language)} files…` : `${languageLabel(language)} project files`}</h3><p>{busy ? 'SYNTHCODE is generating text files; it is not compiling or running this project.' : SOURCE_ONLY_NOTICE}</p><div className="source-only-actions"><button type="button" className="primary" onClick={activateCodeView} disabled={!hasFiles}>Open source files</button><button type="button" onClick={download} disabled={!hasFiles || busy}>Download project ZIP</button></div></div>
+                    : busy ? <AssemblingPreview lines={live ? live.split('\n').length : 0} width={WIDTH[dev]} />
+                      : tsCompiling ? <div className="ts-compile-status" role="status">Preparing the TypeScript preview…</div>
+                        : tsCompileError ? <div className="ts-compile-error" role="alert"><b>TypeScript preview could not compile.</b>{'\n'}{tsCompileError}</div>
+                          : <div className="preview-empty"><span className="preview-empty-mark"><Build width="24" height="24" /></span><b>Your project preview</b><p>Describe an idea or edit a file to see it come together here.</p></div>}
+            </div>
+          </div>
         </div>
-        <div className="pane" hidden={view !== 'code'}>
+        <div className="pane code-pane" hidden={view === 'preview'}>
           {sourceOnly && <div className="source-export-note" role="note"><b>{languageLabel(language)} source export only</b><span>Not compiled, tested, run, or deployed here.</span></div>}
-          <FileExplorer files={files} dirs={dirs} selected={selected} onSelect={setSelected} onSave={saveFile} onCreate={createFile} onFolder={createFolder} onDelete={deleteFile} onCopy={copyText} busy={busy} live={liveMap} marks={marks} />
+          <FileExplorer files={files} dirs={dirs} selected={selected} onSelect={(path) => { setSelected(path); if (view === 'files') setView('code'); }} onSave={saveFile} onCreate={createFile} onFolder={createFolder} onDelete={deleteFile} onCopy={copyText} busy={busy} live={liveMap} marks={marks} filesOnly={view === 'files'} onExitFilesOnly={() => setView('code')} importedPaths={githubRepository?.importedPaths || []} modifiedPaths={githubChanges.map((change) => change.path)} />
+          {githubRepository && <div className="github-change-bar"><div className="github-change-copy"><b>{githubChanges.length > 0 ? `${githubChanges.length} file${githubChanges.length === 1 ? '' : 's'} changed` : 'No changes yet'}</b><span>{githubChanges.length > 0 ? 'Review the diff before opening a pull request.' : 'Changes made in SYNTHCODE will appear here.'}</span></div><button type="button" className="github-review-button" onClick={activateFilesView} disabled={busy || githubChanges.length === 0} title={githubChanges.length === 0 ? 'No repository changes to review' : 'Review changed repository files'}>Review changes</button><button type="button" className="github-open-pr-button" onClick={() => setGitHubPullRequestOpen(true)} disabled={busy || githubChanges.length === 0} title={githubChanges.length === 0 ? 'No imported or new files have changed' : 'Open a pull request for these changes'}>Open pull request <Arrow width="15" height="15" /></button></div>}
         </div>
         {note && <div className="toast" role="status">{note}</div>}
       </div>
+
+      <nav className="builder-mobile-nav" aria-label="SYNTHCODE workspace views">
+        <button type="button" className={mobileTab === 'chat' ? 'on' : ''} onClick={() => activateMobileTab('chat')} aria-current={mobileTab === 'chat' ? 'page' : undefined}><ChatIcon width="18" height="18" /><span>Chat</span></button>
+        <button type="button" className={mobileTab === 'preview' ? 'on' : ''} onClick={() => activateMobileTab('preview')} aria-current={mobileTab === 'preview' ? 'page' : undefined}><Globe width="18" height="18" /><span>Preview</span></button>
+        <button type="button" className={mobileTab === 'code' ? 'on' : ''} onClick={() => activateMobileTab('code')} aria-current={mobileTab === 'code' ? 'page' : undefined}><Build width="18" height="18" /><span>Code</span></button>
+      </nav>
 
       {full && html && previewAllowed && (
         <div className="fs" role="dialog" aria-label="Full screen preview">
