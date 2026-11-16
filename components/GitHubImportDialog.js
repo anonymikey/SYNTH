@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const SETUP_GUIDE = 'https://github.com/anonymikey/SYNTH/blob/main/docs/integrations/github-app-setup.md';
-
 async function apiJson(url, options) {
   const response = await fetch(url, { cache: 'no-store', ...options });
   let data = {};
@@ -213,7 +211,6 @@ export default function GitHubImportDialog({ open, existingFiles = {}, onClose, 
           <div className="github-import-empty">
             <h3>{connection?.storageReady === false ? 'Secure shared storage is required' : 'GitHub setup is not complete'}</h3>
             <p>The workspace owner must configure the GitHub App and encrypted session storage before repository access is available.</p>
-            <a href={SETUP_GUIDE} target="_blank" rel="noreferrer">Read the GitHub App setup guide</a>
             <button type="button" className="integration-action" onClick={refreshConnection} disabled={busy === 'connection'}>{busy === 'connection' ? 'Checking…' : 'Check again'}</button>
           </div>
         ) : !connected ? (

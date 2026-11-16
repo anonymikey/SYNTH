@@ -104,9 +104,20 @@ test('OAuth callbacks consume one-time state and verify identity and installatio
   assert.match(callback, /exchangeGitHubCode\(code, saved\.verifier\)/);
   assert.match(callback, /loadGitHubUser\(tokens\.access_token\)/);
   assert.match(callback, /fetchGitHubInstallations\(tokens\.access_token\)/);
+  assert.match(callback, /new URL\(`\/apps\/\$\{encodeURIComponent\(config\.slug\)\}\/installations\/new`, 'https:\/\/github\.com'\)/);
+  assert.match(callback, /redirect\(installUrl\.toString\(\), \[clearStateCookie\(\), sessionCookie\(id\)\]\)/);
   assert.match(installed, /fetchGitHubInstallations\(resolved\.session\.accessToken\)/);
   assert.match(installed, /installations\.some\(\(item\) => item\.id === id\)/);
   assert.match(installed, /saveGitHubSession\(sessionId/);
+});
+
+test('GitHub connection UI hides public source links and celebrates a verified installation', () => {
+  const settings = source('../components/GitHubIntegrationSettings.js');
+  const importDialog = source('../components/GitHubImportDialog.js');
+  assert.match(settings, /github-connected-toast/);
+  assert.match(settings, /state\?\.installations\?\.length \? 'Connected' : state\?\.connected \? 'Finish setup'/);
+  assert.doesNotMatch(settings, /github\.com\/anonymiketech\/SYNTH|SETUP_GUIDE/);
+  assert.doesNotMatch(importDialog, /github\.com\/anonymiketech\/SYNTH|SETUP_GUIDE/);
 });
 
 test('Settings exposes keyboard-navigable Personalization, Notification and New Integrations tabs', () => {

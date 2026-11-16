@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-const SETUP_GUIDE = 'https://github.com/anonymikey/SYNTH/blob/main/docs/integrations/github-app-setup.md';
-
 const notices = {
   connected: 'GitHub connected. Choose which repositories SYNTH may reach in the GitHub App installation.',
   installed: 'GitHub installation verified. Its selected repositories are now available in SYNTHCODE.',
@@ -23,6 +21,7 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [successPopup, setSuccessPopup] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -40,7 +39,13 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
-  useEffect(() => { if (notices[notice]) setMessage(notices[notice]); }, [notice]);
+  useEffect(() => {
+    if (notices[notice]) setMessage(notices[notice]);
+    if (notice !== 'installed') return undefined;
+    setSuccessPopup(true);
+    const timer = setTimeout(() => setSuccessPopup(false), 5200);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   async function disconnect() {
     setBusy(true);
@@ -70,12 +75,19 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
       </div>
       {message && <p className="integration-notice" role="status">{message}</p>}
       {error && <p className="integration-error" role="alert">{error}</p>}
+      {successPopup && <div className="github-connected-toast" role="status" aria-live="polite" aria-atomic="true">
+        <span className="github-connected-toast-mark" aria-hidden="true">✓</span>
+        <span><b>GitHub connected</b><small>Your selected repositories are ready to import into SYNTHCODE.</small></span>
+        <button type="button" aria-label="Dismiss GitHub connected message" onClick={() => setSuccessPopup(false)}>×</button>
+      </div>}
 
       <section className="integration-card" aria-labelledby="github-integration-title">
         <div className="integration-card-head">
           <span className="integration-github-mark" aria-hidden="true">GH</span>
           <div><h4 id="github-integration-title">GitHub</h4><p>Selected-repository access · SYNTHCODE import and pull requests</p></div>
-          <span className={'integration-state' + (state?.connected ? ' connected' : '')}>{state?.connected ? 'Connected' : 'Not connected'}</span>
+          <span className={'integration-state' + (state?.connected && state?.installations?.length ? ' connected' : '')}>
+            {state?.connected && state?.installations?.length ? 'Connected' : state?.connected ? 'Finish setup' : 'Not connected'}
+          </span>
         </div>
 
         {!state?.configured ? (
@@ -84,11 +96,11 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
             <p>{state?.storageReady === false
               ? 'The workspace owner must configure shared Upstash Redis before encrypted GitHub sessions can be stored.'
               : 'The workspace owner must configure a GitHub App and server-only credentials before accounts can connect.'}</p>
-            <a href={SETUP_GUIDE} target="_blank" rel="noreferrer">Open the GitHub App setup guide</a>
+            <span className="integration-setup-hint">Once GitHub App setup is complete, refresh this panel to connect.</span>
           </div>
         ) : !state?.connected ? (
           <div className="integration-setup">
-            <p>Connect your GitHub account, then install the SYNTH GitHub App for only the repositories you choose. SYNTH never asks for a personal access token.</p>
+            <p>Authorize your GitHub account, then GitHub will take you directly to the SYNTH App installation screen. Choose only the repositories you want SYNTH to access.</p>
             <a className="integration-action primary" href="/api/integrations/github/start">Connect GitHub</a>
           </div>
         ) : (
@@ -126,7 +138,6 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
       </div>
       <div className="integration-footer-actions">
         <button type="button" className="integration-link-button" onClick={refresh} disabled={loading || busy}>{loading ? 'Refreshing…' : 'Refresh connection'}</button>
-        <a href={SETUP_GUIDE} target="_blank" rel="noreferrer">Owner setup guide</a>
       </div>
     </div>
   );

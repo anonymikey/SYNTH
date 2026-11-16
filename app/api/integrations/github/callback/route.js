@@ -64,7 +64,8 @@ export async function GET(request) {
   };
   try {
     const id = await createGitHubSession(session, now);
-    return returnTo(config, 'connected', [clearStateCookie(), sessionCookie(id)]);
+    const installUrl = new URL(`/apps/${encodeURIComponent(config.slug)}/installations/new`, 'https://github.com');
+    return redirect(installUrl.toString(), [clearStateCookie(), sessionCookie(id)]);
   } catch {
     await revokeGitHubGrant(tokens.access_token);
     return returnTo(config, 'unavailable');
