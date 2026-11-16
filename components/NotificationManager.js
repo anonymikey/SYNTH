@@ -78,7 +78,7 @@ export default function NotificationManager() {
       managerClosedNotifications.add(notification);
       try { notification.close(); } catch {}
     };
-    const soundEnabledFor = (category, state) => state === 'completed'
+    const soundEnabledFor = (category, state) => state === 'completed' || state === 'needs_review'
       ? preferences[category]
       : state === 'failed' && preferences.failures;
     const playTaskSound = ({ category, state }) => {
@@ -114,14 +114,16 @@ export default function NotificationManager() {
     };
     const maybeNotify = (category, state, taskId) => {
       if (!isHidden()) return;
-      const enabled = state === 'completed' ? preferences[category] : state === 'failed' && preferences.failures;
+      const enabled = state === 'completed' || state === 'needs_review' ? preferences[category] : state === 'failed' && preferences.failures;
       if (!enabled || typeof window.Notification !== 'function' || window.Notification.permission !== 'granted') { refreshBadge(); return; }
 
       const isFailure = state === 'failed';
+      const needsReview = state === 'needs_review';
       const title = isFailure
         ? 'A SYNTH task needs attention'
+        : needsReview ? 'SYNTHCODE is waiting for you'
         : category === 'assistant' ? 'Your Assistant response is ready' : 'Your SYNTHCODE build is complete';
-      const body = isFailure ? 'Return to SYNTH to retry or review the result.' : 'Return to SYNTH to review the result.';
+      const body = isFailure ? 'Return to SYNTH to retry or review the result.' : needsReview ? 'Return to SYNTH to review a proposed change or answer a question.' : 'Return to SYNTH to review the result.';
       try {
         unread.add(taskId);
         refreshBadge();
@@ -164,7 +166,7 @@ export default function NotificationManager() {
         refreshBadge();
         return;
       }
-      if (!['completed', 'failed', 'stopped'].includes(state)) return;
+      if (!['completed', 'needs_review', 'failed', 'stopped'].includes(state)) return;
       active.delete(taskId);
       if (state !== 'stopped') maybeNotify(category, state, taskId);
       else refreshBadge();

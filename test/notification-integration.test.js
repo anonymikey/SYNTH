@@ -24,6 +24,7 @@ test('the shared task manager is mounted once for both workspace modes', () => {
   assert.match(chat, /reportTaskNotification\(clientId, 'assistant', 'started'\)/);
   assert.match(builder, /reportTaskNotification\(runKey, 'build', 'started'\)/);
   assert.match(builder, /finishNotification\('completed'\)/);
+  assert.match(builder, /finishNotification\('needs_review'\)/);
   assert.match(builder, /finishNotification\(aborted \? 'stopped' : 'failed'\)/);
   assert.match(builder, /finishNotification\('stopped'\)/);
 });
@@ -35,6 +36,9 @@ test('native task notifications are hidden-tab, permission-gated and content-saf
   assert.match(manager, /window\.Notification\.permission !== 'granted'/);
   assert.match(manager, /Your Assistant response is ready/);
   assert.match(manager, /Your SYNTHCODE build is complete/);
+  assert.match(manager, /SYNTHCODE is waiting for you/);
+  assert.match(manager, /Return to SYNTH to review a proposed change or answer a question/);
+  assert.match(manager, /state === 'needs_review'/);
   assert.doesNotMatch(manager, /detail\.(?:prompt|response|files|image|content)/);
   assert.match(manager, /managerClosedNotifications\.has\(notification\)/);
   assert.match(manager, /notification\.onclose = \(\) => \{[\s\S]*unread\.delete\(taskId\)/);

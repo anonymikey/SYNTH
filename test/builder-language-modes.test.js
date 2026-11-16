@@ -7,6 +7,8 @@ const settings = readFileSync(new URL('../components/BuilderLanguageSettings.js'
 const banner = readFileSync(new URL('../components/CapabilityBanner.js', import.meta.url), 'utf8');
 const updates = readFileSync(new URL('../app/dev-updates/data.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+const explorer = readFileSync(new URL('../components/FileExplorer.js', import.meta.url), 'utf8');
+const approval = readFileSync(new URL('../components/BuilderApprovalDialog.js', import.meta.url), 'utf8');
 
 test('Auto is the default and the same SYNTHCODE generation pipeline resolves the project mode', () => {
   assert.match(builder, /useState\('auto'\)/);
@@ -71,7 +73,7 @@ test('mobile keeps the pre-generation source-only notice visible', () => {
 });
 
 test('Assistant and SYNTHCODE workspace controls wrap safely on small screens', () => {
-  assert.match(css, /\.build\{grid-template-columns:minmax\(320px,min\(480px,32vw\)\) minmax\(0,1fr\)\}/);
+  assert.match(css, /\.build\{grid-template-columns:minmax\(285px,min\(355px,27vw\)\) minmax\(0,1fr\)\}/);
   assert.match(builder, /className="builder-stage-settings"/);
   assert.match(css, /@media\(max-width:1100px\)\{\.builder-stage-settings\{display:flex\}\}/);
   assert.match(css, /\.chat \.tools>span\{display:block/);
@@ -79,6 +81,35 @@ test('Assistant and SYNTHCODE workspace controls wrap safely on small screens', 
   assert.match(css, /padding:0 12px calc\(10px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(css, /\.builder-settings-panel\{[\s\S]*?border-radius:22px 22px 0 0/);
   assert.match(css, /@media\(max-width:380px\)/);
+});
+
+test('Code view collapses file navigation by default but keeps accessible browse and hide controls', () => {
+  assert.match(explorer, /useState\(false\);\s+const \[editing/);
+  assert.match(explorer, /useState\('view'\);\s+\/\/ narrow screens/);
+  assert.match(explorer, /className="ftree" hidden=\{!treeOpen\}/);
+  assert.match(explorer, /aria-label="Hide file navigation"/);
+  assert.match(explorer, /aria-label="Browse project files"/);
+  assert.match(explorer, /onClick=\{showFiles\}/);
+  assert.match(css, /\.ftree\[hidden\]\{display:none!important\}/);
+});
+
+test('SYNTHCODE asks before sensitive work, reviews unexpected sensitive paths and gives useful next steps', () => {
+  assert.match(builder, /criticalChangeReason\(text\)/);
+  assert.match(builder, /criticalChangedPaths\(merged\.changed\)/);
+  assert.match(builder, /confirmedCritical/);
+  assert.match(builder, /COLLABORATION_GUIDANCE/);
+  assert.match(builder, /Recent project conversation for continuity/);
+  assert.match(builder, /status === 'needs_input'/);
+  assert.match(builder, /isExplanationRequest\(text\)/);
+  assert.match(builder, /Good next steps/);
+  assert.match(approval, /role="dialog" aria-modal="true"/);
+  assert.match(approval, /Yes, proceed/);
+  assert.match(approval, /Current/);
+  assert.match(approval, /Proposed/);
+  assert.match(builder, /originalFiles: files/);
+  assert.match(builder, /setFiles\(pending\.files\)/);
+  assert.match(approval, /Apply reviewed changes/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\.builder-approval-backdrop/);
 });
 
 test('one combined multi-language release banner is shown after the previous version was dismissed', () => {

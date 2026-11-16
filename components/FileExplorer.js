@@ -15,10 +15,11 @@ export default function FileExplorer({ files, dirs, selected, onSelect, onSave, 
   const [searching, setSearching] = useState(false);
   const [q, setQ] = useState('');
   const [closed, setClosed] = useState({});
+  const [treeOpen, setTreeOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [confirm, setConfirm] = useState(false);
-  const [show, setShow] = useState('tree');      // narrow screens: which pane is visible
+  const [show, setShow] = useState('view');      // narrow screens: which pane is visible
   const picked = useRef(false);                  // the user chose a file while the agent was writing
   const scroller = useRef(null);
 
@@ -39,6 +40,8 @@ export default function FileExplorer({ files, dirs, selected, onSelect, onSave, 
   useEffect(() => { const el = scroller.current; if (busy && el) el.scrollTop = el.scrollHeight; }, [content, busy]); // follow the file being written
 
   const choose = (p) => { if (busy) picked.current = true; onSelect(p); setShow('view'); };
+  const showFiles = () => { setTreeOpen(true); setShow('tree'); };
+  const hideFiles = () => { setTreeOpen(false); setShow('view'); };
   const toggleAdd = (kind) => { setAdding(adding === kind ? '' : kind); setName(''); setMsg(''); };
   function submitAdd() {
     const v = name.trim().replace(/^\/+|\/+$/g, '');
@@ -87,10 +90,11 @@ export default function FileExplorer({ files, dirs, selected, onSelect, onSave, 
   const lines = content ? content.split('\n').length : 0;
   return (
     <div className="explorer">
-      <div className="exin" data-show={show}>
-        <aside className="ftree">
+      <div className={'exin' + (treeOpen ? ' tree-open' : ' tree-closed')} data-show={show}>
+        <aside className="ftree" hidden={!treeOpen}>
           <div className="fhead">
             <b>Files</b>
+            <button className="iconbtn sm" onClick={hideFiles} aria-label="Hide file navigation" title="Hide file navigation"><ArrowLeft width="17" height="17" /></button>
             <button className={'iconbtn sm' + (adding === 'file' ? ' on' : '')} disabled={busy} onClick={() => toggleAdd('file')} aria-label="New file" title="New file"><FilePlus width="18" height="18" /></button>
             <button className={'iconbtn sm' + (adding === 'folder' ? ' on' : '')} disabled={busy} onClick={() => toggleAdd('folder')} aria-label="New folder" title="New folder"><FolderPlus width="18" height="18" /></button>
             <button className={'iconbtn sm' + (searching ? ' on' : '')} onClick={() => { setSearching(!searching); setQ(''); }} aria-label="Search files" title="Search files"><Search width="18" height="18" /></button>
@@ -124,7 +128,8 @@ export default function FileExplorer({ files, dirs, selected, onSelect, onSave, 
           {exists ? (
             <>
               <div className="fvhead">
-                <button className="iconbtn sm fback" onClick={() => setShow('tree')} aria-label="Back to files"><ArrowLeft width="18" height="18" /></button>
+                <button className="file-nav-open" type="button" onClick={showFiles} aria-label="Browse project files" title="Browse project files"><FileIcon width="16" height="16" /><span>Files</span></button>
+                <button className="iconbtn sm fback" onClick={showFiles} aria-label="Back to files"><ArrowLeft width="18" height="18" /></button>
                 <span className="fvpath" title={viewPath}>{viewPath}</span>
                 <span className="fvmeta">{lines} {lines === 1 ? 'line' : 'lines'}</span>
                 {busy ? <span className="fvlive"><i />writing</span>
@@ -158,11 +163,12 @@ export default function FileExplorer({ files, dirs, selected, onSelect, onSave, 
             </>
           ) : (
             <div className="fempty">
+              <div className="fempty-bar"><button className="file-nav-open" type="button" onClick={showFiles} aria-label="Browse project files" title="Browse project files"><FileIcon width="16" height="16" /><span>Files</span></button></div>
               {busy && <CodeRain />}
               <div className="fempty-in">
                 <span className="fempty-ico"><FileIcon width="22" height="22" /></span>
                 <b>{busy ? 'Waiting for the first file' : 'Select a file'}</b>
-                <span>{busy ? 'Files appear here as SYNTHCODE writes them.' : 'Choose a file from the tree to view its contents.'}</span>
+                <span>{busy ? 'Files appear here as SYNTHCODE writes them.' : 'Show project files to browse, search or create a file.'}</span>
               </div>
             </div>
           )}

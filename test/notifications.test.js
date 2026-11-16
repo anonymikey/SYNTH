@@ -106,12 +106,14 @@ test('task lifecycle events contain only a bounded id, allowed category and stat
   try {
     reportTaskNotification('task-' + 'x'.repeat(150), 'assistant', 'completed');
     reportTaskNotification('task-2', 'build', 'failed');
+    reportTaskNotification('task-4', 'build', 'needs_review');
     reportTaskNotification('private prompt', 'assistant', 'prompt');
     reportTaskNotification('task-3', 'unknown', 'completed');
-    assert.equal(events.length, 2);
+    assert.equal(events.length, 3);
     assert.equal(events[0].type, TASK_NOTIFICATION_EVENT);
     assert.deepEqual(events[0].detail, { taskId: 'task-' + 'x'.repeat(115), category: 'assistant', state: 'completed' });
     assert.deepEqual(events[1].detail, { taskId: 'task-2', category: 'build', state: 'failed' });
+    assert.deepEqual(events[2].detail, { taskId: 'task-4', category: 'build', state: 'needs_review' });
     assert.deepEqual(Object.keys(events[0].detail).sort(), ['category', 'state', 'taskId']);
   } finally {
     if (originalWindow === undefined) delete globalThis.window;
