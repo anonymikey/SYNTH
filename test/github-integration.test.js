@@ -120,6 +120,18 @@ test('GitHub connection UI hides public source links and celebrates a verified i
   assert.doesNotMatch(importDialog, /github\.com\/anonymiketech\/SYNTH|SETUP_GUIDE/);
 });
 
+test('GitHub settings and SYNTHCODE import use the real reusable GitHub mark instead of letter placeholders', () => {
+  const icon = source('../lib/icons.js');
+  const settings = source('../components/GitHubIntegrationSettings.js');
+  const builder = source('../components/Builder.js');
+  assert.match(icon, /export const GitHubMark =/);
+  assert.match(icon, /viewBox="0 0 24 24"/);
+  assert.match(settings, /<GitHubMark size=\{22\} \/>/);
+  assert.match(builder, /<GitHubMark size=\{14\} \/>/);
+  assert.doesNotMatch(settings, />GH</);
+  assert.doesNotMatch(builder, />GH</);
+});
+
 test('Settings exposes keyboard-navigable Personalization, Notification and New Integrations tabs', () => {
   const settings = source('../components/Personalization.js');
   assert.match(settings, /id: 'personalization'/);

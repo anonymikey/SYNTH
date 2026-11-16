@@ -23,7 +23,7 @@ import BuilderApprovalDialog from './BuilderApprovalDialog';
 import { AssemblingPreview, AssemblingOverlay, WordCycle } from './Working';
 import { BUILDER_TEMPLATE_CATEGORIES, BUILDER_TEMPLATES, getBuilderTemplatePage } from './builder-templates';
 import { BUILDER_TEMPLATE_EXTRAS } from './builder-template-extras';
-import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit, Chevron } from '../lib/icons';
+import { Monitor, Tablet, Phone, Download, Arrow, ArrowDown, Plus, Stop, Globe, Build, Refresh, Open, Copy, Send, Close, Edit, Chevron, GitHubMark } from '../lib/icons';
 import { safeFrontendText } from '../lib/brand-view.js';
 import { reportTaskNotification } from '../lib/notifications';
 import { diffGitHubProject } from '../lib/github-repo';
@@ -648,7 +648,7 @@ export default function Builder({ seed }) {
                 <div className="compose-toolbar builder-toolbar">
                   <div className="toolbar-cluster">
                     <AttachButton a={a} />
-                    <button type="button" className="toolbar-chip github-import-trigger" onClick={() => setGitHubImportOpen(true)}><span className="github-chip-mark" aria-hidden="true">GH</span><span className="toolbar-label">Import from GitHub</span><span className="github-new-badge">New</span></button>
+                    <button type="button" className="toolbar-chip github-import-trigger" onClick={() => setGitHubImportOpen(true)}><span className="github-chip-mark"><GitHubMark size={14} /></span><span className="toolbar-label">Import from GitHub</span><span className="github-new-badge">New</span></button>
                     <LanguageSettingsButton preference={languagePreference} onClick={() => setSettingsOpen(true)} open={settingsOpen} />
                   </div>
                   <span className="toolbar-spacer" />

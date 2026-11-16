@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { GitHubMark } from '../lib/icons';
 
 const notices = {
   connected: 'GitHub connected. Choose which repositories SYNTH may reach in the GitHub App installation.',
@@ -83,7 +84,7 @@ export default function GitHubIntegrationSettings({ notice = '' }) {
 
       <section className="integration-card" aria-labelledby="github-integration-title">
         <div className="integration-card-head">
-          <span className="integration-github-mark" aria-hidden="true">GH</span>
+          <span className="integration-github-mark"><GitHubMark size={22} /></span>
           <div><h4 id="github-integration-title">GitHub</h4><p>Selected-repository access · SYNTHCODE import and pull requests</p></div>
           <span className={'integration-state' + (state?.connected && state?.installations?.length ? ' connected' : '')}>
             {state?.connected && state?.installations?.length ? 'Connected' : state?.connected ? 'Finish setup' : 'Not connected'}
