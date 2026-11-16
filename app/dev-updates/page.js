@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { updates, formatDate } from './data';
 import CapabilityBanner from '../../components/CapabilityBanner';
+import { GitHubUpdateVideoPlayer, GitHubUpdateReadMore } from '../../components/GitHubUpdateVideo';
 
 // Server component, so it can export metadata. Do not add "use client" to this file.
 export const metadata = {
@@ -26,7 +27,10 @@ export default function DevUpdatesPage() {
                         </div>
                         <h2>{u.title}</h2>
                         <p>{u.summary}</p>
-                        <Link href={`/dev-updates/${u.slug}`} className="du-btn">Read more <span aria-hidden="true">→</span></Link>
+                        {u.slug === 'synthcode-github-repository-workflow' && <GitHubUpdateVideoPlayer className="gh-update-card-player" />}
+                        {u.slug === 'synthcode-github-repository-workflow'
+                            ? <GitHubUpdateReadMore href={`/dev-updates/${u.slug}`} />
+                            : <Link href={`/dev-updates/${u.slug}`} className="du-btn">Read more <span aria-hidden="true">→</span></Link>}
                     </article>
                 ))}
             </section>

@@ -203,3 +203,19 @@
 @media(prefers-reduced-motion:reduce){.ld *,.ld *::before,.ld *::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none;filter:none}.ld{scroll-behavior:auto}}
 
 .tile{max-width:104px;text-align:center}
+
+/* Latest SYNTHCODE repository workflow feature. */
+.ld .gh-release .gh-release-card{display:grid;grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);align-items:center;gap:clamp(22px,4vw,52px);margin-top:8px;padding:clamp(20px,3.5vw,38px);border:1px solid rgba(137,164,255,.24);border-radius:28px;background:radial-gradient(70% 130% at 0 0,rgba(41,81,190,.18),transparent 65%),linear-gradient(145deg,rgba(16,22,43,.96),rgba(8,11,20,.98));box-shadow:0 28px 90px rgba(20,52,160,.18),inset 0 1px rgba(255,255,255,.035)}
+.ld .gh-release-copy{min-width:0}
+.ld .gh-release-kicker{display:flex;align-items:center;gap:8px;margin:0 0 13px;color:#86e9ff;font-size:10px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}
+.ld .gh-release-kicker>span{width:8px;height:8px;border-radius:50%;background:#45dcff;box-shadow:0 0 14px rgba(69,220,255,.9);animation:pulse 1.8s ease-in-out infinite}
+.ld .gh-release-copy h2{font-size:clamp(28px,4vw,46px);line-height:1.06;letter-spacing:-.035em}
+.ld .gh-release-copy>p:not(.gh-release-kicker){max-width:520px;margin:14px 0 0;color:#b9c5df;font-size:15px;line-height:1.65}
+.ld .gh-release-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:22px}
+.ld .gh-release-actions .btn{min-height:44px;padding-inline:15px;font-size:13px}
+.ld .gh-release-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#dce7ff;font-size:13px;font-weight:650;transition:border-color .18s,background .18s}
+.ld .gh-release-secondary:hover{border-color:rgba(139,190,255,.55);background:rgba(88,125,240,.12)}
+.ld .gh-release-player{min-width:0;border-radius:18px;box-shadow:0 20px 54px rgba(0,0,0,.38)}
+@media(max-width:900px){.ld .gh-release .gh-release-card{grid-template-columns:1fr;gap:22px}.ld .gh-release-copy>p:not(.gh-release-kicker){max-width:680px}}
+@media(max-width:560px){.ld .gh-release .gh-release-card{padding:18px;border-radius:22px}.ld .gh-release-actions{align-items:stretch}.ld .gh-release-actions .btn,.ld .gh-release-secondary{flex:1 1 100%}.ld .gh-release-player{border-radius:13px}}
+@media(prefers-reduced-motion:reduce){.ld .gh-release-kicker>span{animation:none}}

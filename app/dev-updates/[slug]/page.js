@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { updates, getUpdate, formatDate } from '../data';
+import { GitHubUpdateVideoPlayer } from '../../../components/GitHubUpdateVideo';
 
 // Server component: it reads the slug from the URL and renders one update. Do not add "use client" to this file.
 export function generateStaticParams() {
@@ -30,6 +31,12 @@ export default async function DevUpdatePage({ params }) {
             </div>
             <h1>{u.title}</h1>
             <p className="du-lead">{u.summary}</p>
+            {u.slug === 'synthcode-github-repository-workflow' && (
+                <section className="gh-update-article-video" aria-label="GitHub in SYNTHCODE video walkthrough">
+                    <p>Watch the walkthrough</p>
+                    <GitHubUpdateVideoPlayer />
+                </section>
+            )}
             <div className="du-body">{u.content.map((p, k) => <p key={k}>{p}</p>)}</div>
             <nav className="du-pager" aria-label="More updates">
                 {newer ? <Link href={`/dev-updates/${newer.slug}`}><small>Newer</small><span>{newer.title}</span></Link> : <span />}

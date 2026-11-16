@@ -7,6 +7,7 @@ import { Reveal, ShinyText, CountUp, Marquee, Wordmark, Card } from './bits';
 import { Flow, EvolveLoop, DemoWindow, MockBuilder, MockVision, MockFallback, MockLearn, MockAdmin, MockDevices } from './visuals';
 import { Globe, Build, Phone, Chat, Flask, Arrow, Menu, Close } from '../../lib/icons';
 import CapabilityBanner from '../CapabilityBanner';
+import { GitHubUpdateVideoPlayer } from '../GitHubUpdateVideo';
 
 const TILES = [
   { k: 'website', t: 'Website', I: Globe, p: 'Build a modern, responsive website for ' },
@@ -131,6 +132,24 @@ export default function Landing() {
         <Reveal><h2 className="left">Watch it <span className="gt">build</span></h2></Reveal>
         <Reveal delay={100}><p className="lead left">From one sentence to a working page, streamed live.</p></Reveal>
         <Reveal variant="scale" delay={150}><DemoWindow /></Reveal>
+      </section>
+
+      {/* LATEST IMPLEMENTATION */}
+      <section className="sec gh-release" aria-labelledby="gh-release-title">
+        <Reveal variant="up">
+          <div className="gh-release-card">
+            <div className="gh-release-copy">
+              <p className="gh-release-kicker"><span aria-hidden="true" /> LATEST IMPLEMENTATION · SYNTHCODE</p>
+              <h2 id="gh-release-title">GitHub projects, ready for <span className="gt">SYNTHCODE</span></h2>
+              <p>Connect your GitHub account, choose a repository and branch, edit selected files in SYNTHCODE, then review a new branch and pull request before anything is published.</p>
+              <div className="gh-release-actions">
+                <Link href="/dev-updates/synthcode-github-repository-workflow" className="btn go">Explore the update <Arrow /></Link>
+                <Link href="/app?tab=build" className="gh-release-secondary">Open SYNTHCODE</Link>
+              </div>
+            </div>
+            <GitHubUpdateVideoPlayer className="gh-release-player" />
+          </div>
+        </Reveal>
       </section>
 
       {/* HOW */}
