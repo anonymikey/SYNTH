@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 
 const route = readFileSync(new URL('../app/api/cron/learn/route.js', import.meta.url), 'utf8');
 
-test('scheduled learning stays authenticated and reports failed analysis to cron monitoring', () => {
+test('scheduled learning stays authenticated and reports both lock conflicts and failed analysis', () => {
   const authCheck = route.indexOf("if (!process.env.CRON_SECRET || req.headers.get('authorization')");
   const learningCall = route.indexOf('const result = await runLearning()');
   assert.ok(authCheck >= 0 && learningCall > authCheck, 'authorization must be checked before running learning');
-  assert.match(route, /status:\s*result\?\.error\s*\?\s*503\s*:\s*200/);
+  assert.match(route, /status:\s*result\?\.busy\s*\?\s*409\s*:\s*result\?\.error\s*\?\s*503\s*:\s*200/);
 });

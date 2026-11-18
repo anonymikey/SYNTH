@@ -87,10 +87,13 @@ function modelCatalogueAnd(handler) {
   };
 }
 
-test('an OpenRouter 429 cools the failed model, retries a healthy model, and avoids it next run', async () => {
+test('an OpenRouter 429 cools the provider, skips sibling models, and immediately uses a configured fallback', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
   const called = [];
   globalThis.fetch = modelCatalogueAnd(async (_url, body) => {
     called.push(body.model);
+    if (String(_url).startsWith('https://api.cloudflare.com/')) return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash');
     if (body.model === PRIMARY) return rateLimited(body.model);
     return success(validAnalysis(), `openrouter/${body.model}`);
   });
@@ -101,22 +104,62 @@ test('an OpenRouter 429 cools the failed model, retries a healthy model, and avo
   assert.equal(first.attempts[0].status, 429);
   assert.match(first.attempts[0].error, /rate-limited/);
   assert.equal(isCoolingDown(PRIMARY), true);
-  assert.notEqual(first.model, `openrouter/${PRIMARY}`);
+  assert.equal(first.model, '@cf/zai-org/glm-4.7-flash');
+  assert.deepEqual(called, [PRIMARY, '@cf/zai-org/glm-4.7-flash']);
 
   const beforeSecondRun = called.length;
   const second = await completeWith([{ role: 'user', content: 'analyze activity again' }], { validate: parseLearningOutput });
-  assert.equal(second.attempts.length, 0);
-  assert.equal(called[beforeSecondRun], 'meta/llama-3.3-70b-instruct:free');
-  assert.equal(called.includes(PRIMARY), true);
-  assert.equal(called.slice(beforeSecondRun).includes(PRIMARY), false);
+  assert.equal(second.attempts[0].provider, 'openrouter');
+  assert.match(second.attempts[0].error, /cooldown/);
+  assert.equal(called.length, beforeSecondRun + 1);
+  assert.equal(called.at(-1), '@cf/zai-org/glm-4.7-flash');
+});
+
+test('an OpenRouter server error skips sibling models and falls through to configured Cloudflare', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
+  const calls = [];
+  globalThis.fetch = modelCatalogueAnd(async (url) => {
+    if (url.startsWith('https://openrouter.ai/')) {
+      calls.push('openrouter');
+      return response({ error: { message: 'upstream server error' } }, 500, { 'retry-after': '45' });
+    }
+    calls.push('cloudflare');
+    return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash');
+  });
+  const result = await completeWith([{ role: 'user', content: 'analyze activity' }], { validate: parseLearningOutput });
+  assert.equal(result.model, '@cf/zai-org/glm-4.7-flash');
+  assert.deepEqual(calls, ['openrouter', 'cloudflare']);
+  assert.equal(result.attempts[0].status, 500);
+});
+
+test('an OpenRouter timeout skips sibling models and lets the next configured service complete analysis', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
+  const calls = [];
+  globalThis.fetch = modelCatalogueAnd(async (url) => {
+    if (url.startsWith('https://openrouter.ai/')) {
+      calls.push('openrouter');
+      throw Object.assign(new Error('request timed out'), { name: 'TimeoutError' });
+    }
+    calls.push('cloudflare');
+    return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash');
+  });
+  const result = await completeWith([{ role: 'user', content: 'analyze activity' }], { validate: parseLearningOutput });
+  assert.equal(result.model, '@cf/zai-org/glm-4.7-flash');
+  assert.deepEqual(calls, ['openrouter', 'cloudflare']);
+  assert.equal(result.attempts[0].status, 0);
 });
 
 test('honors an HTTP-date Retry-After after the default cooldown would have expired', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
   const realNow = Date.now;
   let now = 1_000_000;
   Date.now = () => now;
   const called = [];
   globalThis.fetch = modelCatalogueAnd(async (_url, body) => {
+    if (String(_url).startsWith('https://api.cloudflare.com/')) { called.push('cloudflare'); return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash'); }
     called.push(body.model);
     if (body.model === PRIMARY) return rateLimited(body.model, new Date(now + 600000).toUTCString());
     return success(validAnalysis());
@@ -128,7 +171,8 @@ test('honors an HTTP-date Retry-After after the default cooldown would have expi
     const beforeSecond = called.length;
     now += 180000;
     const second = await completeWith([{ role: 'user', content: 'analyze activity again' }], { validate: parseLearningOutput });
-    assert.equal(second.attempts.length, 0);
+    assert.equal(second.attempts.length, 1);
+    assert.match(second.attempts[0].error, /cooldown/);
     assert.ok(called.slice(beforeSecond).length > 0);
     assert.equal(called.slice(beforeSecond).includes(PRIMARY), false);
   } finally {
@@ -137,10 +181,13 @@ test('honors an HTTP-date Retry-After after the default cooldown would have expi
 });
 
 test('caps excessive Retry-After values at the documented maximum cooldown', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
   const realNow = Date.now;
   const now = 3_000_000;
   Date.now = () => now;
   globalThis.fetch = modelCatalogueAnd(async (_url, body) => {
+    if (String(_url).startsWith('https://api.cloudflare.com/')) return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash');
     if (body.model === PRIMARY) return rateLimited(body.model, '999999');
     return success(validAnalysis());
   });
@@ -173,12 +220,15 @@ test('skips OpenRouter when every candidate model is still cooling down', async 
 });
 
 test('restores a model cooldown from shared storage after process-local cooldown state is lost', async () => {
+  enableCloudflare();
+  process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
   const realNow = Date.now;
   let now = 1_000_000;
   Date.now = () => now;
   const called = [];
   const storageKey = `learn:cooldown:model:${encodeURIComponent(PRIMARY)}`;
   globalThis.fetch = modelCatalogueAnd(async (_url, body) => {
+    if (String(_url).startsWith('https://api.cloudflare.com/')) return success(validAnalysis(), '@cf/zai-org/glm-4.7-flash');
     called.push(body.model);
     if (body.model === PRIMARY) return rateLimited(body.model, '600');
     return success(validAnalysis());
@@ -192,7 +242,8 @@ test('restores a model cooldown from shared storage after process-local cooldown
     now += 180000;
     const beforeSecond = called.length;
     const second = await completeWith([{ role: 'user', content: 'analyze activity again' }], { validate: parseLearningOutput });
-    assert.equal(second.attempts.length, 0);
+    assert.equal(second.attempts.length, 1);
+    assert.match(second.attempts[0].error, /cooldown/);
     assert.equal(called.slice(beforeSecond).includes(PRIMARY), false);
   } finally {
     Date.now = realNow;
@@ -233,7 +284,7 @@ test('restores a provider cooldown from shared storage after process-local coold
   }
 });
 
-test('learning falls through all failed OpenRouter models to configured Cloudflare', async () => {
+test('OpenRouter 429 skips sibling models and falls through to configured Cloudflare', async () => {
   enableCloudflare();
   process.env.PROVIDER_ORDER = 'openrouter,cloudflare';
   const called = [];
@@ -249,9 +300,9 @@ test('learning falls through all failed OpenRouter models to configured Cloudfla
   const result = await completeWith([{ role: 'user', content: 'analyze activity' }], { validate: parseLearningOutput });
   assert.equal(result.model, '@cf/zai-org/glm-4.7-flash');
   assert.equal(result.value.weak_areas[0].topic, 'Reliability');
-  assert.equal(result.attempts.length, 3);
+  assert.equal(result.attempts.length, 1);
   assert.ok(called.at(-1) === 'cloudflare');
-  assert.equal(called.filter((call) => call.startsWith('openrouter:')).length, 3);
+  assert.equal(called.filter((call) => call.startsWith('openrouter:')).length, 1);
 });
 
 test('malformed JSON is rejected and the next provider gets a chance to produce valid learning output', async () => {
@@ -301,7 +352,9 @@ test('learning parser requires both result arrays and valid entries', () => {
   assert.throws(() => parseLearningOutput('{"lessons":[],"weak_areas":null}'), /weak-areas list/);
   assert.throws(() => parseLearningOutput('{"lessons":[{}],"weak_areas":[]}'), /lesson entry/);
   assert.throws(() => parseLearningOutput('{"lessons":[],"weak_areas":[{"topic":"Reliability"}]}'), /weak-area entry/);
-  assert.deepEqual(parseLearningOutput('{"lessons":[],"weak_areas":[]}'), { lessons: [], weak_areas: [] });
+  assert.throws(() => parseLearningOutput('{"lessons":[],"weak_areas":[]}'), /no actionable/);
+  assert.throws(() => parseLearningOutput(JSON.stringify({ lessons: [{ topic: 'Privacy', text: 'Contact person@example.test at 555-123-4567 for more help.' }], weak_areas: [] })), /personal data/);
+  assert.deepEqual(parseLearningOutput('{"lessons":[{"topic":"Clarity","text":"State uncertainty and give the user a concise next step."},{"topic":"Clarity","text":"State uncertainty and give the user a concise next step."}],"weak_areas":[]}'), { lessons: [{ topic: 'Clarity', text: 'State uncertainty and give the user a concise next step.' }], weak_areas: [] });
 });
 
 test('slow OpenRouter attempts cannot consume the reserved window for SPARK and Cloudflare', async () => {
@@ -342,7 +395,7 @@ test('all-provider failure returns bounded per-target diagnostics instead of onl
   await assert.rejects(
     completeWith([{ role: 'user', content: 'analyze activity' }]),
     (error) => {
-      assert.equal(error.attempts.length, 3);
+      assert.equal(error.attempts.length, 1);
       assert.match(error.message, /No configured learning provider completed/);
       assert.match(error.message, /HTTP 429/);
       assert.ok(error.message.length <= 1000);

@@ -6,6 +6,7 @@ import {
   unorouterBase,
   unorouterFreeModels,
   unorouterKey,
+  verifiedUnoFreeModels,
 } from '../lib/unorouter.js';
 
 const envNames = [
@@ -18,7 +19,10 @@ const originalEnv = Object.fromEntries(envNames.map((key) => [key, process.env[k
 const originalFetch = globalThis.fetch;
 const originalWarn = console.warn;
 
-beforeEach(() => { for (const key of envNames) delete process.env[key]; });
+beforeEach(() => {
+  for (const key of envNames) delete process.env[key];
+  Object.assign(globalThis.__synthUnoCatalog, { t: 0, models: [], pending: null });
+});
 afterEach(() => {
   for (const key of envNames) {
     if (originalEnv[key] === undefined) delete process.env[key];
@@ -37,6 +41,26 @@ test('UnoRouter only accepts free-suffix model IDs and never reads a client-cont
   assert.equal(isUnoFreeModelId('gpt-oss-120b'), false);
   assert.equal(isUnoFreeModelId('paid:model:free'), false);
   assert.deepEqual(unorouterFreeModels(), ['openai/gpt-oss-120b:free', 'deepseek/deepseek-v4.1-flash-1017:free']);
+  delete process.env.UNOROUTER_FREE_MODELS;
+  assert.deepEqual(unorouterFreeModels(), [], 'no static model IDs are invented when the user has not configured an allowlist');
+});
+
+test('SYNTH Connect selects only live free IDs with OpenAI endpoint support and respects an explicit allowlist', async () => {
+  const catalog = [
+    { id: 'deepseek-v3.1:free', context_length: 128000, supported_endpoint_types: ['openai'] },
+    { id: 'qwen-embed:free', supported_endpoint_types: ['openai'] },
+    { id: 'paid/deepseek-v4', supported_endpoint_types: ['openai'] },
+    { id: 'swamponyxl:free', supported_endpoint_types: ['aihorde'] },
+    { id: 'gemma-4-26b:free', context_length: 262144, supported_endpoint_types: ['openai'] },
+  ];
+  globalThis.fetch = async (url) => {
+    assert.equal(String(url), 'https://api.unorouter.com/v1/models');
+    return Response.json({ data: catalog });
+  };
+  assert.deepEqual(await verifiedUnoFreeModels(), ['deepseek-v3.1:free', 'gemma-4-26b:free']);
+
+  process.env.UNOROUTER_FREE_MODELS = 'deepseek-v3.1:free,paid/deepseek-v4';
+  assert.deepEqual(await verifiedUnoFreeModels(), ['deepseek-v3.1:free']);
 });
 
 test('UnoRouter Retry-After parser supports seconds and HTTP-date and bounds invalidly long values', () => {
@@ -77,6 +101,9 @@ test('429 free-model response honors Retry-After, persists cooldown, and immedia
 
     if (String(url).startsWith('https://openrouter.ai/api/v1/models')) {
       return Response.json({ data: [{ id: 'openai/gpt-oss-20b:free', name: 'Open free model', context_length: 32000 }] });
+    }
+    if (String(url).startsWith('https://api.unorouter.com/v1/models')) {
+      return Response.json({ data: [{ id: 'openai/gpt-oss-120b:free', supported_endpoint_types: ['openai'], context_length: 120000 }] });
     }
 
     const body = init.body ? JSON.parse(init.body) : {};

@@ -8,6 +8,13 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const tid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function safeError(value) {
+  return String(value || 'Image service failed.')
+    .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')
+    .replace(/\b(?:sk|rk|pk)-[A-Za-z0-9_-]{12,}\b/g, '[redacted key]')
+    .replace(/([?&](?:key|token|api_key|authorization)=)[^&\s]+/gi, '$1[redacted]')
+    .replace(/[\r\n\t]+/g, ' ').slice(0, 140);
+}
 function imageMime(base64, hinted = '') {
   if (/^image\/(png|jpeg|webp)$/i.test(hinted)) return hinted.toLowerCase();
   const b = Buffer.from(base64.slice(0, 40), 'base64');
@@ -16,9 +23,9 @@ function imageMime(base64, hinted = '') {
   if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
   return 'image/png';
 }
-async function logRun(id, started, status, error = '') {
+async function logRun(id, started, status, error = '', failureStatus = 502) {
   const ms = Date.now() - started;
-  const entry = { tid: id, ts: Date.now(), mode: 'chat', task: 'image-generation', step: 0, provider: 'cloudflare', node: `cloudflare/${CF_MODELS.image}`, failovers: 0, ms, status, img: false, fails: error ? [{ provider: 'cloudflare', target: `cloudflare/${CF_MODELS.image}`, status: 502, msg: String(error).slice(0, 140) }] : [] };
+  const entry = { tid: id, ts: Date.now(), mode: 'chat', task: 'image-generation', step: 0, provider: 'cloudflare', node: `cloudflare/${CF_MODELS.image}`, failovers: 0, ms, status, img: false, fails: error ? [{ provider: 'cloudflare', target: `cloudflare/${CF_MODELS.image}`, status: failureStatus, msg: safeError(error) }] : [] };
   try { await pushCapped('spark', entry, 500); } catch {}
   if (status === 'Failed') await recordFail('image-generation', `cloudflare/${CF_MODELS.image}`);
   else await record({ tid: id, task: 'image-generation', via: `cloudflare/${CF_MODELS.image}`, ms, fallback: false });
@@ -52,8 +59,10 @@ export async function POST(req) {
     await logRun(id, started, 'Success');
     return Response.json({ image: data, tid: id, model: `cloudflare/${CF_MODELS.image}` });
   } catch (e) {
-    await logRun(id, started, 'Failed', e.message);
-    console.warn('[synth] Cloudflare image generation failed:', String(e.message).slice(0, 180));
-    return Response.json({ error: 'Cloudflare could not generate that image right now. Check the Cloudflare Workers AI free daily allowance and model availability, then try again.' }, { status: 502 });
+    const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+    const failureStatus = timedOut ? 504 : 502;
+    await logRun(id, started, 'Failed', e.message, failureStatus);
+    console.warn('[synth] Image generation failed:', safeError(e.message));
+    return Response.json({ error: timedOut ? 'Image generation timed out while the service was responding. Try again shortly.' : 'Image generation is temporarily unavailable. Check the configured image service allowance and try again.' }, { status: failureStatus });
   }
 }

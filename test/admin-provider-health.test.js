@@ -35,3 +35,20 @@ test('health panel uses SYNTH-safe aliases and remains responsive on narrow scre
   assert.match(styles, /\.admin-provider-grid\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(178px,1fr\)\)/);
   assert.match(styles, /@media\(max-width:480px\)\{[\s\S]*?\.admin-provider-grid\{grid-template-columns:1fr\}/);
 });
+
+test('training progress is the first section and long review panels stay easy to navigate', () => {
+  const nav = admin.indexOf('<nav className="studio-nav"');
+  const training = admin.indexOf('<StudioSection id="training"');
+  const providers = admin.indexOf('<StudioSection id="providers"');
+  assert.ok(nav >= 0 && nav < training && training < providers, 'training progress follows navigation and precedes provider diagnostics');
+  assert.match(admin, /useState\('training'\)/);
+  assert.match(admin, /Run learning now/);
+  assert.match(admin, /studio-training-status[\s\S]*?role="status"/);
+  assert.match(admin, /<TrainingProgress d=\{d\} busy=\{busy\} onRun=\{learn\} message=\{msg\}/);
+  assert.match(admin, /const plural = \(count, noun\)/);
+  assert.match(admin, /plural\(j\.added, 'new lesson'\)/);
+  assert.match(admin, /<details className="studio-detail">[\s\S]*?Task coverage/);
+  assert.match(admin, /aria-label=\{`\$\{filter\} learning lessons`\}/);
+  assert.match(styles, /\.studio-list-scroll\{max-height:min\(42vh,380px\);overflow:auto/);
+  assert.match(styles, /\.studio-training-actions>button\{flex:none;min-height:40px\}/);
+});

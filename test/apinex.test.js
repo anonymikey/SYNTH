@@ -254,6 +254,7 @@ test('429 cooldown and shared atomic account reservation fall back to OpenRouter
   // Simulate a fresh request after the 429 hold, then return a depleted allowance with a published reset.
   redis.delete(APINEX_ACCOUNT_COOLDOWN_KEY);
   globalThis.__synthApinexCool?.clear();
+  globalThis.__provDown?.delete('apinex');
   quotaResponse = true;
   const quotaRoute = await route(input);
   assert.equal(quotaRoute.ok, true);
