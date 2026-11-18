@@ -78,6 +78,14 @@ test('Dev Updates announces SYNTH Bridge without exposing the upstream provider 
   assert.doesNotMatch(data, /APInex|apinex\.bond|free\/(?:deepseek|qwen|gemini)/i);
 });
 
+test('Dev Updates announces animated, context-aware workspace composer prompts', () => {
+  const data = readFileSync(new URL('../app/dev-updates/data.js', import.meta.url), 'utf8');
+  assert.match(data, /animated-workspace-composer-prompts/);
+  assert.match(data, /Assistant composer now cycles between short ideas/);
+  assert.match(data, /SYNTHCODE’s composer changes its suggestions/);
+  assert.match(data, /adapts to reduced-motion settings/);
+});
+
 test('Dev Updates covers Antigravity personalization and polished self-contained Web output', () => {
   const data = readFileSync(new URL('../app/dev-updates/data.js', import.meta.url), 'utf8');
   assert.match(data, /personalized-antigravity-and-polished-web-projects/);

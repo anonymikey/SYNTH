@@ -9,6 +9,7 @@ import { SOURCE_ONLY_NOTICE, autoProjectPrompt, autoProjectRetry, inferProjectMo
 import { compileTypeScript } from '../lib/typescript-client';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import VoiceInput from './VoiceInput';
+import AnimatedTextarea from './AnimatedTextarea';
 import ResponseToolbar from './ResponseToolbar';
 import Markdown from './Markdown';
 import ToolRuns from './ToolRuns';
@@ -73,6 +74,17 @@ Collaboration:
 - If critical decisions remain unclear, ask one focused question with no file blocks. Never turn a clarification into a guessed code change. For explanation/review-only requests, answer directly without inventing file changes.
 - After edits, give a brief accurate summary and at most three practical next-step ideas. Do not claim that code was built, tested, type-checked, run, hosted, or deployed unless that actually happened.`;
 const IDEAS = ['Landing page for a coffee shop', 'Habit tracker with streaks', 'Pomodoro timer with sounds', 'Kanban board with drag and drop'];
+const BUILDER_WELCOME_PROMPTS = ['Describe your app idea…', 'Build a budget dashboard with charts…', 'Create a responsive landing page…', 'Start with a template…'];
+const BUILDER_EDIT_PROMPTS = ['Ask for a change…', 'Refine a screen or feature…', 'Improve a component…'];
+const BUILDER_QUEUE_PROMPTS = ['Describe the next change…', 'Add the next feature after this build…'];
+const BUILDER_CLARIFICATION_PROMPTS = ['Answer SYNTHCODE’s question…', 'Share the detail needed to continue…'];
+const builderPlaceholderPrompts = (busy, last, hasFiles) => busy
+  ? BUILDER_QUEUE_PROMPTS
+  : last?.status === 'needs_input'
+    ? BUILDER_CLARIFICATION_PROMPTS
+    : hasFiles
+      ? BUILDER_EDIT_PROMPTS
+      : BUILDER_WELCOME_PROMPTS;
 const WIDTH = { desktop: '100%', tablet: '820px', phone: '390px' };
 const LANGUAGE_PREFERENCE_KEY = 'synthcode-language-preference-v1';
 const entryFor = (files, language) => isSourceOnlyLanguage(language) ? sourceProjectEntry(files, language) : entryOf(files);
@@ -713,7 +725,7 @@ export default function Builder({ seed, onOpenMenu, banner }) {
               <Thumbs a={a} />
               <NotificationSetupBanner category="build" />
               <div className="compose compose-stack">
-                <textarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" aria-label="Describe what to build"
+                <AnimatedTextarea ref={wbox} value={prompt} rows={1} placeholder="Describe the app or page you want, or paste a screenshot" typingTexts={BUILDER_WELCOME_PROMPTS} aria-label="Describe what to build"
                   onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />
                 <div className="compose-toolbar builder-toolbar">
@@ -879,7 +891,8 @@ export default function Builder({ seed, onOpenMenu, banner }) {
         <NotificationSetupBanner category="build" />
         <div className="compose col compose-stack">
           <div className="pbar-head"><i />prompt<span className="grow" /><span>{busy ? 'new requests are queued' : languageStatus(language)}</span></div>
-          <textarea ref={wbox} value={prompt} rows={3} aria-label="Describe what to build or change"
+          <AnimatedTextarea ref={wbox} value={prompt} rows={3} aria-label="Describe what to build or change"
+            typingTexts={builderPlaceholderPrompts(busy, last, hasFiles)}
             placeholder={busy ? 'Type your next request. It runs when this build finishes.' : last?.status === 'needs_input' ? 'Answer SYNTHCODE’s question to continue' : hasFiles ? 'Ask for a change' : 'Describe what to build'}
             onChange={(e) => setPrompt(e.target.value)} onPaste={a.onPaste}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); build(); } }} />

@@ -570,6 +570,13 @@ html[data-density="compact"] .m{gap:8px}
 /* Shared reference-inspired composer: clear writing area, tool cluster on the left, mic/action on the right. */
 .compose.compose-stack{flex-direction:column;align-items:stretch;gap:6px;padding:9px 10px 8px;border-radius:22px}
 .compose.compose-stack textarea{width:100%;flex:none;min-height:38px;padding:6px 8px;max-height:180px}
+.composer-field{position:relative;min-width:0;width:100%}
+.composer-field textarea{display:block;width:100%;min-width:0;box-sizing:border-box}
+.composer-field[data-typing-placeholder="true"] textarea::placeholder{color:transparent}
+.composer-placeholder-overlay{position:absolute;z-index:2;top:11px;left:6px;max-width:calc(100% - 12px);color:var(--muted);font-size:16px;line-height:1.4;pointer-events:none}
+.composer-placeholder-overlay .text-type{max-width:100%;white-space:normal;color:inherit}
+.compose.compose-stack .composer-placeholder-overlay{top:6px;left:8px;max-width:calc(100% - 16px);line-height:1.4}
+.build .compose.col .composer-placeholder-overlay{font-size:12px;line-height:1.5}
 .compose-toolbar{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 1px}
 .toolbar-cluster{display:inline-flex;align-items:center;gap:4px;flex:none;padding:3px;border:1px solid var(--line);border-radius:15px;background:var(--panel2)}
 .toolbar-cluster .attachbtn{width:38px;height:38px;min-height:38px;border-radius:50%;padding:0}

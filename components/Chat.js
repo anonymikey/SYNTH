@@ -5,6 +5,7 @@ import { track } from '../lib/track';
 import { withImages } from '../lib/images';
 import { useAttach, Thumbs, AttachButton } from './Attach';
 import VoiceInput from './VoiceInput';
+import AnimatedTextarea from './AnimatedTextarea';
 import Markdown from './Markdown';
 import ResponseToolbar from './ResponseToolbar';
 import ToolRuns from './ToolRuns';
@@ -18,6 +19,8 @@ import { reportTaskNotification } from '../lib/notifications';
 const SYSTEM = `You are SYNTH ASSISTANT: clear, concise and honest. Use Markdown (short paragraphs, lists, fenced code blocks with a language) when it helps.
 When the user shares images: look closely, describe what is actually visible, transcribe any text exactly, read charts and tables carefully, and say so when something is unclear or cut off instead of guessing.`;
 const IDEAS = ['Explain neural networks simply', 'Help me debug code', 'Draft a follow-up email', 'Describe an image I share'];
+const ASSISTANT_TEXT_PROMPTS = ['Ask SYNTH anything…', 'Help me debug a code issue…', 'Draft a follow-up email…', 'Explain a tricky concept…'];
+const ASSISTANT_IMAGE_PROMPTS = ['Describe an image to create…', 'Create a calm landscape…', 'Design a product concept…'];
 const newId = () => globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
 
 // Only the most recent image message (within the last 6 turns) keeps its pixels, to stay under request limits.
@@ -222,7 +225,7 @@ export default function Chat({ seed }) {
         {!imageMode && <Thumbs a={a} />}
         <NotificationSetupBanner category="assistant" />
         <div className="compose compose-stack">
-          <textarea ref={box} value={input} placeholder={imageMode ? 'Describe the image to create' : 'Message SYNTH'} rows={1} aria-label={imageMode ? 'Describe an image to generate' : 'Message'}
+          <AnimatedTextarea ref={box} value={input} placeholder={imageMode ? 'Describe the image to create' : 'Message SYNTH'} typingTexts={imageMode ? ASSISTANT_IMAGE_PROMPTS : ASSISTANT_TEXT_PROMPTS} rows={1} aria-label={imageMode ? 'Describe an image to generate' : 'Message'}
             onChange={(event) => setInput(event.target.value)} onPaste={!imageMode ? a.onPaste : undefined}
             onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); imageMode ? generateImage() : send(); } }} />
           <div className="compose-toolbar">

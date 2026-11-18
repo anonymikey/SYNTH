@@ -2,6 +2,17 @@
 // Fields: slug (the URL), date (YYYY-MM-DD), title, summary, tags, content (one string per paragraph).
 export const updates = [
     {
+        slug: 'animated-workspace-composer-prompts',
+        date: '2026-11-18',
+        title: 'More expressive prompts, without extra effort',
+        summary: 'SYNTH ASSISTANT and SYNTHCODE now cycle through softly typed, context-aware prompt suggestions in empty composer fields.',
+        tags: ['New', 'SYNTH ASSISTANT', 'SYNTHCODE', 'Workspace'],
+        content: [
+            'The empty Assistant composer now cycles between short ideas for chat or image creation. SYNTHCODE’s composer changes its suggestions for a new project, an edit, a queued follow-up or a clarification.',
+            'The animated text is only a placeholder; it never changes or sends what you type. Focusing an empty field restores its normal static placeholder, while entered text replaces it normally. The effect adapts to reduced-motion settings and remains available on phones and desktop.',
+        ],
+    },
+    {
         slug: 'personalized-antigravity-and-polished-web-projects',
         date: '2026-11-16',
         title: 'A more personal workspace and polished web projects',

@@ -150,6 +150,14 @@
 - [x] Carry the same design requirement into provider retries and web-page edits, but preserve an existing project’s established component/theme/stylesheet architecture; do not impose single-file HTML on imported GitHub repositories and do not invent a UI for server-only or command-line projects. Keep new starters free of unnecessary external CSS/font downloads and dependencies.
 
 
+## Animated typing placeholders in SYNTH ASSISTANT and SYNTHCODE
+
+- [x] Add the React Bits TextType animation to the Assistant and SYNTHCODE workspace composers. Rotate relevant prompts rather than the demo copy, using 75ms typing, a 1500ms pause, 50ms backspace deletion, fade-in typing, a 0.2 mistake rate, and a gliding bar cursor.
+- [x] Cover Assistant text and image prompts, the SYNTHCODE welcome composer, and active build/edit/queued/clarification states. Keep every current textarea controlled and preserve its ref, static fallback placeholder, input/paste/voice behavior, auto-resizing, keyboard submission, build queueing, and accessible label.
+- [x] Keep the animated layer non-interactive and hidden from assistive technology; show it only when the field is visible, empty and unfocused, stop it when the user focuses or enters text, suspend it in hidden/offscreen workspace tabs, and honor reduced-motion preferences. Keep layouts responsive without clipping or horizontal overflow.
+- [x] Add a concise Dev Updates announcement for the new workspace composer interaction.
+
+
 ## Shared Antigravity background for SYNTH ASSISTANT and SYNTHCODE
 
 - [x] Use the supplied React Bits Antigravity component as the default background across both SYNTH ASSISTANT and SYNTHCODE. Cover the workspace behind the content instead of leaving the demo's 400px height. Use the configured colors `['#5227FF', '#FF9FFC', '#B497CF']`, `count={1500}`, `magnetRadius={9}`, `ringRadius={7}`, `particleSize={0.9}` and `autoAnimate={true}`.
